@@ -1,4 +1,5 @@
-## Main Challenge:
+## Main Challenge
+
 Personal Economic Trainer
 by S-Pankki
 
@@ -29,14 +30,16 @@ Optional bonus angle (not required, the challenge is fully solvable with the pro
 
     Multi-bank view: under PSD2, customers can let their bank fetch account data from other banks. How could an AI coach use the customer’s full financial picture?
 
-You can find data and materials used in the challenge in this repo: https://github.com/hackjunction/Junction-2026-S-pankki
+You can find data and materials used in the challenge in this repo: <https://github.com/hackjunction/Junction-2026-S-pankki>
 And in the "Challenge Data"-folder
 
+### Side challenges
 
-
-### Side challenges:
-Elevenlabs:
-Best use of Illevenlabs:he ChallengeDeploy natural, human-sounding audio with ElevenLabs. Create realistic, dynamic, and emotionally expressive voices for any project, from interactive AI companions to narrated stories and voice-enabled apps. ElevenLabs will empower you to build rich, immersive experiences without the need for actors or complex audio production, using simply the power of AI.Integrate fully autonomous audio experiences into your hack with ElevenLabs and give your project a voice, along with giving your team the chance to win some wireless earbuds!ResourcesClaim your code at <https://mlh.link/junction-26> and check how to build with ElevenLabs at <https://mlh.link/elevenlabsCompany> InfoMajor League HackingMajor League Hacking (MLH) is a community-focused organization that empowers student developers through hackathons, technical workshops, and hands-on learning experiences. Serving as the official student hackathon league, MLH supports events around the world by providing resources, mentorship, and a platform for students to collaborate, build innovative projects, and strengthen their technical skills. By fostering an inclusive and enthusiastic environment, MLH helps students grow as developers, leaders, and creators while connecting them with a global network of peers and industry partners.Prizes
+Best use of ElevenLabs:
+The Challenge
+Deploy natural, human-sounding audio with ElevenLabs. Create realistic, dynamic, and emotionally expressive voices for any project, from interactive AI companions to narrated stories and voice-enabled apps. Integrate fully autonomous audio experiences into your hack and give your project a voice.
+Claim your code at <https://mlh.link/junction-26> and check how to build with ElevenLabs at <https://mlh.link/elevenlabs>
+Prizes
 Best Overall
 Wireless Earbuds
 
