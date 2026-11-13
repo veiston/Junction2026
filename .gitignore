@@ -30,3 +30,6 @@ tmp/
 *.swp
 .DS_Store
 Thumbs.db
+
+.expo/
+expo-env.d.ts
