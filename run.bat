@@ -1,7 +1,6 @@
 @echo off
 setlocal
+cd /d "%~dp0"
 
-set "ROOT_DIR=%~dp0"
-
-start "backend" /b uv run --directory "%ROOT_DIR%backend" main.py
-pnpm --dir "%ROOT_DIR%frontend" dev
+start "backend" /b uv run --directory backend main.py
+pnpm --dir frontend dev

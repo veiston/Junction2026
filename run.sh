@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$(dirname "${BASH_SOURCE[0]}")"
+trap 'kill 0' EXIT
 
-uv run --directory "$ROOT_DIR/backend" main.py &
-BACKEND_PID=$!
-trap 'kill "$BACKEND_PID" 2>/dev/null || true' EXIT
-
-pnpm --dir "$ROOT_DIR/frontend" dev
+uv run --directory backend main.py &
+pnpm --dir frontend dev
