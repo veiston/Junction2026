@@ -3,24 +3,20 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 
 import { api as apiClient } from "@/api/client";
 import type { QuickAction, TransactionListData } from "@/contracts";
-import { colors, fontSize, spacing } from "@/theme";
+import { colors, fonts, spacing } from "@/theme";
 import { formatCents } from "@/widgets/common/Money";
 
 import { Composer } from "./Composer";
+import { FunctionCards } from "./FunctionCards";
 import { MessageList } from "./MessageList";
-import { QuickActions } from "./QuickActions";
 import { SeeAllPanel } from "./SeeAllPanel";
+import { SuggestionChips } from "./SuggestionChips";
 import type { WidgetHostApi } from "./registry";
 import type { UseChat } from "./useChat";
 
-interface Props {
-  chat: UseChat;
-  greeting?: string;
-}
-
 /** Chat UI: all data comes from the `chat` hook result passed in. */
-export function ChatScreen({ chat, greeting }: Props) {
-  const { messages, busy, error, send, sendChip, retry } = chat;
+export function ChatScreen({ chat }: { chat: UseChat }) {
+  const { messages, busy, error, send, sendChip, retry, started } = chat;
   const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
 
   const host: WidgetHostApi = useMemo(
@@ -39,7 +35,17 @@ export function ChatScreen({ chat, greeting }: Props) {
           <SeeAllPanel title={seeAll.title} filter={seeAll.filter} onClose={() => setSeeAll(null)} />
         ) : (
           <>
-            {messages.length === 0 && greeting ? <Text style={styles.greeting}>{greeting}</Text> : null}
+            {!started ? (
+              <>
+                <View style={styles.intro}>
+                  <Text style={styles.heading} accessibilityRole="header">
+                    What would you like to do today?
+                  </Text>
+                  <Text style={styles.sub}>Choose an option or ask your own question.</Text>
+                </View>
+                <FunctionCards onPick={sendChip} disabled={busy} />
+              </>
+            ) : null}
             <MessageList messages={messages} api={host} onSend={send} onSeeAll={setSeeAll} />
             {busy ? (
               <Text accessibilityRole="progressbar" style={styles.status}>
@@ -54,12 +60,12 @@ export function ChatScreen({ chat, greeting }: Props) {
                 </Pressable>
               </View>
             ) : null}
-            {messages.length === 0 ? <QuickActions onChip={sendChip} disabled={busy} /> : null}
           </>
         )}
       </ScrollView>
       {seeAll ? null : (
-        <View style={styles.composer}>
+        <View style={styles.footer}>
+          {!started ? <SuggestionChips onPick={send} disabled={busy} /> : null}
           <Composer onSend={send} disabled={busy} />
         </View>
       )}
@@ -69,12 +75,14 @@ export function ChatScreen({ chat, greeting }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { padding: spacing.md, gap: spacing.md },
-  greeting: { fontSize: fontSize.body, color: colors.text },
-  status: { fontSize: fontSize.small, color: colors.textMuted },
+  content: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: 10 },
+  intro: { gap: 4, paddingVertical: 4 },
+  heading: { fontSize: 24, lineHeight: 30, fontFamily: fonts.medium, color: colors.text },
+  sub: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted },
+  status: { fontSize: 15, fontFamily: fonts.regular, color: colors.textMuted },
   error: { gap: spacing.sm },
-  errorText: { fontSize: fontSize.small, color: colors.text },
+  errorText: { fontSize: 15, fontFamily: fonts.regular, color: colors.text },
   retry: { minHeight: 44, justifyContent: "center" },
-  retryText: { fontSize: fontSize.small, color: colors.primary, fontWeight: "600" },
-  composer: { padding: spacing.md, backgroundColor: colors.surface },
+  retryText: { fontSize: 15, fontFamily: fonts.semibold, color: colors.primary },
+  footer: { paddingHorizontal: spacing.md, paddingVertical: 10, gap: 8, backgroundColor: colors.surface },
 });

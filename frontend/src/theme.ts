@@ -41,3 +41,18 @@ export const iconSize = {
   tile: 32,
   feature: 48,
 };
+
+/** Plus Jakarta Sans, loaded in app/_layout.tsx. Used by the coach screen (AI tab). */
+export const fonts = {
+  regular: "PlusJakartaSans_400Regular",
+  medium: "PlusJakartaSans_500Medium",
+  semibold: "PlusJakartaSans_600SemiBold",
+  bold: "PlusJakartaSans_700Bold",
+};
+
+/** Extra colours from the AI screen design. */
+export const coachColors = {
+  surfaceMuted: "#F1F3F1",
+  border: "#E4E7E4",
+  sendButton: "#E6ECE6",
+};

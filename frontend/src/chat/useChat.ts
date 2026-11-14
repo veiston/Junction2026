@@ -18,20 +18,29 @@ export interface UseChat {
   sendChip: (action: QuickAction) => void;
   /** Re-sends the last failed turn. */
   retry: () => void;
+  /** False on the first view (three function buttons shown); true once a message or function was sent. */
+  started: boolean;
+  /** Back to the first view: clears the conversation and shows the three function buttons again. */
+  reset: () => void;
 }
 
 export function useChat(): UseChat {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [started, setStarted] = useState(false);
   const conversationId = useRef<string | null>(null);
   const failed = useRef<ChatRequest | null>(null);
   const inFlight = useRef(false);
   const seq = useRef(0);
+  /** Bumped by reset(); an answer that arrives for an older generation is dropped. */
+  const generation = useRef(0);
 
   const post = useCallback(async (req: ChatRequest) => {
     if (inFlight.current) return;
     inFlight.current = true;
+    const mine = generation.current;
+    setStarted(true);
     setBusy(true);
     setError(null);
     failed.current = null;
@@ -44,9 +53,11 @@ export function useChat(): UseChat {
           CHAT_TIMEOUT_MS,
         ),
       );
+      if (mine !== generation.current) return;
       conversationId.current = res.conversation_id;
       setMessages((m) => [...m, res.message]);
     } catch (err) {
+      if (mine !== generation.current) return;
       if (err instanceof ApiError && err.body.code === "NOT_IMPLEMENTED") {
         // "Coming soon": show the server's text as a normal assistant message.
         setMessages((m) => [
@@ -67,8 +78,10 @@ export function useChat(): UseChat {
         setError(FRIENDLY);
       }
     } finally {
-      inFlight.current = false;
-      setBusy(false);
+      if (mine === generation.current) {
+        inFlight.current = false;
+        setBusy(false);
+      }
     }
   }, []);
 
@@ -93,5 +106,16 @@ export function useChat(): UseChat {
     if (failed.current) void post(failed.current);
   }, [post]);
 
-  return { messages, busy, error, send, sendChip, retry };
+  const reset = useCallback(() => {
+    generation.current += 1;
+    inFlight.current = false;
+    conversationId.current = null;
+    failed.current = null;
+    setMessages([]);
+    setBusy(false);
+    setError(null);
+    setStarted(false);
+  }, []);
+
+  return { messages, busy, error, send, sendChip, retry, started, reset };
 }

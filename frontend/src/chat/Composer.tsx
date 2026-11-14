@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
-import { colors, fontSize, radius, spacing } from "@/theme";
+import { Icon } from "@/components/Icon";
+import { coachColors, colors, fonts, spacing } from "@/theme";
 
 export function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabled?: boolean }) {
   const [text, setText] = useState("");
@@ -13,11 +14,12 @@ export function Composer({ onSend, disabled }: { onSend: (text: string) => void;
     setText("");
   };
   return (
-    <View style={styles.row}>
+    <View style={styles.pill}>
+      <Icon name="message-outline" size={20} color={colors.textMuted} />
       <TextInput
         style={styles.input}
         accessibilityLabel="Message"
-        placeholder="Ask about your money…"
+        placeholder="Ask anything about your money..."
         placeholderTextColor={colors.textSubtle}
         maxLength={1000}
         value={text}
@@ -30,34 +32,35 @@ export function Composer({ onSend, disabled }: { onSend: (text: string) => void;
         accessibilityLabel="Send"
         disabled={!canSend}
         onPress={submit}
-        style={[styles.send, !canSend && styles.disabled]}
+        style={[styles.send, canSend && styles.sendActive]}
       >
-        <Text style={styles.sendText}>Send</Text>
+        <Icon name="arrow-up" size={20} color={canSend ? colors.onPrimary : colors.text} />
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: spacing.sm, alignItems: "center" },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.round,
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    minHeight: 48,
+    paddingLeft: 14,
+    paddingRight: 6,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: colors.divider,
+    borderColor: coachColors.border,
     backgroundColor: colors.surface,
-    fontSize: fontSize.small,
-    color: colors.text,
   },
+  input: { flex: 1, fontSize: 14, fontFamily: fonts.regular, color: colors.text, minHeight: 40 },
   send: {
-    minHeight: 44,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.round,
-    backgroundColor: colors.primary,
+    backgroundColor: coachColors.sendButton,
   },
-  disabled: { opacity: 0.4 },
-  sendText: { color: colors.onPrimary, fontSize: fontSize.small, fontWeight: "600" },
+  sendActive: { backgroundColor: colors.primary },
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import { setToken } from "@/auth/token";
 import { transactionListMock } from "@/dev/mocks";
@@ -32,7 +32,7 @@ const bodyOf = (call: unknown[]) => JSON.parse((call[1] as { body: string }).bod
 
 function Harness() {
   const chat = useChat();
-  return <ChatScreen chat={chat} greeting="Hello there" />;
+  return <ChatScreen chat={chat} />;
 }
 
 beforeEach(() => {
@@ -42,12 +42,21 @@ beforeEach(() => {
 });
 
 describe("chat", () => {
-  it("shows the greeting and three chips on an empty chat", () => {
+  it("first view shows the heading, the three function cards and the example chips", () => {
     render(<Harness />);
-    expect(screen.getByText("Hello there")).toBeTruthy();
-    expect(screen.getByText("Understand my money")).toBeTruthy();
-    expect(screen.getByText("Plan my finances")).toBeTruthy();
-    expect(screen.getByText("Improve my habits")).toBeTruthy();
+    expect(screen.getByText("What would you like to do today?")).toBeTruthy();
+    expect(screen.getByText("Understand My Money")).toBeTruthy();
+    expect(screen.getByText("Plan My Finances")).toBeTruthy();
+    expect(screen.getByText("Improve My Habits")).toBeTruthy();
+    expect(screen.getByText("Coffee spend")).toBeTruthy();
+  });
+
+  it("an example chip sends its question as a message", async () => {
+    fetchMock.mockResolvedValue(reply("About coffee"));
+    render(<Harness />);
+    fireEvent.press(screen.getByText("Coffee spend"));
+    expect(await screen.findByText("About coffee")).toBeTruthy();
+    expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({ message: "How much do I spend on coffee?" });
   });
 
   it("sends a message and renders assistant text with a transaction_list widget", async () => {
@@ -68,7 +77,7 @@ describe("chat", () => {
   it("a chip sends its quick action and a 501 'coming soon' shows as a normal message", async () => {
     fetchMock.mockResolvedValue(err(501, "NOT_IMPLEMENTED", "Coming soon"));
     render(<Harness />);
-    fireEvent.press(screen.getByText("Plan my finances"));
+    fireEvent.press(screen.getByText("Plan My Finances"));
     expect(await screen.findByText("Coming soon")).toBeTruthy();
     expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({ quick_action: "plan_my_finances" });
   });
@@ -143,5 +152,61 @@ describe("See all", () => {
     expect(await screen.findByText("Row page 2")).toBeTruthy();
     fireEvent.press(screen.getByText("Back to chat"));
     await waitFor(() => expect(screen.getByText("Here")).toBeTruthy());
+  });
+});
+
+describe("first view and the three functions", () => {
+  it("hides the cards, chips and heading after a message is sent", async () => {
+    fetchMock.mockResolvedValue(reply("Hi back"));
+    render(<Harness />);
+    fireEvent.changeText(screen.getByLabelText("Message"), "hello");
+    fireEvent.press(screen.getByLabelText("Send"));
+    expect(await screen.findByText("Hi back")).toBeTruthy();
+    expect(screen.queryByText("Understand My Money")).toBeNull();
+    expect(screen.queryByText("What would you like to do today?")).toBeNull();
+  });
+
+  it("hides the chips as soon as a function is picked, even before the answer", async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    render(<Harness />);
+    fireEvent.press(screen.getByText("Improve My Habits"));
+    await waitFor(() => expect(screen.queryByText("Plan My Finances")).toBeNull());
+  });
+
+  it("reset brings the first view back with the three chips and an empty conversation", async () => {
+    fetchMock.mockResolvedValue(reply("Answer one"));
+    let chatRef: ReturnType<typeof useChat> | null = null;
+    function WithRef() {
+      const chat = useChat();
+      chatRef = chat;
+      return <ChatScreen chat={chat} />;
+    }
+    render(<WithRef />);
+    fireEvent.changeText(screen.getByLabelText("Message"), "hello");
+    fireEvent.press(screen.getByLabelText("Send"));
+    expect(await screen.findByText("Answer one")).toBeTruthy();
+
+    act(() => chatRef!.reset());
+    expect(screen.getByText("Understand My Money")).toBeTruthy();
+    expect(screen.getByText("What would you like to do today?")).toBeTruthy();
+    expect(screen.queryByText("Answer one")).toBeNull();
+  });
+
+  it("an answer that arrives after reset is dropped", async () => {
+    let finish: (v: unknown) => void = () => {};
+    fetchMock.mockImplementation(() => new Promise((r) => (finish = r)));
+    let chatRef: ReturnType<typeof useChat> | null = null;
+    function WithRef() {
+      const chat = useChat();
+      chatRef = chat;
+      return <ChatScreen chat={chat} />;
+    }
+    render(<WithRef />);
+    fireEvent.changeText(screen.getByLabelText("Message"), "hello");
+    fireEvent.press(screen.getByLabelText("Send"));
+    act(() => chatRef!.reset());
+    await act(async () => finish(reply("Too late")));
+    expect(screen.queryByText("Too late")).toBeNull();
+    expect(screen.getByText("Understand My Money")).toBeTruthy();
   });
 });
