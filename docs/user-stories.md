@@ -43,7 +43,8 @@ Format: **As a …, I want … so that …** — *Accepted when …*. Priority M
 | US-H2 | As a customer, I want to adjust and accept the limit, so that the coach tracks it. | Slider + "Accept" button → POST /habits/limits → 201; a second accept in the same month → 409 with a friendly message. Nothing is saved without the button. | M | UC-13 |
 | US-H3 | As a customer, I want to see my progress against the limit, so that I can adjust during the month. | limit_progress shows spent, remaining, on-pace line, status (on_track / at_risk / over), daily cumulative chart, top 3 groups. | M | UC-14 |
 | US-H4 | As a customer, I want feedback at the end of the month, so that I learn from the result. | review_limit returns met/not met, difference, biggest leak, best week; the AI text praises or encourages without blame. | S | UC-15 |
-| US-H5 | As a customer, I want personalised challenges, so that I learn by doing. | ≤ 3 challenge suggestions each with a personal reason; "Start" → 201; challenge_progress card shows days left and on-track. | S | UC-16 |
+| US-H5 | As a customer, I want to test one small change on my own spending, so that I learn by doing. | Quick action finds one regular everyday habit (≤ 3 suggestions) with baseline, target and a yearly estimate; "Start experiment" → 201 (409 if one is active); after 7 days the card compares with the 7 days before, says whether the target was met, shows a short concept note and offers "Repeat for 7 days" or "Try another category". | S | UC-16 |
+| US-H6 | As a customer, I want to ask what a card or a money term means, so that I understand it in plain language. | Every card has an "Explain" button; the answer is a `concept_note` from five fixed concepts, filled with my numbers when available. | S | UC-16 |
 
 ## Coverage check
 

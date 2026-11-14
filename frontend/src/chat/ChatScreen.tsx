@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api as apiClient } from "@/api/client";
 import type { QuickAction, TransactionListData } from "@/contracts";
@@ -13,11 +13,24 @@ import { MessageList } from "./MessageList";
 import { SeeAllPanel } from "./SeeAllPanel";
 import { SuggestionChips } from "./SuggestionChips";
 import type { WidgetHostApi } from "./registry";
-import type { UseChat } from "./useChat";
+import { registerChatAsk } from "./chatAsk";
+import { QUICK_ACTION_TEXT, type UseChat } from "./useChat";
 
 /** Chat UI: all data comes from the `chat` hook result passed in. */
+const WAIT_TEXT: Record<string, string> = {
+  [QUICK_ACTION_TEXT.improve_my_habits]: "Looking through your last 4 weeks to find one habit to test. This takes a few seconds.",
+  [QUICK_ACTION_TEXT.understand_my_money]: "Looking at where your money went. This takes a few seconds.",
+  [QUICK_ACTION_TEXT.plan_my_finances]: "Working out your plan. This takes a few seconds.",
+};
+
 export function ChatScreen({ chat }: { chat: UseChat }) {
-  const { messages, busy, error, send, sendChip, retry, started } = chat;
+  const { messages, busy, error, send, sendChip, askAbout, retry, started } = chat;
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  const waitText = (lastUser && "text" in lastUser && WAIT_TEXT[lastUser.text]) || "Looking at your data. This takes a few seconds.";
+  useEffect(() => registerChatAsk(askAbout), [askAbout]);
+  const ys = useRef<Record<string, number>>({});
+  const listY = useRef(0);
+  const scrolledTo = useRef<string | null>(null);
   const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
 
   const voice = useVoiceConversation({
@@ -26,18 +39,20 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
     onSend: send,
   });
 
-  // Follow new messages until the customer scrolls back themselves.
+  // New messages scroll into view from their first line, until the customer scrolls themselves.
   const scrollRef = useRef<ScrollView>(null);
-  const followBottom = useRef(false);
+  const followNewest = useRef(false);
   useEffect(() => {
-    followBottom.current = true;
+    followNewest.current = true;
   }, [messages.length, busy]);
 
   const scrollToNewest = () => {
-    if (!followBottom.current) {
-      return;
-    }
-    scrollRef.current?.scrollToEnd({ animated: true });
+    const last = messages[messages.length - 1];
+    if (!followNewest.current || !started || seeAll || !last || scrolledTo.current === last.id) return;
+    const y = ys.current[last.id];
+    if (y === undefined) return;
+    scrolledTo.current = last.id;
+    scrollRef.current?.scrollTo({ y: Math.max(0, listY.current + y - 8), animated: true });
   };
 
   const host: WidgetHostApi = useMemo(
@@ -58,7 +73,7 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={scrollToNewest}
         onScrollBeginDrag={() => {
-          followBottom.current = false;
+          followNewest.current = false;
         }}
       >
         {seeAll ? (
@@ -76,18 +91,27 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
                 <FunctionCards onPick={sendChip} disabled={busy} />
               </>
             ) : null}
-            <MessageList
-              messages={messages}
-              api={host}
-              onSend={send}
-              onSeeAll={setSeeAll}
-              onPlayTts={voice.playMessageTts}
-              playingMessageId={voice.playingMessageId}
-            />
+            <View onLayout={(e) => (listY.current = e.nativeEvent.layout.y)}>
+              <MessageList
+                messages={messages}
+                api={host}
+                onSend={(text) => {
+                  // A pill that repeats a section's request starts that section like its card does.
+                  const action = (Object.keys(QUICK_ACTION_TEXT) as QuickAction[]).find((a) => QUICK_ACTION_TEXT[a] === text);
+                  if (action) sendChip(action);
+                  else send(text);
+                }}
+                onSeeAll={setSeeAll}
+                onPlayTts={voice.playMessageTts}
+                playingMessageId={voice.playingMessageId}
+                onMessageLayout={(id, y) => (ys.current[id] = y)}
+              />
+            </View>
             {busy ? (
-              <Text accessibilityRole="progressbar" style={styles.status}>
-                Thinking…
-              </Text>
+              <View accessibilityRole="progressbar" accessibilityLabel="Looking at your data" style={styles.loading}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.status}>{waitText}</Text>
+              </View>
             ) : null}
             {error ? (
               <View accessibilityRole="alert" style={styles.error}>
@@ -148,6 +172,7 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
 }
 
 const styles = StyleSheet.create({
+  loading: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   flex: { flex: 1 },
   scroll: { flex: 1, backgroundColor: colors.background },
   content: {
@@ -159,7 +184,7 @@ const styles = StyleSheet.create({
   intro: { gap: 4, paddingVertical: 4 },
   heading: { fontSize: 24, lineHeight: 30, fontFamily: fonts.bold, color: "#0F2817" },
   sub: { fontSize: 14, fontFamily: fonts.regular, color: "#2C4032" },
-  status: { fontSize: 15, fontFamily: fonts.regular, color: colors.textMuted },
+  status: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: colors.textMuted },
   error: { gap: spacing.sm },
   errorText: { fontSize: 15, fontFamily: fonts.regular, color: colors.text },
   retry: { minHeight: 44, justifyContent: "center" },

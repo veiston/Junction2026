@@ -5,7 +5,7 @@ import { api } from "@/api/client";
 import { WidgetHost } from "@/chat/WidgetHost";
 import { registry, type WidgetHostApi } from "@/chat/registry";
 import type { Widget, WidgetType } from "@/contracts";
-import { mocks } from "@/dev/mocks";
+import { mockVariants, mocks } from "@/dev/mocks";
 import { colors, fontSize, spacing } from "@/theme";
 import { formatCents } from "@/widgets/common/Money";
 
@@ -35,6 +35,12 @@ export default function WidgetGallery() {
             </View>
           );
         })}
+        {mockVariants.map((v) => (
+          <View key={v.name} style={styles.item}>
+            <Text style={styles.type}>{v.name}</Text>
+            <WidgetHost widget={{ id: `mock_${v.name}`, version: 1, type: v.type, data: v.data } as Widget} api={host} />
+          </View>
+        ))}
         <View style={styles.item}>
           <Text style={styles.type}>unknown type (fallback)</Text>
           <WidgetHost

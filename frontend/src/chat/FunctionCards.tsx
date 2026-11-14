@@ -20,7 +20,7 @@ export const FUNCTIONS: { action: QuickAction; title: string; description: strin
   {
     action: "improve_my_habits",
     title: "Improve My Habits",
-    description: "Personalized challenges · Savings simulations · Progress tracking · Learning feedback",
+    description: "A 7-day test on your spending · Savings estimate · Progress tracking · Plain-language tips",
     icon: "school-outline",
   },
 ];

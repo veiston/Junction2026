@@ -19,20 +19,22 @@ interface Props {
   /** Read one assistant message aloud (tapping again stops it). */
   onPlayTts: (messageId: string, text: string) => void;
   playingMessageId: string | null;
+  /** Reports where each message starts, so the screen can scroll to it. */
+  onMessageLayout?: (id: string, y: number) => void;
 }
 
 const SPEAK_BUTTON_SIZE = 28;
 
-export function MessageList({ messages, api, onSend, onSeeAll, onPlayTts, playingMessageId }: Props) {
+export function MessageList({ messages, api, onSend, onSeeAll, onPlayTts, playingMessageId, onMessageLayout }: Props) {
   return (
     <View style={styles.list} accessibilityLabel="Conversation">
       {messages.map((m) =>
         m.role === "user" ? (
-          <View key={m.id} style={styles.user}>
+          <View key={m.id} style={styles.user} onLayout={(e) => onMessageLayout?.(m.id, e.nativeEvent.layout.y)}>
             <Text style={styles.userText}>{m.text}</Text>
           </View>
         ) : (
-          <View key={m.id} style={styles.assistant}>
+          <View key={m.id} style={styles.assistant} onLayout={(e) => onMessageLayout?.(m.id, e.nativeEvent.layout.y)}>
             {m.text ? (
               <View style={styles.bubble}>
                 <MarkdownText content={m.text} style={styles.text} />

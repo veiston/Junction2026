@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AiTopBar } from "@/chat/AiTopBar";
 import { ChatScreen } from "@/chat/ChatScreen";
 import { useChat } from "@/chat/useChat";
+import { useNotifications } from "@/chat/useNotifications";
 import { useSession } from "@/chat/useSession";
 import { colors, fontSize, spacing } from "@/theme";
 
@@ -12,10 +13,19 @@ export default function AiScreen() {
   const router = useRouter();
   const session = useSession();
   const chat = useChat();
+  const notices = useNotifications(session.status === "ready", chat.messages.length);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
-      <AiTopBar onBack={() => router.navigate("/")} onShowFunctions={chat.reset} />
+      <AiTopBar
+        onBack={() => router.navigate("/")}
+        onShowFunctions={chat.reset}
+        notices={notices.items}
+        onNotice={(n) => {
+          notices.dismiss(n.id);
+          chat.ask("How is my challenge going?");
+        }}
+      />
       <View style={styles.body}>
         {session.status === "loading" && (
           <View style={styles.center}>

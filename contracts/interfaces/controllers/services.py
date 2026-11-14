@@ -116,3 +116,8 @@ class HabitsService(Protocol):
         """Raises NotFound for unknown template, Conflict if the same template is active."""
 
     def list_challenges(self, customer_id: str) -> ChallengeList: ...
+
+    def stop_challenge(self, customer_id: str, challenge_id: int) -> ChallengeProgress:
+        """Ends a running challenge without a verdict (status cancelled).
+        Raises NotFound if it is missing or belongs to another customer, Conflict if it already finished."""
+

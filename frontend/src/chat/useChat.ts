@@ -9,13 +9,6 @@ export type ChatMessage = { id: string; role: "user"; text: string } | Assistant
 
 const FRIENDLY = "Sorry, something went wrong on my side. Please try again.";
 
-/** What the customer "says" when they pick a function card (same wording as the backend). */
-const QUICK_ACTION_TEXT: Record<QuickAction, string> = {
-  understand_my_money: "Help me understand my money",
-  plan_my_finances: "Help me plan my finances",
-  improve_my_habits: "Help me improve my habits",
-};
-
 export interface UseChat {
   messages: ChatMessage[];
   busy: boolean;
@@ -23,6 +16,10 @@ export interface UseChat {
   error: string | null;
   send: (text: string) => void;
   sendChip: (action: QuickAction) => void;
+  /** Asks the assistant without adding a customer bubble. */
+  ask: (text: string) => void;
+  /** Asks the assistant a question about a card; only the question is shown as the customer's message. */
+  askAbout: (question: string, facts: string, pills?: string[]) => void;
   /** Re-sends the last failed turn. */
   retry: () => void;
   /** False on the first view (three function buttons shown); true once a message or function was sent. */
@@ -30,6 +27,13 @@ export interface UseChat {
   /** Back to the first view: clears the conversation and shows the three function buttons again. */
   reset: () => void;
 }
+
+/** What the customer "says" when they pick a function card (same wording as the backend). */
+export const QUICK_ACTION_TEXT: Record<QuickAction, string> = {
+  understand_my_money: "Show me where my money goes",
+  plan_my_finances: "Help me save for what I want",
+  improve_my_habits: "Help me spend less on everyday things",
+};
 
 export function useChat(): UseChat {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -40,6 +44,8 @@ export function useChat(): UseChat {
   const failed = useRef<ChatRequest | null>(null);
   const inFlight = useRef(false);
   const seq = useRef(0);
+  /** Pills to show under the next answer when the assistant adds none (set by a card question). */
+  const nextPills = useRef<string[] | null>(null);
   /** Bumped by reset(); an answer that arrives for an older generation is dropped. */
   const generation = useRef(0);
 
@@ -62,7 +68,9 @@ export function useChat(): UseChat {
       );
       if (mine !== generation.current) return;
       conversationId.current = res.conversation_id;
-      setMessages((m) => [...m, res.message]);
+      const pills = nextPills.current;
+      nextPills.current = null;
+      setMessages((m) => [...m, pills && res.message.suggestions.length === 0 ? { ...res.message, suggestions: pills } : res.message]);
     } catch (err) {
       if (mine !== generation.current) return;
       if (err instanceof ApiError && err.body.code === "NOT_IMPLEMENTED") {
@@ -102,6 +110,23 @@ export function useChat(): UseChat {
     [post],
   );
 
+  const ask = useCallback(
+    (text: string) => {
+      setStarted(true);
+      void post({ message: text });
+    },
+    [post],
+  );
+
+  const askAbout = useCallback(
+    (question: string, facts: string, pills?: string[]) => {
+      nextPills.current = pills ?? null;
+      setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: question }]);
+      void post({ message: (facts ? `${question}\n\nCard facts: ${facts}` : question).slice(0, 1000) }); // the API accepts at most 1000 characters
+    },
+    [post],
+  );
+
   const sendChip = useCallback(
     (action: QuickAction) => {
       if (inFlight.current) return;
@@ -126,5 +151,5 @@ export function useChat(): UseChat {
     setStarted(false);
   }, []);
 
-  return { messages, busy, error, send, sendChip, retry, started, reset };
+  return { messages, busy, error, send, sendChip, ask, askAbout, retry, started, reset };
 }
