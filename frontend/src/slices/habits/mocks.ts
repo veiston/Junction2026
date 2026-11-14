@@ -1,6 +1,9 @@
+import { conceptMocks } from "@/widgets/common/conceptMocks";
 import type {
+  Challenge,
   ChallengeProgress,
   ChallengeSuggestions,
+  ChallengeTemplate,
   LimitProgress,
   LimitReview,
   LimitSuggestion,
@@ -71,18 +74,25 @@ export const limitReviewMock: LimitReview = {
   source: source("Everyday spending in September", "2026-09-01", "2026-09-30", 83),
 };
 
+const taxiTemplate = {
+  id: "taxi_half_week",
+  title: "Halve your taxi spending for 7 days",
+  description: "Take public transport or walk for some trips this week.",
+  spend_group: "taxis",
+  rule: { kind: "max_amount", amount_cents: 4900 },
+  duration_days: 7,
+  estimated_saving_cents: 5026,
+  reason: "You took 3 taxi rides for 99,26 EUR in the last 7 days.",
+  baseline_cents: 9926,
+  baseline_count: 3,
+  yearly_saving_cents: 261352,
+  concept: conceptMocks.small_purchases_add_up,
+} as ChallengeTemplate;
+
 export const challengeSuggestionsMock: ChallengeSuggestions = {
   items: [
-    {
-      id: "no_taxi_week",
-      title: "Taxi-free week",
-      description: "Skip taxis for 7 days and use public transport instead.",
-      spend_group: "taxis",
-      rule: { kind: "zero_spend" },
-      duration_days: 7,
-      estimated_saving_cents: 3500,
-      reason: "You took 9 taxis last month.",
-    },
+    taxiTemplate,
+    // Older shape: none of the 1.1.0 fields.
     {
       id: "cafe_cap",
       title: "Cafe cap",
@@ -93,36 +103,66 @@ export const challengeSuggestionsMock: ChallengeSuggestions = {
       estimated_saving_cents: 4200,
       reason: "You spent 62 EUR in cafes last month.",
     },
-    {
-      id: "fast_food_limit",
-      title: "Fewer takeaways",
-      description: "At most 2 fast food purchases in 30 days.",
-      spend_group: "fast_food_cafes",
-      rule: { kind: "max_count", count: 2 },
-      duration_days: 30,
-      estimated_saving_cents: 6800,
-      reason: "You bought takeaway 8 times last month.",
-    },
   ],
 };
 
+const taxiChallenge = {
+  id: 1,
+  template_id: "taxi_half_week",
+  title: "Halve your taxi spending for 7 days",
+  spend_group: "taxis",
+  rule: { kind: "max_amount", amount_cents: 4900 },
+  start_date: "2026-09-10",
+  end_date: "2026-09-16",
+  status: "active",
+} as Challenge;
+
+/** Experiment in progress. */
 export const challengeProgressMock: ChallengeProgress = {
-  challenge: {
-    id: 1,
-    template_id: "no_taxi_week",
-    title: "Taxi-free week",
-    spend_group: "taxis",
-    rule: { kind: "zero_spend" },
-    start_date: "2026-09-10",
-    end_date: "2026-09-16",
-    status: "active",
-  },
+  challenge: taxiChallenge,
   progress_pct: 57.1,
-  current_amount_cents: 0,
-  current_count: 0,
+  current_amount_cents: 2150,
+  current_count: 1,
   days_left: 3,
   on_track: true,
-  source: source("Taxi spending since the challenge started", "2026-09-10", "2026-09-14", 0),
+  baseline_cents: 9926,
+  baseline_count: 3,
+  concept: conceptMocks.spending_pace,
+  source: source("Taxi spending since the experiment started", "2026-09-10", "2026-09-13", 1),
+};
+
+/** Finished, target met: EUR 38.81 against a baseline of EUR 99.26. */
+export const challengeProgressWonMock: ChallengeProgress = {
+  challenge: { ...taxiChallenge, status: "won" },
+  progress_pct: 100,
+  current_amount_cents: 3881,
+  current_count: 1,
+  days_left: 0,
+  on_track: true,
+  baseline_cents: 9926,
+  baseline_count: 3,
+  difference_cents: 6045,
+  change_pct: 60.9,
+  concept: conceptMocks.one_week_is_not_proof,
+  next_step: "Repeat the experiment for another 7 days to see if the change holds, or test a different category.",
+  source: source("Taxi spending during the experiment", "2026-09-10", "2026-09-16", 1),
+};
+
+/** Finished, target not met: spent more than before. */
+export const challengeProgressLostMock: ChallengeProgress = {
+  challenge: { ...taxiChallenge, status: "lost" },
+  progress_pct: 100,
+  current_amount_cents: 12400,
+  current_count: 4,
+  days_left: 0,
+  on_track: false,
+  baseline_cents: 9926,
+  baseline_count: 3,
+  difference_cents: -2474,
+  change_pct: -24.9,
+  concept: conceptMocks.compare_equal_periods,
+  next_step: "This week was higher than the week before. Try again for 7 days, or pick another category.",
+  source: source("Taxi spending during the experiment", "2026-09-10", "2026-09-16", 4),
 };
 
 export const habitsMocks = {
