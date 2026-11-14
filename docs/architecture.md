@@ -91,12 +91,9 @@ the extra domain layer. Decision record: `decisions/0003-mvc-backend-with-servic
 ```mermaid
 flowchart LR
   subgraph Phone["Phone / browser"]
-    ED["embedded-demo (Expo, fake S-mobiili)"]
-    CO["s-money-coach frontend (Vite, :5173)"]
-    ED -->|WebView / iframe + #token| CO
+    FE["frontend (Expo / React Native, web :8081)<br/>fake S-mobiili tabs + native AI coach screen"]
   end
-  ED -->|POST /demo/session| BE
-  CO -->|REST + Bearer token| BE["backend FastAPI :8000"]
+  FE -->|POST /demo/session, then REST + Bearer token| BE["backend FastAPI :8000"]
   BE --> DB[("db/money_coach.sqlite3")]
   BE -->|function calling, aggregates only| GM["Gemini API"]
   ING["scripts/ingest.py (once)"] --> DB
@@ -119,10 +116,10 @@ Sequence diagram: `docs/diagrams.md` § Chat turn.
 
 | # | Measure | Where |
 |---|---|---|
-| 1 | Signed JWT (HS256, 60 min, `sub` = customer_id), passed in URL fragment, kept in memory | foundation: `api/security.py`, frontend `auth/token.ts` |
+| 1 | Signed JWT (HS256, 60 min, `sub` = customer_id), fetched by the AI screen itself, kept in memory (never in a URL) | foundation: `api/security.py`, frontend `auth/token.ts` |
 | 2 | LLM never writes SQL; only fixed tools; customer_id injected from token | `ai_tool.py` contract |
 | 3 | LLM gets aggregates only | tool `facts` rule |
 | 4 | AI only proposes; saving needs a user tap (REST call) | habits widgets |
 | 5 | API key only in backend `.env` (gitignored, checked) | config |
-| 6 | DTO validation, CORS = coach origin, CSP `frame-ancestors` = embedded-demo origin | `api/server.py` |
+| 6 | DTO validation, CORS = Expo web origin (`http://localhost:8081`), CSP `frame-ancestors 'none'` | `api/server.py` |
 | 7 | Sources on every widget; disclaimer on coaching / product text | DTOs |
