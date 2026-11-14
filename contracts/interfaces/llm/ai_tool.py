@@ -53,6 +53,7 @@ class AiTool(Protocol):
 TOOL_CATALOG: dict[str, list[str]] = {
     "foundation": [
         "list_transactions",      # -> transaction_list widget
+        "explain_concept",        # "explain this" / "what is ..." -> concept_note widget (from the fixed glossary)
     ],
     "understand": [
         "get_basket_breakdown",   # quick action understand_my_money -> basket_breakdown
@@ -69,16 +70,17 @@ TOOL_CATALOG: dict[str, list[str]] = {
         "simulate_what_if",       # "save if I cut dining 20 %" -> what_if
     ],
     "habits": [
-        "suggest_monthly_limit",  # quick action improve_my_habits -> limit_suggestion
+        "suggest_monthly_limit",  # -> limit_suggestion (optional next step after an experiment)
         "get_limit_progress",     # -> limit_progress
         "review_limit",           # -> limit_review
-        "suggest_challenges",     # -> challenge_suggestions
+        "suggest_challenges",     # quick action improve_my_habits -> challenge_suggestions (finds the habit, offers a 7-day experiment)
         "get_challenge_progress", # -> challenge_progress
+        "stop_challenge",         # "I want to skip the challenge" -> ends the running challenge, facts only
     ],
 }
 
 QUICK_ACTION_TOOL: dict[str, str] = {
     "understand_my_money": "get_basket_breakdown",
     "plan_my_finances": "get_balance_forecast",
-    "improve_my_habits": "suggest_monthly_limit",
+    "improve_my_habits": "suggest_challenges",
 }

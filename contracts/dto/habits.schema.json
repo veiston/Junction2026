@@ -129,7 +129,11 @@
         "rule": { "$ref": "#/$defs/ChallengeRule" },
         "duration_days": { "type": "integer", "enum": [7, 14, 30] },
         "estimated_saving_cents": { "$ref": "common.schema.json#/$defs/Cents" },
-        "reason": { "type": "string", "description": "Why it is personalised, e.g. 'You took 9 taxis last month'." }
+        "reason": { "type": "string", "description": "Why it is personalised, e.g. 'You took 9 taxis last month'." },
+        "baseline_cents": { "type": ["integer", "null"], "description": "Spend in this group during the 7 days before the start. Null when unknown." },
+        "baseline_count": { "type": ["integer", "null"], "minimum": 0, "description": "Number of purchases in the same baseline period." },
+        "yearly_saving_cents": { "type": ["integer", "null"], "description": "estimated_saving_cents x 52, i.e. 'if you kept this up for a year'. An estimate; the text must say so." },
+        "concept": { "oneOf": [{ "$ref": "common.schema.json#/$defs/ConceptNote" }, { "type": "null" }], "description": "Explanation shown with the suggestion." }
       }
     },
     "ChallengeSuggestions": {
@@ -178,7 +182,13 @@
         "current_count": { "type": "integer", "minimum": 0 },
         "days_left": { "type": "integer", "minimum": 0 },
         "on_track": { "type": "boolean" },
-        "source": { "$ref": "common.schema.json#/$defs/Source" }
+        "source": { "$ref": "common.schema.json#/$defs/Source" },
+        "baseline_cents": { "type": ["integer", "null"], "description": "Spend in the same group during the period of equal length before the challenge started." },
+        "baseline_count": { "type": ["integer", "null"], "minimum": 0 },
+        "difference_cents": { "type": ["integer", "null"], "description": "baseline_cents - current_amount_cents. Positive = spent less than before; negative = spent more." },
+        "change_pct": { "type": ["number", "null"], "description": "(baseline - current) / baseline x 100, one decimal. Null when the baseline is 0." },
+        "concept": { "oneOf": [{ "$ref": "common.schema.json#/$defs/ConceptNote" }, { "type": "null" }], "description": "The 'Learn' note, set once the challenge has finished." },
+        "next_step": { "type": ["string", "null"], "description": "Suggested next step after a finished challenge, e.g. repeat for 7 days or try another group." }
       }
     },
     "ChallengeList": {

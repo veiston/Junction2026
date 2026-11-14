@@ -39,3 +39,7 @@ def get_chat_service(request: Request) -> Any:
 
 def get_transaction_service(request: Request) -> Any:
     return _container(request).transactions
+
+
+def get_habits_service(request: Request) -> Any:
+    return _container(request).habits

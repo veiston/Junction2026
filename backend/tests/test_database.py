@@ -43,7 +43,10 @@ class DatabaseMigrationTests(unittest.TestCase):
                 "messages",
             }.issubset(tables)
         )
-        self.assertEqual([("migration:0001_core.sql",), ("migration:0002_chat.sql",)], migrations)
+        self.assertEqual(
+            [("migration:0001_core.sql",), ("migration:0002_chat.sql",), ("migration:0003_habits.sql",)],
+            migrations,
+        )
 
 
 if __name__ == "__main__":
