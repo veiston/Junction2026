@@ -80,15 +80,26 @@ describe("expense_alerts", () => {
 });
 
 describe("safe_to_spend", () => {
-  it("quick lesson: the right answer earns XP and explains the three baskets", () => {
+  it("quick lesson: the tip comes first and the quiz only opens when asked", () => {
     renderWidget("safe_to_spend", safeToSpendMock);
+    expect(screen.getByText("Did you know?")).toBeTruthy();
+    expect(screen.getByText(/three baskets/)).toBeTruthy();
+    expect(screen.queryByText("Nothing")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Quiz me"));
+    expect(screen.getByText("Nothing")).toBeTruthy();
+    expect(screen.queryByLabelText("Quiz me")).toBeNull();
+  });
+
+  it("quick lesson: the right answer earns XP", () => {
+    renderWidget("safe_to_spend", safeToSpendMock);
+    fireEvent.press(screen.getByLabelText("Quiz me"));
     fireEvent.press(screen.getByText("Rent, bills and a buffer for surprises"));
     expect(screen.getByText("Correct! +10 XP")).toBeTruthy();
-    expect(screen.getByText(/three baskets/)).toBeTruthy();
   });
 
   it("quick lesson: a wrong answer names the right one and locks the quiz", () => {
     renderWidget("safe_to_spend", safeToSpendMock);
+    fireEvent.press(screen.getByLabelText("Quiz me"));
     fireEvent.press(screen.getByText("Nothing"));
     expect(screen.getByText(/Not quite/)).toBeTruthy();
     fireEvent.press(screen.getByText("Rent, bills and a buffer for surprises"));
