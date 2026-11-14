@@ -32,7 +32,7 @@ Priority: **M** = must (demo fails without it), **S** = should, **C** = could (o
 |---|---|---|
 | FR-F1 | The whole frontend is one Expo / React Native app (`frontend/`): a simulated S-mobiili (tabs Koti, Etukortti, Pankki, Minä) whose AI tab is the native coach screen. No WebView, iframe or separate web app (ADR 0013). | M |
 | FR-F2 | Identity: The AI screen obtains a signed token from `POST /demo/session` and keeps it in memory; the user is never asked to log in and the token is never put in a URL. | M |
-| FR-F3 | Chat: free-text questions and three quick-action chips; answers contain text, up to 3 widgets, up to 3 follow-up suggestion chips, and sources. | M |
+| FR-F3 | Chat: free-text questions and three quick-action chips; answers contain text, up to 3 widgets, up to 3 follow-up suggestion chips, and sources. The screen follows the Figma design and hides the three chips once the chat starts (decision 0014). | M |
 | FR-F4 | The LLM chooses tools; tools return facts + widgets; the LLM only writes the explanation. | M |
 | FR-F5 | Every transaction is tagged at ingest with flow, spend group and basket (rules in `docs/er.md`). | M |
 | FR-F6 | Transaction list widget with "see all" (paged list filtered by basket / category / group / dates). | M |
