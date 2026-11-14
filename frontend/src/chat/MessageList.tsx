@@ -1,0 +1,78 @@
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import type { TransactionListData } from "@/contracts";
+import { colors, fontSize, radius, spacing } from "@/theme";
+import { SourceLine } from "@/widgets/common/SourceLine";
+
+import type { ChatMessage } from "./useChat";
+import { WidgetHost } from "./WidgetHost";
+import type { WidgetHostApi } from "./registry";
+
+interface Props {
+  messages: ChatMessage[];
+  api: WidgetHostApi;
+  /** Tapping a follow-up suggestion sends it as a message. */
+  onSend: (text: string) => void;
+  onSeeAll: (data: TransactionListData) => void;
+}
+
+export function MessageList({ messages, api, onSend, onSeeAll }: Props) {
+  return (
+    <View style={styles.list} accessibilityLabel="Conversation">
+      {messages.map((m) =>
+        m.role === "user" ? (
+          <View key={m.id} style={styles.user}>
+            <Text style={styles.userText}>{m.text}</Text>
+          </View>
+        ) : (
+          <View key={m.id} style={styles.assistant}>
+            <Text style={styles.text}>{m.text}</Text>
+            {m.widgets.map((w) => (
+              <WidgetHost key={w.id} widget={w} api={api} onSeeAll={onSeeAll as never} />
+            ))}
+            {m.sources.map((s, i) => (
+              <SourceLine key={i} source={s} />
+            ))}
+            {m.disclaimer ? <Text style={styles.disclaimer}>{m.disclaimer}</Text> : null}
+            {m.suggestions.length > 0 && (
+              <View style={styles.suggestions}>
+                {m.suggestions.map((s) => (
+                  <Pressable key={s} accessibilityRole="button" onPress={() => onSend(s)} style={styles.chip}>
+                    <Text style={styles.chipText}>{s}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+        ),
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  list: { gap: spacing.md },
+  user: {
+    alignSelf: "flex-end",
+    maxWidth: "85%",
+    backgroundColor: colors.brand,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  userText: { fontSize: fontSize.small, color: colors.onPrimary },
+  assistant: { alignSelf: "stretch", gap: spacing.sm },
+  text: { fontSize: fontSize.small, color: colors.text },
+  disclaimer: { fontSize: fontSize.small - 3, color: colors.textSubtle },
+  suggestions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  chip: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.round,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+  chipText: { fontSize: fontSize.small, color: colors.primary },
+});
