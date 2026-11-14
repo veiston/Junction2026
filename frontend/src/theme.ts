@@ -9,6 +9,7 @@ export const colors = {
   textSubtle: "#8A8A8A",
   divider: "#E2E5E2",
   onPrimary: "#FFFFFF",
+  warning: "#B26A00",
 };
 
 export const spacing = {

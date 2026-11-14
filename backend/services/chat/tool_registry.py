@@ -43,10 +43,13 @@ class ToolRegistry:
         return tool.run(ctx, clean)
 
 
-def default_registry(transaction_service) -> ToolRegistry:
+def default_registry(transaction_service, plan_service=None) -> ToolRegistry:
     from services.chat.foundation_tools import build_foundation_tools
     from services.habits.tools import TOOLS as HABITS
-    from services.plan.tools import TOOLS as PLAN
+    from services.plan.tools import build_plan_tools
     from services.understand.tools import TOOLS as UNDERSTAND
 
-    return ToolRegistry([*build_foundation_tools(transaction_service), *UNDERSTAND, *PLAN, *HABITS])
+    plan_tools: list[AiTool] = []
+    if plan_service is not None:
+        plan_tools = build_plan_tools(plan_service)
+    return ToolRegistry([*build_foundation_tools(transaction_service), *UNDERSTAND, *plan_tools, *HABITS])

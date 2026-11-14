@@ -15,5 +15,5 @@ fi
 trap 'kill 0' EXIT
 
 uv run --directory backend main.py &                                  # backend   :8000
-CI=1 pnpm --dir frontend exec expo start --web --port 8081 &          # expo web   :8081
+CI=0 pnpm --dir frontend exec expo start --web --port 8081 &          # expo web   :8081
 wait

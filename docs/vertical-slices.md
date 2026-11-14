@@ -102,7 +102,7 @@ understand-frontend-ui · understand-frontend-hooks · understand-tests
 ## Slice 2 — Plan my finances (Worker 2)
 
 - **Goal:** look forward: forecast, safe-to-spend, what-if.
-- **After it I can:** tap *Plan my finances* → 30-day forecast; switch to 60/90; ask "what is safe to spend this week", "what if I spend 20 % less on restaurants" and move the slider; see bills and alerts.
+- **After it I can:** tap *Plan my finances* → 30-day forecast; switch öto 60/90; ask "what is safe to spend this week", "what if I spend 20 % less on restaurants" and move the slider; see bills and alerts.
 - **Stories:** US-P1 … US-P5.
 - **Done when:** the 5 plan endpoints and 5 tools pass their tests (safe-to-spend steps add up; forecast has horizon+1 points; what-if with 0 % equals the baseline); the 5 widgets are approved by you.
 

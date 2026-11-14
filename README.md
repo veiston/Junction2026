@@ -35,7 +35,9 @@ The database step takes a few minutes. If `db/money_coach.sqlite3` already exist
 
 1. UV
 2. Python
-3. FastAPI: ``POST /api/v1/chat`` (Gemini). `backend/local_ai.py` is a local Ollama (gemma4:e4b) prototype that is not wired into the API yet; to try it, install [Ollama](https://ollama.com/) and run ``ollama pull gemma4:e4b``
+3. FastAPI: ``POST /api/v1/chat``. Gemini answers general questions; once a tool has returned money figures, the answer is written by the local Ollama model (gemma4:e4b) so those figures never leave your machine. Without `OLLAMA_BASE_URL` everything goes to Gemini.
+   - Local model: install [Ollama](https://ollama.com/), then ``python scripts/host_ollama.py`` (pulls the model, starts a token-protected proxy and an ngrok tunnel) and paste the printed `OLLAMA_BASE_URL` and `OLLAMA_API_KEY` into `.env`.
+   - Read aloud (speaker icon on coach messages): set `ELEVENLABS_API_KEY` in `.env`. The key stays on the backend.
 
 ### Frontend
 
