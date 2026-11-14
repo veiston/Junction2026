@@ -1,119 +1,71 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { WebView } from "react-native-webview";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { api } from "@/api/client";
+import { setToken } from "@/auth/token";
 import { HeaderBar } from "@/components/HeaderBar";
 import { Screen } from "@/components/Screen";
-import {
-  API_BASE_URL,
-  COACH_URL,
-  DEMO_CUSTOMER_ID,
-  buildCoachUrl,
-  describeSessionError,
-  isTokenExpiredMessage,
-  sessionEndpoint,
-} from "@/config";
+import { DEMO_CUSTOMER_ID } from "@/config";
+import type { Me } from "@/contracts";
 import { colors, fontSize, spacing } from "@/theme";
 
 type State =
   | { kind: "loading" }
   | { kind: "error"; message: string }
-  | { kind: "ready"; url: string; nonce: number };
-
-async function fetchToken(): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-  let status: number | undefined;
-  try {
-    const res = await fetch(sessionEndpoint(API_BASE_URL), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customer_id: DEMO_CUSTOMER_ID }),
-      signal: controller.signal,
-    });
-    status = res.status;
-    if (!res.ok) throw new Error("http");
-    const body = (await res.json()) as { token?: string };
-    if (!body.token) throw new Error("no token");
-    return body.token;
-  } catch (err) {
-    throw new Error(describeSessionError(err, status));
-  } finally {
-    clearTimeout(timer);
-  }
-}
+  | { kind: "ready"; me: Me };
 
 export default function AiScreen() {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
 
-  const reload = useCallback(() => {
+  const retry = useCallback(() => {
     setState({ kind: "loading" });
     setAttempt((n) => n + 1);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    fetchToken()
-      .then((token) => {
+    (async () => {
+      try {
+        const session = await api.createDemoSession(DEMO_CUSTOMER_ID);
+        setToken(session.token);
+        const me = await api.getMe();
+        if (!cancelled) setState({ kind: "ready", me });
+      } catch (e) {
+        setToken(null);
         if (!cancelled) {
-          setState({ kind: "ready", url: buildCoachUrl(COACH_URL, token), nonce: attempt });
+          setState({ kind: "error", message: e instanceof Error ? e.message : "Something went wrong." });
         }
-      })
-      .catch((e: Error) => {
-        if (!cancelled) setState({ kind: "error", message: e.message });
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, [attempt]);
 
-  // Web: the coach iframe posts messages to window.parent.
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const onMessage = (e: MessageEvent) => {
-      if (isTokenExpiredMessage(e.data)) reload();
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [reload]);
-
   return (
     <Screen header={<HeaderBar title="AI" />}>
-      <View style={styles.fill}>
-        {state.kind === "loading" && <ActivityIndicator style={styles.center} color={colors.text} />}
+      <View style={styles.center}>
+        {state.kind === "loading" && <ActivityIndicator color={colors.text} />}
         {state.kind === "error" && (
-          <View style={styles.center}>
+          <>
             <Text style={styles.text}>{state.message}</Text>
-            <Pressable onPress={reload} accessibilityRole="button" style={styles.retry}>
+            <Pressable onPress={retry} accessibilityRole="button" style={styles.retry}>
               <Text style={styles.retryText}>Retry</Text>
             </Pressable>
-          </View>
+          </>
         )}
-        {state.kind === "ready" &&
-          (Platform.OS === "web" ? (
-            <iframe
-              key={state.nonce}
-              src={state.url}
-              title="Coach"
-              style={{ border: 0, width: "100%", height: "100%" }}
-            />
-          ) : (
-            <WebView
-              key={state.nonce}
-              source={{ uri: state.url }}
-              onMessage={(e) => {
-                if (isTokenExpiredMessage(e.nativeEvent.data)) reload();
-              }}
-            />
-          ))}
+        {state.kind === "ready" && (
+          <Text style={styles.text}>
+            Hi, {state.me.customer_id}! Your {state.me.region} coach is getting ready.
+          </Text>
+        )}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, minHeight: 400 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
   text: { fontSize: fontSize.body, color: colors.text, textAlign: "center" },
   retry: {
