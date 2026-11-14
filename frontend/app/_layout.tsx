@@ -60,6 +60,7 @@ export default function TabLayout() {
       {TABS_BEFORE_AI.map(renderTab)}
       <Tabs.Screen name="ai" options={{ title: "AI", tabBarButton: AiTabButton }} />
       {TABS_AFTER_AI.map(renderTab)}
+      <Tabs.Screen name="dev/gallery" options={{ href: null }} />
     </Tabs>
   );
 }
