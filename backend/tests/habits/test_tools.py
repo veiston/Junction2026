@@ -69,6 +69,13 @@ def test_challenge_tools(service):
     assert p.facts["items"][0]["days_left"] == 7 and p.facts["items"][0]["baseline_cents"] == 2500
 
 
+def test_suggest_challenges_shows_the_running_experiment_instead_of_a_new_one(service):
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    r = tool("suggest_challenges").run(CTX, {})
+    check(r, "challenge_progress")
+    assert r.facts["already_running"] is True and "new challenge" in r.facts["note"]
+
+
 def test_suggest_challenges_without_a_habit_returns_facts_only():
     svc, *_ = make_world(date(2024, 10, 5))
     bind_service(svc)

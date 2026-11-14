@@ -63,77 +63,68 @@ describe("render from mocks", () => {
   it("challenge_progress active shows spent vs target, days left and the concept", () => {
     show("challenge_progress", habitsMocks.challenge_progress);
     expect(screen.getByText("Halve your taxi spending for 7 days")).toBeTruthy();
-    expect(screen.getByText("Active")).toBeTruthy();
     expect(screen.getByLabelText(/Spent so far/)).toBeTruthy();
-    expect(screen.getByLabelText(/Target /)).toBeTruthy();
-    expect(screen.getByText("3 days left, on track.")).toBeTruthy();
+    expect(screen.getByLabelText(/Your goal /)).toBeTruthy();
+    expect(screen.getByText("3 days left · doing well")).toBeTruthy();
     expect(screen.getByText("Spending pace")).toBeTruthy();
   });
 
   it("challenge_progress active at risk", () => {
     show("challenge_progress", { ...habitsMocks.challenge_progress, on_track: false });
-    expect(screen.getByText("3 days left, at risk.")).toBeTruthy();
+    expect(screen.getByText("3 days left · careful")).toBeTruthy();
   });
 
   it("challenge_suggestions shows baseline, target, estimates and concept", () => {
     show("challenge_suggestions", habitsMocks.challenge_suggestions);
     expect(screen.getByTestId("baseline-taxi_half_week")).toBeTruthy();
-    expect(screen.getByLabelText(/Before: last 7 days \(3 purchases\) .*99,26/)).toBeTruthy();
-    expect(screen.getByLabelText(/Target: next 7 days .*49,00/)).toBeTruthy();
-    expect(screen.getByText(/Possible saving: .*50,26/)).toBeTruthy();
-    expect(screen.getByText(/Estimate: about .*2 613,52.* a year/)).toBeTruthy();
-    expect(screen.getByText("Small purchases add up")).toBeTruthy();
+    expect(screen.getByLabelText(/Last 7 days .*99,26/)).toBeTruthy();
+    expect(screen.getByLabelText(/Goal .*49,00/)).toBeTruthy();
+    expect(screen.getByText(/99,26.*→.*49,00/)).toBeTruthy();
   });
 
-  it("challenge_suggestions shows at most 3 templates", () => {
+  it("challenge_suggestions shows one habit at a time", () => {
     const base = habitsMocks.challenge_suggestions.items;
-    show("challenge_suggestions", { items: [...base, { ...base[1], id: "third" }, { ...base[1], id: "extra" }] });
-    expect(screen.getAllByText("Start experiment").length).toBe(3);
-    expect(screen.queryByTestId("challenge-extra")).toBeNull();
-    expect(screen.getByTestId("challenge-cafe_cap")).toBeTruthy();
+    show("challenge_suggestions", { items: [...base, { ...base[1], id: "third" }] });
+    expect(screen.getAllByText("Start the 7-day challenge").length).toBe(1);
+    expect(screen.queryByTestId("challenge-third")).toBeNull();
   });
 });
 
 describe("finished experiment", () => {
   it("won shows target met, before vs now, the difference and the concept", () => {
     show("challenge_progress", challengeProgressWonMock);
-    expect(screen.getByTestId("challenge-status").props.children).toBe("Won");
-    expect(screen.getByText("Target met")).toBeTruthy();
-    expect(screen.getByLabelText(/Before .*99,26/)).toBeTruthy();
-    expect(screen.getByLabelText(/Now .*38,81/)).toBeTruthy();
+    expect(screen.getByText("You reached your goal")).toBeTruthy();
+    expect(screen.getByLabelText(/Week before .*99,26/)).toBeTruthy();
+    expect(screen.getByLabelText(/This week .*38,81/)).toBeTruthy();
     expect(norm(screen.getByTestId("challenge-difference").props.children)).toContain("60,45");
-    expect(norm(screen.getByTestId("challenge-difference").props.children)).toContain("less than before");
-    expect(screen.getByText("Change in spending: -60,9 %")).toBeTruthy();
+    expect(norm(screen.getByTestId("challenge-difference").props.children)).toContain("less than the week before");
     expect(screen.getByText("One week is not proof")).toBeTruthy();
-    expect(screen.getByText(/Repeat the experiment for another 7 days/)).toBeTruthy();
   });
 
   it("lost shows an increase, never a saving", () => {
     show("challenge_progress", challengeProgressLostMock);
-    expect(screen.getByTestId("challenge-status").props.children).toBe("Lost");
-    expect(screen.getByText("Target not met")).toBeTruthy();
+    expect(screen.getByText("You did not reach your goal this time")).toBeTruthy();
     const text = norm(screen.getByTestId("challenge-difference").props.children);
-    expect(text).toContain("increased by");
+    expect(text).toContain("more than the week before");
     expect(text).toContain("24,74");
     expect(text).not.toMatch(/saved|saving|less than/);
-    expect(screen.getByText("Change in spending: +24,9 %")).toBeTruthy();
   });
 
   it("Repeat for 7 days starts the same template", async () => {
     const request = jest.fn().mockResolvedValue(habitsMocks.challenge_progress);
     show("challenge_progress", challengeProgressWonMock, makeApi(request));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Repeat for 7 days"));
+      fireEvent.press(screen.getByLabelText("Try again for 7 days"));
     });
     expect(request).toHaveBeenCalledWith("POST", "/habits/challenges", { template_id: "taxi_half_week" });
-    expect(screen.getByText("Experiment started")).toBeTruthy();
+    expect(screen.getByText("Started")).toBeTruthy();
   });
 
   it("Repeat for 7 days shows the 409 message", async () => {
     const request = jest.fn().mockRejectedValue({ status: 409, message: "x" });
     show("challenge_progress", challengeProgressWonMock, makeApi(request));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Repeat for 7 days"));
+      fireEvent.press(screen.getByLabelText("Try again for 7 days"));
     });
     expect(screen.getByText("You already have this challenge running.")).toBeTruthy();
   });
@@ -151,7 +142,7 @@ describe("finished experiment", () => {
       delete old[k];
     }
     expect(() => show("challenge_progress", old)).not.toThrow();
-    expect(screen.getByText("Target met")).toBeTruthy();
+    expect(screen.getByText("You reached your goal")).toBeTruthy();
   });
 
   it("explicit nulls do not crash", () => {
@@ -172,7 +163,7 @@ describe("finished experiment", () => {
     const t = { ...habitsMocks.challenge_suggestions.items[0], baseline_cents: null, baseline_count: null, yearly_saving_cents: null, concept: null };
     expect(() => show("challenge_suggestions", { items: [t] })).not.toThrow();
     expect(screen.queryByTestId("baseline-taxi_half_week")).toBeNull();
-    expect(screen.queryByText(/Estimate:/)).toBeNull();
+    expect(screen.queryByText("Yearly estimate")).toBeNull();
   });
 });
 
@@ -256,17 +247,17 @@ describe("ChallengeSuggestions actions", () => {
     const request = jest.fn().mockResolvedValue(habitsMocks.challenge_progress);
     show("challenge_suggestions", data, makeApi(request));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Start experiment: Cafe cap"));
+      fireEvent.press(screen.getByLabelText(/Start the 7-day challenge: /));
     });
-    expect(request).toHaveBeenCalledWith("POST", "/habits/challenges", { template_id: "cafe_cap" });
-    expect(screen.getByText("Experiment started")).toBeTruthy();
+    expect(request).toHaveBeenCalledWith("POST", "/habits/challenges", { template_id: "taxi_half_week" });
+    expect(screen.getByText("Started")).toBeTruthy();
   });
 
   it("409 says the challenge is already active", async () => {
     const request = jest.fn().mockRejectedValue({ status: 409, message: "x" });
     show("challenge_suggestions", data, makeApi(request));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Start experiment: Halve your taxi spending for 7 days"));
+      fireEvent.press(screen.getByLabelText(/Start the 7-day challenge: /));
     });
     expect(screen.getByText("You already have this challenge running.")).toBeTruthy();
   });
@@ -275,8 +266,33 @@ describe("ChallengeSuggestions actions", () => {
     const request = jest.fn().mockRejectedValue({ status: 404, message: "x" });
     show("challenge_suggestions", data, makeApi(request));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Start experiment: Halve your taxi spending for 7 days"));
+      fireEvent.press(screen.getByLabelText(/Start the 7-day challenge: /));
     });
     expect(screen.getByText("This challenge is no longer available.")).toBeTruthy();
+  });
+});
+
+describe("experiment flow through the chat", () => {
+  it("Check progress asks the chat after the experiment started", async () => {
+    const request = jest.fn().mockResolvedValue(habitsMocks.challenge_progress);
+    const api = makeApi(request);
+    show("challenge_suggestions", habitsMocks.challenge_suggestions, api);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText(/Start the 7-day challenge: /));
+    });
+    fireEvent.press(screen.getByLabelText("Check progress"));
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "How is my challenge going?" });
+  });
+
+  it("the demo button moves the clock to the end date and asks for the result", async () => {
+    const request = jest.fn().mockResolvedValue({});
+    const api = makeApi(request);
+    show("challenge_progress", habitsMocks.challenge_progress, api);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Demo: a week passes, show the result"));
+    });
+    const end = (habitsMocks.challenge_progress as { challenge: { end_date: string } }).challenge.end_date;
+    expect(request).toHaveBeenCalledWith("PUT", "/demo/clock", { today: end });
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "How is my challenge going?" });
   });
 });

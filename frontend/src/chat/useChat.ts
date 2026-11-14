@@ -24,6 +24,12 @@ export interface UseChat {
   reset: () => void;
 }
 
+export const QUICK_ACTION_TEXT: Record<QuickAction, string> = {
+  understand_my_money: "Show me where my money goes",
+  plan_my_finances: "Help me save for what I want",
+  improve_my_habits: "Help me spend less on everyday things",
+};
+
 export function useChat(): UseChat {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
@@ -97,6 +103,7 @@ export function useChat(): UseChat {
 
   const sendChip = useCallback(
     (action: QuickAction) => {
+      setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: QUICK_ACTION_TEXT[action] }]);
       void post({ quick_action: action });
     },
     [post],

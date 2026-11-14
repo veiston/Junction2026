@@ -29,7 +29,7 @@ describe("/dev/gallery", () => {
     ]) {
       expect(screen.getByText(name)).toBeTruthy();
     }
-    expect(screen.getByText("Target met")).toBeTruthy();
-    expect(screen.getByText("Target not met")).toBeTruthy();
+    expect(screen.getByText("You reached your goal")).toBeTruthy();
+    expect(screen.getByText("You did not reach your goal this time")).toBeTruthy();
   });
 });

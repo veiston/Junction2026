@@ -42,10 +42,19 @@ export function PrimaryButton({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
+      hitSlop={6}
       onPress={onPress}
       style={[styles.button, disabled && styles.buttonDisabled]}
     >
       <Text style={styles.buttonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function SecondaryButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={styles.secondary}>
+      <Text style={styles.secondaryText}>{label}</Text>
     </Pressable>
   );
 }
@@ -94,16 +103,27 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.bold, fontSize: 18, color: colors.text },
   body: { fontFamily: fonts.regular, fontSize: 15, color: colors.text },
   button: {
-    minHeight: MIN_TOUCH,
-    minWidth: MIN_TOUCH,
+    minHeight: 36,
+    alignSelf: "flex-start",
     borderRadius: radius.round,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
+  secondary: {
+    minHeight: 36,
+    alignSelf: "flex-start",
+    borderRadius: radius.round,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  secondaryText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.primary },
   buttonDisabled: { opacity: 0.5 },
-  buttonText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.onPrimary },
+  buttonText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.onPrimary },
   track: { height: 10, borderRadius: 5, backgroundColor: coachColors.surfaceMuted, overflow: "hidden" },
   fill: { height: 10, borderRadius: 5 },
   error: { fontFamily: fonts.medium, fontSize: 14, color: danger },

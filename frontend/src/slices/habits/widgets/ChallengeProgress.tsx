@@ -8,26 +8,13 @@ import { ConceptNoteBody } from "@/widgets/common/ConceptNote";
 import { useStartChallenge } from "../hooks/useStartChallenge";
 import { CompareBars } from "./CompareBars";
 import { plural } from "./format";
-import { ruleText } from "./ruleText";
-import { Body, Card, ErrorText, PrimaryButton, ProgressBar, Title, danger } from "./ui";
+import { Body, Card, ErrorText, PrimaryButton, ProgressBar, SecondaryButton, Title } from "./ui";
 
 export const ANOTHER_HABIT_MESSAGE = "Show me another habit to test";
 
-const STATUS: Record<string, { text: string; color: string }> = {
-  active: { text: "Active", color: colors.primary },
-  won: { text: "Won", color: colors.primary },
-  lost: { text: "Lost", color: danger },
-  cancelled: { text: "Cancelled", color: colors.textMuted },
-};
+export const PROGRESS_MESSAGE = "How is my challenge going?";
 
 const has = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n);
-
-function pctText(changePct: number): string {
-  // change_pct > 0 means spending went down, so the displayed change is its opposite.
-  const shown = -changePct;
-  const abs = Math.abs(shown).toFixed(1).replace(".", ",");
-  return `${shown > 0 ? "+" : shown < 0 ? "-" : ""}${abs} %`;
-}
 
 export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgressData>) {
   const d = widget.data;
@@ -35,25 +22,16 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
   if (!d?.challenge) return null;
   const c = d.challenge;
   const fmt = api.formatCents;
-  const status = STATUS[c.status] ?? STATUS.active;
   const finished = c.status === "won" || c.status === "lost";
   const current = has(d.current_amount_cents) ? d.current_amount_cents : 0;
   const baseline = has(d.baseline_cents) ? d.baseline_cents : null;
 
-  const header = (
-    <>
-      <Title>{c.title}</Title>
-      <Text style={[styles.status, { color: status.color }]} testID="challenge-status">
-        {status.text}
-      </Text>
-      <Body muted>{ruleText(c.rule, fmt)}</Body>
-    </>
-  );
+  const header = <Title>{c.title}</Title>;
 
   if (!finished) {
     const target = c.rule?.kind === "max_amount" && has(c.rule.amount_cents) ? c.rule.amount_cents : null;
     const behind = c.status === "active" && !d.on_track;
-    const color = behind ? danger : colors.primary;
+    const color = behind ? colors.textMuted : colors.primary;
     return (
       <Card label="Experiment progress">
         {header}
@@ -63,7 +41,7 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
               formatCents={fmt}
               rows={[
                 { label: "Spent so far", cents: current, color },
-                { label: "Target", cents: target, color: coachColors.border },
+                { label: "Your goal", cents: target, color: coachColors.border },
               ]}
             />
           </>
@@ -72,12 +50,23 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
         )}
         {c.status === "active" ? (
           <Body muted>
-            {`${plural(d.days_left ?? 0, "day", "days")} left, ${d.on_track ? "on track" : "at risk"}.`}
+            {`${plural(d.days_left ?? 0, "day", "days")} left · ${d.on_track ? "doing well" : "careful"}`}
           </Body>
         ) : (
           <Body muted>{`${c.start_date} to ${c.end_date}`}</Body>
         )}
-        {d.concept ? <ConceptNoteBody note={d.concept} /> : null}
+        {d.concept ? <ConceptNoteBody note={d.concept} collapsed /> : null}
+        {c.status === "active" ? (
+          <SecondaryButton
+            label="Demo: a week passes, show the result"
+            onPress={() => {
+              void api
+                .request("PUT", "/demo/clock", { today: c.end_date })
+                .then(() => api.sendChat({ message: PROGRESS_MESSAGE }))
+                .catch(() => undefined);
+            }}
+          />
+        ) : null}
       </Card>
     );
   }
@@ -87,35 +76,31 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
   return (
     <Card label="Experiment result">
       {header}
-      <Text style={[styles.verdict, { color: won ? colors.primary : danger }]} testID="challenge-verdict">
-        {won ? "Target met" : "Target not met"}
-      </Text>
+      <View style={[styles.verdict, won ? styles.verdictMet : styles.verdictNotMet]} testID="challenge-verdict">
+        <Text style={[styles.verdictText, { color: won ? colors.primary : colors.textMuted }]}>{won ? "You reached your goal" : "You did not reach your goal this time"}</Text>
+      </View>
       {baseline !== null ? (
         <CompareBars
           formatCents={fmt}
           rows={[
-            { label: "Before", cents: baseline, color: coachColors.border },
-            { label: "Now", cents: current, color: won ? colors.primary : danger },
+            { label: "Week before", cents: baseline, color: coachColors.border },
+            { label: "This week", cents: current, color: won ? colors.primary : colors.textMuted },
           ]}
         />
       ) : (
         <Body muted>{`Spent in the experiment: ${fmt(current)}`}</Body>
       )}
       {diff !== null ? (
-        <Text style={[styles.diff, { color: diff >= 0 ? colors.primary : danger }]} testID="challenge-difference">
+        <Text style={[styles.diff, { color: diff >= 0 ? colors.primary : colors.textMuted }]} testID="challenge-difference">
           {diff >= 0
-            ? `You spent ${fmt(diff)} less than before.`
-            : `Spending increased by ${fmt(-diff)} compared with before.`}
+            ? `You spent ${fmt(diff)} less than the week before.`
+            : `You spent ${fmt(-diff)} more than the week before.`}
         </Text>
       ) : null}
-      {has(d.change_pct) ? (
-        <Body muted>{`Change in spending: ${pctText(d.change_pct)}`}</Body>
-      ) : null}
-      {d.concept ? <ConceptNoteBody note={d.concept} /> : null}
-      {d.next_step ? <Body>{d.next_step}</Body> : null}
+      {d.concept ? <ConceptNoteBody note={d.concept} collapsed /> : null}
       {start.result ? (
         <Text style={styles.verdict} accessibilityLiveRegion="polite">
-          Experiment started
+          Started
         </Text>
       ) : (
         <View style={styles.actions}>
@@ -129,11 +114,11 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
             </ErrorText>
           ) : null}
           <PrimaryButton
-            label={start.loading ? "Starting..." : "Repeat for 7 days"}
+            label={start.loading ? "Starting..." : "Try again for 7 days"}
             disabled={start.loading || start.alreadyActive || start.notFound}
             onPress={() => start.start(c.template_id)}
           />
-          <PrimaryButton label="Try another category" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
+          <SecondaryButton label="Try another category" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
         </View>
       )}
     </Card>
@@ -141,8 +126,11 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
 }
 
 const styles = StyleSheet.create({
-  status: { fontFamily: fonts.bold, fontSize: 16 },
-  verdict: { fontFamily: fonts.bold, fontSize: 16, color: colors.primary },
-  diff: { fontFamily: fonts.semibold, fontSize: 15 },
+  status: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18 },
+  verdict: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  verdictMet: { backgroundColor: coachColors.surfaceMuted },
+  verdictNotMet: { backgroundColor: coachColors.surfaceMuted },
+  verdictText: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19 },
+  diff: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19 },
   actions: { gap: spacing.sm },
 });

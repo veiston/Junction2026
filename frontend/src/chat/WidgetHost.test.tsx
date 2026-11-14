@@ -22,23 +22,23 @@ describe("Explain button", () => {
     const button = screen.getByLabelText("Explain this card");
     expect(button.props.style).toMatchObject({ minHeight: 44, minWidth: 44 });
     fireEvent.press(button);
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain this: transaction_list" });
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain in simple words: my latest transactions" });
   });
 
   it("works on widget types that have no component yet", () => {
     const api = show("what_if", {});
     expect(screen.getByTestId("widget-fallback")).toBeTruthy();
     fireEvent.press(screen.getByLabelText("Explain this card"));
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain this: what_if" });
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain in simple words: this what-if" });
   });
 
-  it("sends the concept id when the widget carries a concept", () => {
+  it("names the concept when the widget carries one", () => {
     const api = show("challenge_progress", {
       ...(mocks.challenge_progress as object),
       concept: { id: "spending_pace", title: "t", text: "x" },
     });
     fireEvent.press(screen.getByLabelText("Explain this card"));
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain the concept: spending_pace" });
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain in simple words: t" });
   });
 
   it("is absent on concept_note", () => {

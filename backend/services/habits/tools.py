@@ -124,6 +124,17 @@ class SuggestChallengesTool(_HabitsTool):
 
     def run(self, ctx: ToolContext, arguments: dict[str, Any]) -> ToolResult:
         _check_args(arguments, set())
+        running = [i for i in self._svc().list_challenges(ctx.customer_id).items if i.challenge.status.value == "active"]
+        if running:
+            current = running[0]
+            facts = {
+                "already_running": True,
+                "title": current.challenge.title, "days_left": current.days_left, "on_track": current.on_track,
+                "current_amount_cents": current.current_amount_cents,
+                "note": ("The customer already has a 7-day challenge running. Say so in one friendly sentence, say how it is "
+                         "going and that a new challenge can start when this one ends. Do not offer a new one now."),
+            }
+            return ToolResult(facts=facts, widgets=[_widget("challenge_progress", current)], sources=[current.source])
         s = self._svc().challenge_suggestions(ctx.customer_id)
         facts = {
             "count": len(s.items),

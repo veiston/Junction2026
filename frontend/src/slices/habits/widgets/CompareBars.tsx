@@ -29,9 +29,9 @@ export function CompareBars({ rows, formatCents }: { rows: CompareRow[]; formatC
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm },
+  wrap: { gap: spacing.xs },
   row: { gap: 4 },
   head: { flexDirection: "row", justifyContent: "space-between" },
-  label: { fontFamily: fonts.medium, fontSize: 14, color: colors.textMuted },
-  value: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
+  label: { flex: 1, fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, lineHeight: 18 },
+  value: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text, lineHeight: 18 },
 });

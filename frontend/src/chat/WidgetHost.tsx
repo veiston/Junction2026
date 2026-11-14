@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { Widget } from "@/contracts";
+import { Icon } from "@/components/Icon";
 import { colors, fonts, fontSize } from "@/theme";
 import { TransactionList } from "@/widgets/common/TransactionList";
 import { WidgetCard } from "@/widgets/common/WidgetCard";
@@ -14,19 +15,45 @@ interface Props {
   onSeeAll?: (data: Widget["data"]) => void;
 }
 
-/** The concept id a widget carries, if any (card level or first suggestion). */
-function conceptIdOf(data: unknown): string | null {
-  const d = data as { concept?: { id?: string } | null; items?: { concept?: { id?: string } | null }[] } | null | undefined;
-  const direct = d?.concept?.id;
-  if (typeof direct === "string") return direct;
-  const first = Array.isArray(d?.items) ? d?.items?.find((i) => i?.concept?.id)?.concept?.id : undefined;
-  return typeof first === "string" ? first : null;
+/** The concept a widget carries, if any (card level or first suggestion). */
+function conceptOf(data: unknown): { id: string; title: string } | null {
+  type C = { id?: string; title?: string } | null | undefined;
+  const d = data as { concept?: C; items?: { concept?: C }[] } | null | undefined;
+  const c = d?.concept ?? (Array.isArray(d?.items) ? d?.items?.find((i) => i?.concept?.id)?.concept : undefined);
+  return c?.id && c.title ? { id: c.id, title: c.title } : null;
 }
 
+const CARD_NAMES: Record<string, string> = {
+  transaction_list: "my latest transactions",
+  spending_summary: "my spending summary",
+  basket_breakdown: "my spending by category",
+  basket_trend: "my spending trend",
+  peer_benchmark: "how I compare with others",
+  spender_profile: "my spending profile",
+  balance_forecast: "my balance forecast",
+  safe_to_spend: "what is safe to spend",
+  upcoming_bills: "my upcoming bills",
+  expense_alerts: "my spending alerts",
+  what_if: "this what-if",
+  limit_suggestion: "the monthly limit",
+  limit_progress: "my limit progress",
+  limit_review: "my limit review",
+  challenge_suggestions: "the 7-day experiment",
+  challenge_progress: "my experiment",
+};
+
+/** What the customer sees in the chat: plain words, never internal names. */
 export function explainMessage(widget: Widget): string {
-  const concept = conceptIdOf(widget.data);
-  return concept ? `Explain the concept: ${concept}` : `Explain this: ${widget.type}`;
+  const concept = conceptOf(widget.data);
+  if (concept) return `Explain in simple words: ${concept.title}`;
+  return `Explain in simple words: ${CARD_NAMES[widget.type] ?? "this card"}`;
 }
+
+/** A question the customer would ask, not a command word. */
+const ASK_LABEL: Record<string, string> = {
+  challenge_suggestions: "Why this goal?",
+  challenge_progress: "What does this mean?",
+};
 
 function ExplainButton({ widget, api }: { widget: Widget; api: WidgetHostApi }) {
   return (
@@ -37,7 +64,8 @@ function ExplainButton({ widget, api }: { widget: Widget; api: WidgetHostApi }) 
       style={styles.explain}
       testID="explain-button"
     >
-      <Text style={styles.explainText}>Explain</Text>
+      <Icon name="lightbulb-on-outline" size={16} />
+      <Text style={styles.explainText}>{ASK_LABEL[widget.type] ?? "What does this mean?"}</Text>
     </Pressable>
   );
 }
@@ -71,7 +99,15 @@ export function WidgetHost(props: Props) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 2 },
-  explain: { minHeight: 44, minWidth: 44, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 8 },
+  explain: {
+    minHeight: 44,
+    minWidth: 44,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+  },
   explainText: { fontFamily: fonts.semibold, fontSize: fontSize.small, color: colors.primary },
   fallback: { fontSize: fontSize.small, color: colors.textMuted },
 });

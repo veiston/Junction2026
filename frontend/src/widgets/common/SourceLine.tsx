@@ -6,7 +6,7 @@ import { colors, fontSize } from "@/theme";
 export function SourceLine({ source }: { source: Source }) {
   return (
     <Text style={styles.line}>
-      {source.description} · {source.period.from_date} – {source.period.to_date} · {source.tx_count} transactions
+      {`Based on ${source.tx_count} ${source.tx_count === 1 ? "transaction" : "transactions"} of yours`}
     </Text>
   );
 }

@@ -1,18 +1,30 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "@/components/Icon";
 import type { ConceptNote as ConceptNoteData } from "@/contracts";
 import type { WidgetProps } from "@/chat/registry";
 import { coachColors, colors, fonts, radius, spacing } from "@/theme";
 
 /** Inline form, reused by the habits widgets. */
-export function ConceptNoteBody({ note }: { note: ConceptNoteData }) {
+export function ConceptNoteBody({ note, collapsed = false }: { note: ConceptNoteData; collapsed?: boolean }) {
+  const [expanded, setExpanded] = useState(!collapsed);
   return (
-    <View style={styles.card} accessibilityLabel={`Learn: ${note.title}`} testID={`concept-${note.id}`}>
-      <Text style={styles.label}>Learn</Text>
-      <Text style={styles.title} accessibilityRole="header">
-        {note.title}
-      </Text>
-      <Text style={styles.text}>{note.text}</Text>
+    <View style={[styles.card, collapsed && styles.compactCard]} testID={`concept-${note.id}`}>
+      <Pressable
+        accessibilityLabel={`Learn: ${note.title}`}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={() => setExpanded((value) => !value)}
+        style={styles.trigger}
+      >
+        <Icon name="lightbulb-on-outline" size={16} />
+        <Text style={styles.label}>Learn</Text>
+        <Text numberOfLines={1} style={styles.title} accessibilityRole="header">
+          {note.title}
+        </Text>
+      </Pressable>
+      {expanded ? <Text style={styles.text}>{note.text}</Text> : null}
     </View>
   );
 }
@@ -32,6 +44,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
+  compactCard: {
+    borderWidth: 0,
+    padding: 0,
+    backgroundColor: "transparent",
+  },
+  trigger: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   label: {
     fontFamily: fonts.semibold,
     fontSize: 12,
@@ -39,6 +62,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  title: { fontFamily: fonts.bold, fontSize: 17, color: colors.text },
-  text: { fontFamily: fonts.regular, fontSize: 15, color: colors.text, lineHeight: 22 },
+  title: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.text, lineHeight: 19 },
+  text: { fontFamily: fonts.regular, fontSize: 14, color: colors.text, lineHeight: 19 },
 });

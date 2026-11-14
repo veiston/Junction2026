@@ -2,14 +2,10 @@ import { StyleSheet, Text, View } from "react-native";
 
 import type { ChallengeSuggestions as ChallengeSuggestionsData, ChallengeTemplate } from "@/contracts";
 import type { WidgetHostApi, WidgetProps } from "@/chat/registry";
-import { coachColors, colors, fonts, radius, spacing } from "@/theme";
-import { ConceptNoteBody } from "@/widgets/common/ConceptNote";
+import { colors, fonts, spacing } from "@/theme";
 
 import { useStartChallenge } from "../hooks/useStartChallenge";
-import { CompareBars } from "./CompareBars";
-import { plural } from "./format";
-import { ruleText } from "./ruleText";
-import { Body, Card, ErrorText, PrimaryButton, Title } from "./ui";
+import { Body, Card, ErrorText, PrimaryButton, SecondaryButton, Title } from "./ui";
 
 const has = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n);
 
@@ -26,61 +22,49 @@ function TemplateRow({ t, api }: { t: ChallengeTemplate; api: WidgetHostApi }) {
   const target = targetCents(t);
   const baseline = has(t.baseline_cents) ? t.baseline_cents : null;
   return (
-    <View style={styles.item} testID={`challenge-${t.id}`}>
-      <Text style={styles.itemTitle}>{t.title}</Text>
-      {t.reason ? <Body muted>{t.reason}</Body> : null}
-      {t.description ? <Body muted>{t.description}</Body> : null}
-      <Body muted>{`${ruleText(t.rule, fmt)} - ${plural(t.duration_days, "day", "days")}`}</Body>
-      {baseline !== null && target !== null ? (
-        <View testID={`baseline-${t.id}`}>
-          <CompareBars
-            formatCents={fmt}
-            rows={[
-              {
-                label: has(t.baseline_count)
-                  ? `Before: last 7 days (${plural(t.baseline_count, "purchase", "purchases")})`
-                  : "Before: last 7 days",
-                cents: baseline,
-                color: coachColors.border,
-              },
-              { label: "Target: next 7 days", cents: target, color: colors.primary },
-            ]}
-          />
-        </View>
-      ) : baseline !== null ? (
-        <Body muted>{`Last 7 days: ${fmt(baseline)}`}</Body>
-      ) : null}
-      <Text style={styles.saving}>{`Possible saving: ${fmt(t.estimated_saving_cents)}`}</Text>
-      {has(t.yearly_saving_cents) ? (
-        <Body muted>{`Estimate: about ${fmt(t.yearly_saving_cents)} a year if you kept this up.`}</Body>
-      ) : null}
-      {t.concept ? <ConceptNoteBody note={t.concept} /> : null}
-      {result ? (
-        <Text style={styles.started} accessibilityLiveRegion="polite">
-          Experiment started
-        </Text>
-      ) : (
-        <>
-          {alreadyActive ? <ErrorText>You already have this challenge running.</ErrorText> : null}
-          {notFound ? <ErrorText>This challenge is no longer available.</ErrorText> : null}
-          {errorStatus !== null && !alreadyActive && !notFound ? (
-            <ErrorText>{errorMessage ?? "Could not start the experiment."}</ErrorText>
-          ) : null}
-          <PrimaryButton
-            label={loading ? "Starting..." : "Start experiment"}
-            accessibilityLabel={`Start experiment: ${t.title}`}
-            disabled={loading || alreadyActive || notFound}
-            onPress={() => start(t.id)}
-          />
-        </>
-      )}
-    </View>
+    <Card label={t.title}>
+      <View style={styles.item} testID={`challenge-${t.id}`}>
+        <Text style={styles.itemTitle}>{t.title}</Text>
+        {baseline !== null && target !== null ? (
+          <Text
+            style={styles.numbers}
+            testID={`baseline-${t.id}`}
+            accessibilityLabel={`Last 7 days ${fmt(baseline)}, Goal ${fmt(target)}`}
+          >
+            {`${fmt(baseline)} → ${fmt(target)}`}
+          </Text>
+        ) : null}
+        {result ? (
+          <>
+            <Text style={styles.small} accessibilityLiveRegion="polite">
+              Started
+            </Text>
+            <SecondaryButton label="Check progress" onPress={() => api.sendChat({ message: "How is my challenge going?" })} />
+          </>
+        ) : (
+          <>
+            {alreadyActive ? <ErrorText>You already have this challenge running.</ErrorText> : null}
+            {notFound ? <ErrorText>This challenge is no longer available.</ErrorText> : null}
+            {errorStatus !== null && !alreadyActive && !notFound ? (
+              <ErrorText>{errorMessage ?? "Could not start the experiment."}</ErrorText>
+            ) : null}
+            <PrimaryButton
+              label={loading ? "Starting..." : "Start the 7-day challenge"}
+              accessibilityLabel={`Start the 7-day challenge: ${t.title}`}
+              disabled={loading || alreadyActive || notFound}
+              onPress={() => start(t.id)}
+            />
+          </>
+        )}
+      </View>
+    </Card>
   );
 }
 
+/** One habit at a time keeps the choice simple. */
 export function ChallengeSuggestions({ widget, api }: WidgetProps<ChallengeSuggestionsData>) {
-  const items = (widget.data?.items ?? []).slice(0, 3);
-  if (items.length === 0) {
+  const first = (widget.data?.items ?? [])[0];
+  if (!first) {
     return (
       <Card label="Habit experiment">
         <Title>Habit experiment</Title>
@@ -88,25 +72,12 @@ export function ChallengeSuggestions({ widget, api }: WidgetProps<ChallengeSugge
       </Card>
     );
   }
-  return (
-    <Card label="Habit experiment">
-      <Title>Try a 7-day experiment</Title>
-      {items.map((t) => (
-        <TemplateRow key={t.id} t={t} api={api} />
-      ))}
-    </Card>
-  );
+  return <TemplateRow t={first} api={api} />;
 }
 
 const styles = StyleSheet.create({
-  item: {
-    borderWidth: 1,
-    borderColor: coachColors.border,
-    borderRadius: radius.card,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  itemTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
-  saving: { fontFamily: fonts.medium, fontSize: 14, color: colors.primary },
-  started: { fontFamily: fonts.semibold, fontSize: 15, color: colors.primary },
+  item: { gap: spacing.sm },
+  itemTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text, lineHeight: 22 },
+  numbers: { fontFamily: fonts.semibold, fontSize: 16, color: colors.primary, lineHeight: 22 },
+  small: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted, lineHeight: 19 },
 });
