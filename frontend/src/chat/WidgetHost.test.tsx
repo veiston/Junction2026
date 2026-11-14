@@ -16,34 +16,22 @@ function show(type: string, data: unknown, api = makeApi()) {
   return api;
 }
 
-describe("Explain button", () => {
-  it("shows under a widget and sends the explain message", () => {
-    const api = show("transaction_list", mocks.transaction_list);
-    const button = screen.getByLabelText("Explain this card");
-    expect(button.props.style).toMatchObject({ minHeight: 44, minWidth: 44 });
-    fireEvent.press(button);
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain in simple words: my latest transactions" });
+describe("question buttons only where they mean something", () => {
+  it("a transaction list has none: there is nothing to explain", () => {
+    show("transaction_list", mocks.transaction_list);
+    expect(screen.queryByTestId("explain-buttons")).toBeNull();
+    expect(screen.queryByText("What does this mean?")).toBeNull();
   });
 
-  it("works on widget types that have no component yet", () => {
-    const api = show("what_if", {});
+  it("a card with no component yet has none", () => {
+    show("what_if", {});
     expect(screen.getByTestId("widget-fallback")).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Explain this card"));
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain in simple words: this what-if" });
+    expect(screen.queryByTestId("explain-buttons")).toBeNull();
   });
 
-  it("names the concept when the widget carries one", () => {
-    const api = show("limit_progress", {
-      ...(mocks.limit_progress as object),
-      concept: { id: "spending_pace", title: "t", text: "x" },
-    });
-    fireEvent.press(screen.getByLabelText("Explain this card"));
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Explain in simple words: t" });
-  });
-
-  it("is absent on concept_note", () => {
+  it("a concept note has none", () => {
     show("concept_note", mocks.concept_note);
-    expect(screen.queryByLabelText("Explain this card")).toBeNull();
+    expect(screen.queryByTestId("explain-buttons")).toBeNull();
   });
 });
 
