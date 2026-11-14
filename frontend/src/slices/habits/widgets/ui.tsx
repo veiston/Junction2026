@@ -59,6 +59,17 @@ export function SecondaryButton({ label, onPress }: { label: string; onPress: ()
   );
 }
 
+/** Purple on purpose: it must be obvious this is a developer tool, not part of the product. */
+export const devPurple = "#7B3FE4";
+
+export function DevButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={styles.dev}>
+      <Text style={styles.devText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function ProgressBar({
   fraction,
   color,
@@ -122,6 +133,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   secondaryText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.primary },
+  dev: {
+    minHeight: 36,
+    alignSelf: "flex-start",
+    borderRadius: radius.round,
+    backgroundColor: devPurple,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  devText: { fontFamily: fonts.semibold, fontSize: 14, color: "#FFFFFF" },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.onPrimary },
   track: { height: 10, borderRadius: 5, backgroundColor: coachColors.surfaceMuted, overflow: "hidden" },
