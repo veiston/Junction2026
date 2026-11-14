@@ -23,4 +23,9 @@
 cd backend && uv run pytest tests/foundation/test_gemini_client.py tests/foundation/test_fake_llm.py -q
 ```
 
-**Blockers:** _(agent writes here)_
+**Blockers:** (none blocking; notes)
+- `pytest` is not in `backend/pyproject.toml` dev deps (not mine to edit). Ran with `uv run --with pytest pytest ...`; `foundation-tests` should add it.
+- `backend/gemini_ai.py` NOT deleted: `backend/main.py` still imports it.
+- Tests prepend `backend/` and repo root to `sys.path` themselves (no conftest owned); the app wiring must do the same for `contracts`.
+- Model env: `GEMINI_MODEL`, falling back to `.env.example`'s `GEMINI_DEFAULT_MODEL`, then `gemini-2.5-flash`.
+- `@pytest.mark.live` marker is unregistered (harmless warning); register it in pyproject/conftest later.
