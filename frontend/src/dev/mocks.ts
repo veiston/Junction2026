@@ -1,4 +1,5 @@
 import type { Transaction, TransactionListData, WidgetType } from "@/contracts";
+import { mocks as understandMocks } from "@/slices/understand/mocks";
 
 const tx = (id: number, date: string, label: string, cents: number): Transaction => ({
   id,
@@ -36,4 +37,5 @@ export const transactionListMock: TransactionListData = {
 /** One mock per widget type that has a component. Slices add theirs here. */
 export const mocks: Partial<Record<WidgetType, unknown>> = {
   transaction_list: transactionListMock,
+  ...understandMocks,
 };
