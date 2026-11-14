@@ -2,26 +2,32 @@
 
 Junction 2026, S-Bank challenge solution
 
-## Prerequisites: UV, pnpm and Ollama
+## Prerequisites: UV and pnpm
 
 1. pip install uv
 2. npm install -g pnpm
-3. Install [Ollama](https://ollama.com/) and run ``ollama pull gemma4:e4b``
 
 ## Run it
 
-Linux / MacOS:
-``./download.sh && ./initialize.sh && ./setup_db.sh && ./run.sh``
+First time only:
 
-Windows:
-``download.bat && initialize.bat && setup_db.bat && run.bat``
+| Step | macOS / Linux | Windows (cmd or PowerShell) |
+|---|---|---|
+| 1. Download the data | `./download.sh` | `download.bat` |
+| 2. Install everything | `./initialize.sh` | `initialize.bat` |
+| 3. Put your Gemini key in `.env` | open `.env`, set `GEMINI_API_KEY=your_key` | same (`.env` is created by step 2) |
+| 4. Build the database | `./setup_db.sh` | `setup_db.bat` |
 
-Delete the `.csv` files and run `download.bat` or `download.sh` to download the full data.
+Every time:
 
-## Set up the database
+| macOS / Linux | Windows |
+|---|---|
+| `./run.sh` | `run.bat` |
 
-Run `./setup_db.sh` on macOS/Linux or `setup_db.bat` on Windows.
-It creates the local SQLite database from the challenge CSV files.
+Then open http://localhost:8081 and tap the AI tab. Stop with `Ctrl+C`.
+
+If the `.csv` files in `Challenge data` are broken, delete them and run the download step again.
+The database step takes a few minutes. If `db/money_coach.sqlite3` already exists you can skip steps 1 and 4.
 
 ## Tech Stack
 
@@ -29,7 +35,7 @@ It creates the local SQLite database from the challenge CSV files.
 
 1. UV
 2. Python
-3. FastAPI: ``POST /chat`` (Gemini) and ``POST /chat/local`` (Ollama, gemma4:e4b)
+3. FastAPI: ``POST /api/v1/chat`` (Gemini). `backend/local_ai.py` is a local Ollama (gemma4:e4b) prototype that is not wired into the API yet; to try it, install [Ollama](https://ollama.com/) and run ``ollama pull gemma4:e4b``
 
 ### Frontend
 

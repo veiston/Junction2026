@@ -8,8 +8,21 @@ dependencies = [
     "google-genai>=2.33.0",
     "ollama>=0.5.0",
     "pillow>=12.3.0",
+    "pydantic>=2.14.3",
+    "pyjwt>=2.15.1",
     "pypdfium2>=5.13.0",
     "python-dotenv>=1.2.4",
     "sqlmodel>=0.0.49",
     "uvicorn>=0.54.0",
 ]
+
+[dependency-groups]
+dev = [
+    "datamodel-code-generator>=0.92.0",
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["live: calls the real Gemini API (needs GEMINI_API_KEY)"]

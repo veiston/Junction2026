@@ -30,8 +30,8 @@ Priority: **M** = must (demo fails without it), **S** = should, **C** = could (o
 ### Foundation (F)
 | Id | Requirement | Prio |
 |---|---|---|
-| FR-F1 | The coach is a standalone mobile web app (`s-money-coach/frontend`) embedded in a simulated S-mobiili (`embedded-demo`) AI tab via WebView / iframe. | M |
-| FR-F2 | Identity: embedded-demo obtains a signed token and passes it in the URL fragment; the coach never asks the user to log in. | M |
+| FR-F1 | The whole frontend is one Expo / React Native app (`frontend/`): a simulated S-mobiili (tabs Koti, Etukortti, Pankki, Minä) whose AI tab is the native coach screen. No WebView, iframe or separate web app (ADR 0013). | M |
+| FR-F2 | Identity: The AI screen obtains a signed token from `POST /demo/session` and keeps it in memory; the user is never asked to log in and the token is never put in a URL. | M |
 | FR-F3 | Chat: free-text questions and three quick-action chips; answers contain text, up to 3 widgets, up to 3 follow-up suggestion chips, and sources. | M |
 | FR-F4 | The LLM chooses tools; tools return facts + widgets; the LLM only writes the explanation. | M |
 | FR-F5 | Every transaction is tagged at ingest with flow, spend group and basket (rules in `docs/er.md`). | M |
@@ -82,15 +82,15 @@ Priority: **M** = must (demo fails without it), **S** = should, **C** = could (o
 | NFR-2 | **Privacy:** a customer can only ever see their own data, even under prompt injection. | customer_id only from token; tests calling with another customer's ids return 404. |
 | NFR-3 | **Data minimisation:** the LLM receives aggregates only, no raw rows, no ids, no token. | Review of tool `facts`; test that facts JSON < 1 KB and has no `customer_id`. |
 | NFR-4 | **Speed (estimate):** REST endpoints < 300 ms / 1 s / 2 s (opt/likely/pess); chat turn 2 / 5 / 10 s. Based on: ~1,600 rows max per customer (checked) and typical hosted LLM latency (not checked). **Measure:** time 20 calls of each on the demo laptop. | Timing script in foundation. |
-| NFR-5 | **Mobile first:** works at 360–430 px width, no horizontal scroll, touch targets ≥ 44 px. | Manual check in embedded-demo. |
+| NFR-5 | **Mobile first:** works at 360–430 px width, no horizontal scroll, touch targets ≥ 44 px. | Manual check in the Expo web app. |
 | NFR-6 | **Plain language:** answers ≤ ~120 words, no jargon without a one-line explanation. | Prompt rule; demo review. |
 | NFR-7 | **Trust:** each widget shows its source ("Calculated from 142 of your transactions, 1–31 Aug"). | `source` is a required field in every slice DTO. |
-| NFR-8 | **Security basics:** API key only on backend; CORS limited to the coach origin; CSP `frame-ancestors` limited to embedded-demo; DTO validation on every input. | Foundation tests + config review. |
+| NFR-8 | **Security basics:** API key only on backend; CORS limited to the Expo web origin; CSP `frame-ancestors 'none'`; DTO validation on every input. | Foundation tests + config review. |
 | NFR-9 | **Independence:** after the foundation is merged, each slice is built without editing another worker's files. | File-ownership table in `docs/filesystem.md`. |
 
 ## 5. Constraints
 
-- Backend: Python + FastAPI (MVC with a services layer). Frontend: React + Vite + TypeScript + plain CSS. Demo host: existing Expo app in `embedded-demo/`.
+- Backend: Python + FastAPI (MVC with a services layer). Frontend: one Expo / React Native + TypeScript app in `frontend/` (jest-expo for tests).
 - Database: SQLite (recommended; team to confirm — see decision 0004).
 - LLM: Gemini via function calling (`GEMINI_API_KEY`, model from env `GEMINI_MODEL`).
 - Data: synthetic S-Bank dataset (checked 2026-11-14): 3,626,755 transactions, 5,100 customers, 1 account each, 2024-10-01 … 2026-09-30, 15 categories, 36 MCC codes, merchants are ids only (no names). All customers live in postal areas 00/01/02 (capital region).
