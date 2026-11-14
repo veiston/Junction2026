@@ -93,7 +93,7 @@ def test_401_matrix(client, method, path, kind):
 
 
 def test_every_slice_route_is_501(client, token):
-    slice_ops = [(m, p) for m, p, op in OPS if op["x-owner"] != "foundation"]
+    slice_ops = [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand")]
     assert slice_ops
     for m, p in slice_ops:
         resp = client.request(m, p.replace("{limit_id}", "1"), token=token, json_body=BODIES.get(p))
@@ -101,7 +101,7 @@ def test_every_slice_route_is_501(client, token):
 
 
 def test_chat_quick_action_chip_says_coming_soon(client, token):
-    resp = client.post("/chat", token=token, json_body={"quick_action": "understand_my_money"})
+    resp = client.post("/chat", token=token, json_body={"quick_action": "plan_my_finances"})
     # the orchestrator turns a not-yet-built chip into a friendly "coming soon" message (no widgets)
     assert resp.status == 200, resp.json
     assert "coming soon" in resp.json["message"]["text"] and resp.json["message"]["widgets"] == []

@@ -92,7 +92,7 @@ def test_request_needs_exactly_one_input(world):
 
 def test_chip_without_tools_is_coming_soon_and_skips_llm(world):
     orch, llm, _ = world
-    for qa in ("understand_my_money", "plan_my_finances", "improve_my_habits"):
+    for qa in ("plan_my_finances", "improve_my_habits"):  # understand_my_money has its tool now
         r = orch.handle(CID, ChatRequest(quick_action=qa))
         assert r.message.text == prompts.COMING_SOON and r.message.widgets == []
     assert llm.calls == []
@@ -148,7 +148,7 @@ def test_unknown_tool_friendly_error(world):
     orch, llm, _ = world
     llm.push(call("drop_database"))
     assert ask(orch, "x").message.text == prompts.TOOL_PROBLEM
-    llm.push(call("get_basket_breakdown"))  # in catalog but not registered
+    llm.push(call("get_balance_forecast"))  # in catalog but not registered
     assert ask(orch, "x").message.text == prompts.TOOL_PROBLEM
 
 
