@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "errors.schema.json",
+  "title": "Errors",
+  "description": "Every non-2xx response has this body. Rules: docs/contracts/errors-and-pagination.md",
+  "$defs": {
+    "ErrorCode": {
+      "title": "ErrorCode",
+      "type": "string",
+      "enum": [
+        "VALIDATION_ERROR",
+        "UNAUTHORIZED",
+        "TOKEN_EXPIRED",
+        "FORBIDDEN",
+        "NOT_FOUND",
+        "CONFLICT",
+        "RATE_LIMITED",
+        "LLM_UNAVAILABLE",
+        "NOT_IMPLEMENTED",
+        "INTERNAL_ERROR"
+      ]
+    },
+    "ErrorDetail": {
+      "title": "ErrorDetail",
+      "type": "object",
+      "required": ["field", "issue"],
+      "additionalProperties": false,
+      "properties": {
+        "field": { "type": "string", "description": "Dotted path, e.g. 'adjustments.0.change_pct'." },
+        "issue": { "type": "string" }
+      }
+    },
+    "ErrorBody": {
+      "title": "ErrorBody",
+      "type": "object",
+      "required": ["code", "message", "details", "request_id"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/ErrorCode" },
+        "message": { "type": "string", "description": "Plain English, safe to show to the user." },
+        "details": { "type": "array", "items": { "$ref": "#/$defs/ErrorDetail" } },
+        "request_id": { "type": "string" }
+      }
+    },
+    "ErrorResponse": {
+      "title": "ErrorResponse",
+      "type": "object",
+      "required": ["error"],
+      "additionalProperties": false,
+      "properties": {
+        "error": { "$ref": "#/$defs/ErrorBody" }
+      }
+    }
+  }
+}

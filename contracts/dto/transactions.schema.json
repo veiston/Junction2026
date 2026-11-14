@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "transactions.schema.json",
+  "title": "Transactions",
+  "$defs": {
+    "Transaction": {
+      "title": "Transaction",
+      "type": "object",
+      "required": ["id", "date", "timestamp", "category", "spend_group", "label", "amount_cents", "balance_after_cents", "flow", "basket", "merchant_id", "mcc"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "description": "Row id assigned at ingest." },
+        "date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "timestamp": { "$ref": "common.schema.json#/$defs/IsoDateTime" },
+        "category": { "$ref": "common.schema.json#/$defs/Category" },
+        "spend_group": { "$ref": "common.schema.json#/$defs/SpendGroup" },
+        "label": { "type": "string", "description": "Display name. Dataset has no merchant names, so e.g. 'Taxis' or 'Rent / housing'." },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "SIGNED as in the bank: negative = money out, positive = money in." },
+        "balance_after_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "flow": { "$ref": "common.schema.json#/$defs/Flow" },
+        "basket": {
+          "oneOf": [{ "$ref": "common.schema.json#/$defs/Basket" }, { "type": "null" }],
+          "description": "null unless flow = spending."
+        },
+        "merchant_id": { "type": ["string", "null"] },
+        "mcc": { "type": ["string", "null"], "pattern": "^[0-9]{4}$" }
+      }
+    },
+    "TransactionFilter": {
+      "title": "TransactionFilter",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "All fields optional; combined with AND. Dates default to the current month up to today.",
+      "properties": {
+        "from_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "to_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "basket": { "$ref": "common.schema.json#/$defs/Basket" },
+        "category": { "$ref": "common.schema.json#/$defs/Category" },
+        "spend_group": { "$ref": "common.schema.json#/$defs/SpendGroup" },
+        "flow": { "$ref": "common.schema.json#/$defs/Flow" },
+        "min_abs_amount_cents": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "TransactionPage": {
+      "title": "TransactionPage",
+      "type": "object",
+      "required": ["items", "page", "page_size", "total", "total_amount_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/Transaction" } },
+        "page": { "type": "integer", "minimum": 1 },
+        "page_size": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "total": { "type": "integer", "minimum": 0, "description": "Number of matching rows over all pages." },
+        "total_amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Signed sum of ALL matching rows, not only this page." }
+      }
+    },
+    "TransactionListData": {
+      "title": "TransactionListData",
+      "type": "object",
+      "description": "Payload of the transaction_list widget. 'See all' re-queries GET /transactions with 'filter'.",
+      "required": ["title", "filter", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "filter": { "$ref": "#/$defs/TransactionFilter" },
+        "page": { "$ref": "#/$defs/TransactionPage" }
+      }
+    }
+  }
+}

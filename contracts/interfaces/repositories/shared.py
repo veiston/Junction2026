@@ -1,0 +1,99 @@
+"""OUTBOUND contract: data access SHARED by all slices. Implemented by the foundation
+(SQLite adapters). Slices only READ through these; they never write transactions.
+
+Every method:
+- filters by customer_id (mandatory argument, first position),
+- never returns rows dated after Clock.today(),
+- returns money as integer cents.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from contracts.dto.transactions import Transaction, TransactionFilter, TransactionPage
+
+
+class Clock(Protocol):
+    """Demo clock. Default today = 2026-09-15 (env DEMO_TODAY). Settable via PUT /demo/clock."""
+
+    def today(self) -> date: ...
+
+    def set_today(self, value: date) -> None: ...
+
+
+@dataclass(frozen=True)
+class CustomerRecord:
+    customer_id: str
+    postal_code: str
+    age: int
+    age_band: str      # session.schema.json AgeBand
+    region: str        # docs/er.md 'Region rule'
+
+
+class CustomerRepository(Protocol):
+    def get(self, customer_id: str) -> CustomerRecord | None: ...
+
+    def ids_in_group(self, age_band: str, region: str | None) -> list[str]:
+        """region None = all regions. Used for peer benchmarks."""
+
+
+@dataclass(frozen=True)
+class SumResult:
+    amount_cents: int   # signed sum (spending is negative)
+    tx_count: int
+
+
+class TransactionRepository(Protocol):
+    def page(self, customer_id: str, flt: TransactionFilter, page: int, page_size: int) -> TransactionPage:
+        """Newest first."""
+
+    def sum(self, customer_id: str, flt: TransactionFilter) -> SumResult: ...
+
+    def all_between(self, customer_id: str, from_date: date, to_date: date) -> list[Transaction]:
+        """Oldest first, every flow. Max ~1,600 rows per customer (checked on dataset), safe in memory."""
+
+    def balance_on(self, customer_id: str, day: date) -> int:
+        """balance_after_cents of the last transaction on or before `day`."""
+
+
+@dataclass(frozen=True)
+class MonthlySpendRow:
+    month: str          # YYYY-MM
+    category: str
+    spend_group: str
+    basket: str | None  # None for non-spending flows
+    flow: str
+    amount_cents: int   # signed sum
+    tx_count: int
+
+
+class MonthlySpendRepository(Protocol):
+    """Pre-aggregated table built at ingest (fast for trends, peers, limits)."""
+
+    def for_customer(self, customer_id: str, from_month: str, to_month: str) -> list[MonthlySpendRow]:
+        """Months fully after today are excluded; the month of today is cut at today."""
+
+    def for_customers(self, customer_ids: list[str], from_month: str, to_month: str) -> list[tuple[str, MonthlySpendRow]]:
+        """(customer_id, row) pairs. Used only for anonymous peer statistics; never exposed row-by-row."""
+
+
+@dataclass(frozen=True)
+class StoredMessage:
+    role: str           # user | assistant
+    text: str
+    widgets_json: str   # JSON array of Widget, "[]" for user
+    created_at: str
+
+
+class ConversationRepository(Protocol):
+    def create(self, customer_id: str) -> str: ...
+
+    def owner_of(self, conversation_id: str) -> str | None: ...
+
+    def append(self, conversation_id: str, role: str, text: str, widgets_json: str = "[]") -> None: ...
+
+    def recent(self, conversation_id: str, limit: int = 10) -> list[StoredMessage]:
+        """Oldest first."""

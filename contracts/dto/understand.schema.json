@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "understand.schema.json",
+  "title": "Understand",
+  "description": "Slice 1 - Understand my money. Owner: Worker 1.",
+  "$defs": {
+    "BasketDetail": {
+      "title": "BasketDetail",
+      "type": "object",
+      "required": ["basket", "amount_cents", "share_pct", "tx_count", "previous_amount_cents", "change_pct", "top_groups"],
+      "additionalProperties": false,
+      "properties": {
+        "basket": { "$ref": "common.schema.json#/$defs/Basket" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Positive = spent." },
+        "share_pct": { "$ref": "common.schema.json#/$defs/Percent" },
+        "tx_count": { "type": "integer", "minimum": 0 },
+        "previous_amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Same basket, previous month, same day-of-month cut-off when the month is in progress." },
+        "change_pct": { "type": ["number", "null"], "description": "null when previous is 0." },
+        "top_groups": { "type": "array", "maxItems": 5, "items": { "$ref": "common.schema.json#/$defs/GroupAmount" } }
+      }
+    },
+    "BasketBreakdown": {
+      "title": "BasketBreakdown",
+      "type": "object",
+      "required": ["month", "is_partial_month", "total_spending_cents", "income_cents", "saving_cents", "baskets", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "month": { "$ref": "common.schema.json#/$defs/YearMonth" },
+        "is_partial_month": { "type": "boolean", "description": "true when month contains demo 'today'." },
+        "total_spending_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "income_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "saving_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Investment deposits in the month." },
+        "baskets": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/BasketDetail" }, "description": "Always the 3 baskets in order mandatory_regular, mandatory_irregular, everyday." },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "BasketTrendMonth": {
+      "title": "BasketTrendMonth",
+      "type": "object",
+      "required": ["month", "baskets"],
+      "additionalProperties": false,
+      "properties": {
+        "month": { "$ref": "common.schema.json#/$defs/YearMonth" },
+        "baskets": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "common.schema.json#/$defs/BasketAmount" } }
+      }
+    },
+    "BasketTrend": {
+      "title": "BasketTrend",
+      "type": "object",
+      "required": ["months", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "months": { "type": "array", "minItems": 1, "maxItems": 12, "items": { "$ref": "#/$defs/BasketTrendMonth" }, "description": "Oldest first." },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "SpendingQuery": {
+      "title": "SpendingQuery",
+      "type": "object",
+      "description": "Exactly one of basket / category / spend_group must be set (validated server-side).",
+      "additionalProperties": false,
+      "required": ["from_date", "to_date"],
+      "properties": {
+        "basket": { "$ref": "common.schema.json#/$defs/Basket" },
+        "category": { "$ref": "common.schema.json#/$defs/Category" },
+        "spend_group": { "$ref": "common.schema.json#/$defs/SpendGroup" },
+        "from_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "to_date": { "$ref": "common.schema.json#/$defs/IsoDate" }
+      }
+    },
+    "SpendingSummary": {
+      "title": "SpendingSummary",
+      "type": "object",
+      "required": ["query", "label", "amount_cents", "tx_count", "average_tx_cents", "previous_period_amount_cents", "sample_transactions", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "query": { "$ref": "#/$defs/SpendingQuery" },
+        "label": { "type": "string", "example": "Taxis" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Positive = spent." },
+        "tx_count": { "type": "integer", "minimum": 0 },
+        "average_tx_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "previous_period_amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Same length period right before from_date." },
+        "sample_transactions": { "type": "array", "maxItems": 5, "items": { "$ref": "transactions.schema.json#/$defs/Transaction" }, "description": "Largest first." },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "Persona": {
+      "title": "Persona",
+      "type": "string",
+      "enum": ["steady_planner", "weekend_socialiser", "payday_splurger", "small_leaks", "balanced"],
+      "description": "Non-judgmental spender types. Rules: docs/er.md 'Persona rules'."
+    },
+    "PersonaTrait": {
+      "title": "PersonaTrait",
+      "type": "object",
+      "required": ["key", "label", "value_text", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "enum": ["weekend_share", "late_night_share", "post_payday_share", "micro_spend", "everyday_share"] },
+        "label": { "type": "string" },
+        "value_text": { "type": "string", "example": "41 % of everyday spending happens Fri-Sun" },
+        "evidence": { "type": "string", "description": "Plain-language why." }
+      }
+    },
+    "SpenderProfile": {
+      "title": "SpenderProfile",
+      "type": "object",
+      "required": ["persona", "title", "description", "traits", "metrics", "tips", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "persona": { "$ref": "#/$defs/Persona" },
+        "title": { "type": "string", "example": "The Weekend Socialiser" },
+        "description": { "type": "string" },
+        "traits": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/PersonaTrait" } },
+        "metrics": {
+          "type": "object",
+          "required": ["weekend_share_pct", "late_night_share_pct", "post_payday_share_pct", "micro_spend_monthly_cents", "everyday_share_pct"],
+          "additionalProperties": false,
+          "properties": {
+            "weekend_share_pct": { "$ref": "common.schema.json#/$defs/Percent" },
+            "late_night_share_pct": { "$ref": "common.schema.json#/$defs/Percent", "description": "Everyday spend 21:00-04:59." },
+            "post_payday_share_pct": { "$ref": "common.schema.json#/$defs/Percent", "description": "Everyday spend within 3 days after salary." },
+            "micro_spend_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Avg monthly sum of everyday tx under 15 EUR." },
+            "everyday_share_pct": { "$ref": "common.schema.json#/$defs/Percent" }
+          }
+        },
+        "tips": { "type": "array", "maxItems": 3, "items": { "type": "string" } },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "PeerGroup": {
+      "title": "PeerGroup",
+      "type": "object",
+      "required": ["age_band", "region", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "age_band": { "$ref": "session.schema.json#/$defs/AgeBand" },
+        "region": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0, "description": "Customers in group. If < 30 the server widens to all regions." }
+      }
+    },
+    "OpenDataReference": {
+      "title": "OpenDataReference",
+      "type": "object",
+      "required": ["label", "share_of_spending_pct", "year", "source_url"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "example": "Finnish households, food & non-alcoholic beverages" },
+        "share_of_spending_pct": { "$ref": "common.schema.json#/$defs/Percent" },
+        "year": { "type": "integer" },
+        "source_url": { "type": "string" }
+      }
+    },
+    "PeerBenchmark": {
+      "title": "PeerBenchmark",
+      "type": "object",
+      "required": ["scope", "key", "label", "your_monthly_cents", "your_share_of_spending_pct", "peer_median_monthly_cents", "peer_p25_monthly_cents", "peer_p75_monthly_cents", "your_percentile", "peer_group", "open_data", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "scope": { "type": "string", "enum": ["basket", "category"] },
+        "key": { "type": "string", "description": "Basket or Category value." },
+        "label": { "type": "string" },
+        "your_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Average of last 3 full months." },
+        "your_share_of_spending_pct": { "$ref": "common.schema.json#/$defs/Percent" },
+        "peer_median_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "peer_p25_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "peer_p75_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "your_percentile": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "peer_group": { "$ref": "#/$defs/PeerGroup" },
+        "open_data": { "oneOf": [{ "$ref": "#/$defs/OpenDataReference" }, { "type": "null" }] },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    }
+  }
+}

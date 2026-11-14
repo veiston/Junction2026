@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "chat.schema.json",
+  "title": "Chat",
+  "$defs": {
+    "QuickAction": {
+      "title": "QuickAction",
+      "type": "string",
+      "enum": ["understand_my_money", "plan_my_finances", "improve_my_habits"],
+      "description": "The three suggested-action chips. Each maps to a fixed first tool: get_basket_breakdown, get_balance_forecast, suggest_monthly_limit."
+    },
+    "ChatRequest": {
+      "title": "ChatRequest",
+      "type": "object",
+      "description": "Send exactly one of 'message' or 'quick_action'.",
+      "additionalProperties": false,
+      "properties": {
+        "conversation_id": { "type": ["string", "null"], "description": "null starts a new conversation." },
+        "message": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
+        "quick_action": { "oneOf": [{ "$ref": "#/$defs/QuickAction" }, { "type": "null" }] }
+      }
+    },
+    "AssistantMessage": {
+      "title": "AssistantMessage",
+      "type": "object",
+      "required": ["id", "role", "created_at", "text", "widgets", "suggestions", "sources", "disclaimer"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string", "const": "assistant" },
+        "created_at": { "$ref": "common.schema.json#/$defs/IsoDateTime" },
+        "text": { "type": "string", "description": "Plain text with **bold** and '- ' bullets only. Max ~120 words. Never contains numbers that are not in the widgets/tool facts." },
+        "widgets": { "type": "array", "maxItems": 3, "items": { "$ref": "widgets.schema.json#/$defs/Widget" } },
+        "suggestions": { "type": "array", "maxItems": 3, "items": { "type": "string", "maxLength": 80 }, "description": "Follow-up chips; tapping one sends it as 'message'." },
+        "sources": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/Source" } },
+        "disclaimer": { "type": ["string", "null"], "description": "Set for coaching / product-suggestion answers." }
+      }
+    },
+    "ChatResponse": {
+      "title": "ChatResponse",
+      "type": "object",
+      "required": ["conversation_id", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "conversation_id": { "type": "string" },
+        "message": { "$ref": "#/$defs/AssistantMessage" }
+      }
+    }
+  }
+}
