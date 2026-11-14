@@ -9,7 +9,7 @@ from contracts.dto.habits import CreateLimitRequest, StartChallengeRequest
 from contracts.interfaces.controllers.errors import ValidationFailed
 from contracts.interfaces.llm.ai_tool import TOOL_CATALOG, ToolContext
 from services.chat.tool_registry import ToolRegistry
-from services.habits.tools import TOOLS, bind_service
+from services.habits.tools import LIMIT_TOOLS, TOOLS, bind_service
 from tests.habits.world import ME, make_world
 
 CTX = ToolContext(customer_id=ME, today=date(2026, 9, 15), conversation_id="c_1")
@@ -23,12 +23,16 @@ def service():
 
 
 def tool(name):
-    return next(t for t in TOOLS if t.name == name)
+    return next(t for t in [*TOOLS, *LIMIT_TOOLS] if t.name == name)
 
 
 def test_tools_match_the_catalog():
-    assert sorted(t.name for t in TOOLS) == sorted(TOOL_CATALOG["habits"])
+    assert sorted(t.name for t in [*TOOLS, *LIMIT_TOOLS]) == sorted(TOOL_CATALOG["habits"])
     ToolRegistry(TOOLS)  # accepted by the registry
+
+
+def test_the_assistant_only_offers_the_challenge_tools():
+    assert sorted(t.name for t in TOOLS) == ["get_challenge_progress", "suggest_challenges"]
 
 
 def check(result, widget_type):
@@ -100,7 +104,7 @@ def test_bad_arguments(service, name, args):
 
 def test_customer_id_argument_is_dropped_by_registry(service):
     reg = ToolRegistry(TOOLS)
-    r = reg.run(CTX, "suggest_monthly_limit", {"customer_id": "CUST00002"})
+    r = reg.run(CTX, "suggest_challenges", {"customer_id": "CUST00002"})
     assert r.widgets
 
 

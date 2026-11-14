@@ -196,13 +196,14 @@ class GetChallengeProgressTool(_HabitsTool):
         return ToolResult(facts=facts, widgets=[_widget("challenge_progress", i) for i in shown], sources=sources)
 
 
-TOOLS: list[AiTool] = [
-    SuggestMonthlyLimitTool(), GetLimitProgressTool(), ReviewLimitTool(),
-    SuggestChallengesTool(), GetChallengeProgressTool(),
-]
+# The monthly limit tools stay in the code and the HTTP API, but the assistant does not offer them: the
+# feature has one goal, the 7-day challenge (decision 0017).
+LIMIT_TOOLS: list[AiTool] = [SuggestMonthlyLimitTool(), GetLimitProgressTool(), ReviewLimitTool()]
+
+TOOLS: list[AiTool] = [SuggestChallengesTool(), GetChallengeProgressTool()]
 
 
 def bind_service(service) -> None:
     """Connects the tools to the habits service (called once by the container)."""
-    for tool in TOOLS:
+    for tool in [*TOOLS, *LIMIT_TOOLS]:
         tool.service = service  # type: ignore[attr-defined]

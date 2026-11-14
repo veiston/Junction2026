@@ -65,24 +65,11 @@ def test_chip_forces_challenge_suggestions_widget(client, llm, token):
     assert "CUST00001" not in str(llm.calls[1]["messages"][-1])  # the model never sees the customer id
 
 
-def test_limit_suggestion_is_still_available_as_a_normal_tool(client, llm, token):
+def test_the_assistant_does_not_offer_the_monthly_limit(client, llm, token):
     llm.push(LlmTurn("", [ToolCall("t1", "suggest_monthly_limit", {})], "tool_calls"))
-    llm.push(LlmTurn("Here is a limit you could try.", [], "stop"))
     resp = client.post("/chat", token=token, json_body={"message": "suggest a monthly limit"})
     assert resp.status == 200, resp.json
-    assert [w["type"] for w in resp.json["message"]["widgets"]] == ["limit_suggestion"]
-
-
-def test_chat_progress_tool_without_limit_and_with_limit(client, llm, token):
-    for _ in range(2):
-        llm.push(LlmTurn("", [ToolCall("t1", "get_limit_progress", {})], "tool_calls"))
-        llm.push(LlmTurn("ok", [], "stop"))
-    first = client.post("/chat", token=token, json_body={"message": "how am I doing on my limit?"})
-    assert first.json["message"]["widgets"] == []
-    assert client.post("/habits/limits", token=token,
-                       json_body={"month": "2026-09", "amount_cents": 30000}).status == 201
-    second = client.post("/chat", token=token, json_body={"message": "how am I doing on my limit?"})
-    assert [w["type"] for w in second.json["message"]["widgets"]] == ["limit_progress"]
+    assert resp.json["message"]["widgets"] == []
 
 
 def test_http_requires_token(client):
