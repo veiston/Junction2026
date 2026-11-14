@@ -3,11 +3,11 @@
 A chat coach for the S-mobiili app. You talk to your own money, and the coach answers with real numbers from your transactions.
 Built at Junction 2026 for the S-Pankki challenge **Personal Economic Trainer**.
 
-## 1. Run it
+## 1. How to run the project
 
 You need: Python 3.10 or newer, Node.js, `uv` (`pip install uv`) and `pnpm` (`npm install -g pnpm`).
 
-**First time only**
+**First time only (install and set up)**
 
 | Step | macOS / Linux | Windows |
 |---|---|---|
@@ -20,7 +20,7 @@ Step 2 creates the `.env` file. Step 4 takes a few minutes. If `db/money_coach.s
 Get a free Gemini key at https://aistudio.google.com (key icon, "Generate API key").
 If the `.csv` files in `Challenge data` look broken, delete them and run step 1 again.
 
-**Every time**
+**Every time (start the app)**
 
 | macOS / Linux | Windows |
 |---|---|
@@ -28,7 +28,7 @@ If the `.csv` files in `Challenge data` look broken, delete them and run step 1 
 
 Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 
-**Demo tips**
+**Tips for a demo**
 
 - The app signs in as demo customer `CUST02706`. "Today" in the demo is **15 September 2026**.
 - A habit challenge lasts 7 days. To see its result now, move the demo date forward. Replace `2026-09-22` with the end date of the challenge:
@@ -39,22 +39,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - To start with no challenges: `sqlite3 db/money_coach.sqlite3 "delete from challenges;"` and restart.
 - Optional keys in `.env`: `ELEVENLABS_API_KEY` (read answers aloud), `OLLAMA_BASE_URL` and `OLLAMA_API_KEY` (local model, see `.env.example`).
 
-## 2. What the challenge asked, and what we built
-
-| The challenge asks for | What the coach does |
-|---|---|
-| Chat with your own money | You type or speak any question about your spending. Off-topic questions get a polite answer. |
-| Simple questions, like "How much did I spend on taxis last month?" | Exact answer from your transactions, with up to 5 example purchases. |
-| Deeper questions, like "What kind of spender am I?" | One spender type, up to 5 traits with evidence, up to 3 tips. No blame words. |
-| "What is safe for me to spend this week?" | Safe amount per day, this week and until payday, with the formula shown. |
-| "How much could I save if I cut dining out by 20%?" | What-if slider from -100% to +100%. Shows monthly and yearly saving. |
-| The three baskets (regular, irregular, everyday) | Spending split into the three baskets, with euros, percent and top groups. |
-| Benchmarks with open data | Compare with similar customers, plus a Statistics Finland reference. |
-| Explain financial concepts in plain language | Five short explanations written by the team. A fixed text, filled with your numbers. |
-| Guide users to healthier money habits | A 7-day challenge on one everyday habit, with a result and a lesson. |
-| Mobile app, or a web app that fits in one | One Expo (React Native) app with phone-sized screens. We run and test it in the browser. |
-
-## 3. Features, by part
+## 2. Features
 
 ### Understand My Money
 - Spending in the **three baskets**: euros, percent, number of purchases, top 5 groups, change since last month.
@@ -86,13 +71,27 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - **Savings goal**: "I want to save 600 EUR for a trip" gives the number of weeks the saving would need (an estimate).
 - Say "I want to skip the challenge" in the chat and the coach does it.
 
-### In every part
+### Features everywhere in the app
 - **Ask in your own words.** The coach finds the numbers, then explains them.
 - **Read aloud** and **talk to the coach** with your voice (ElevenLabs, optional key).
 - **Plain-language concepts**: small purchases add up, compare equal periods, fixed vs everyday spending, spending pace, one week is not proof.
 - **Private by design**: you can only see your own data.
 
-## 4. How it works
+## 3. Value for the customer and for S-Pankki
+
+**Value for the customer**
+- You see where your money goes, in euros, split into three baskets. Not just a list of transactions.
+- You learn by doing: a 7-day challenge on one real habit, then a result and one lesson.
+- Every number comes with a short explanation in plain words. No jargon, no blame.
+- You stay in control. Nothing is blocked and no money moves.
+
+**Value for S-Pankki**
+- Customers talk with their own data and explore it freely. S-Bank says no Finnish bank offers this yet.
+- Customers can trust the answers: the server calculates every number, and the AI model only explains them.
+- It teaches financial skills in everyday life, which helps young adults most.
+- It is one app made for the phone, so it fits the S-mobiili idea.
+
+## 4. How it works: server, AI model and data
 
 - The **server calculates every number**. The AI model never writes database queries and never sees your raw transactions or your customer id. It only explains numbers that are already checked.
 - **Gemini** decides what to look up and writes the answer. You can also set up a local model (Gemma with Ollama). Then answers that contain your numbers are written on your own computer.
@@ -105,14 +104,14 @@ backend/    FastAPI, services, tools, tests       docs/       plan, decisions, u
 db/         SQLite database                       scripts/    data loading, local model
 ```
 
-## 5. Tests
+## 5. How to run the tests
 
 ```bash
 cd backend  && uv run pytest -q
 cd frontend && pnpm test && pnpm exec tsc --noEmit
 ```
 
-## 6. Limits
+## 6. Known limits
 
 - The free Gemini key has a small daily limit. Use a fresh key for a demo.
 - The data is test data. It ends on 30 September 2026.
@@ -120,9 +119,9 @@ cd frontend && pnpm test && pnpm exec tsc --noEmit
 - English only. No push notifications: the bell shows a red dot inside the app.
 - The Windows scripts are less tested than the macOS ones.
 
-## 7. More
+## 7. More documentation
 
-`docs/vertical-slices.md` (the three parts), `docs/architecture.md`, `docs/requirements.md`, `docs/user-stories.md`, `docs/decisions/` (why we chose things).
+`docs/vertical-slices.md` (plan of each function), `docs/architecture.md`, `docs/requirements.md`, `docs/user-stories.md`, `docs/decisions/` (why we chose things).
 
 ## Team
 
