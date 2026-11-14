@@ -9,12 +9,12 @@ from system_prompt import SYSTEM_PROMPT
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 MODEL = os.getenv("GEMINI_DEFAULT_MODEL", DEFAULT_MODEL)
 
 
 def chat(messages: list[ChatMessage]) -> str:
-    gemini = genai.Client()  # reads GOOGLE_API_KEY or GEMINI_API_KEY
+    gemini = genai.Client()  # reads GEMINI_API_KEY
     contents = [to_gemini(message) for message in messages]
     config = {"system_instruction": SYSTEM_PROMPT}
     response = gemini.models.generate_content(model=MODEL, contents=contents, config=config).text
