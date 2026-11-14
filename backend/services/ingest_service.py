@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
@@ -11,43 +12,16 @@ import duckdb
 from models.database import Database
 
 
+SEED_PATH = Path(__file__).resolve().parents[2] / "db" / "seed" / "mcc_reference.csv"
+
+
+def _load_mcc_seed(path: Path = SEED_PATH) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 MCC_RULES: dict[str, tuple[str, str, str]] = {
-    "5411": ("supermarkets", "Supermarkets", "mandatory_regular"),
-    "5422": ("butchers", "Butchers", "mandatory_regular"),
-    "5451": ("dairy", "Dairy shops", "mandatory_regular"),
-    "4111": ("public_transport", "Public transport", "mandatory_regular"),
-    "5541": ("fuel", "Fuel", "mandatory_regular"),
-    "5542": ("fuel", "Fuel", "mandatory_regular"),
-    "5912": ("pharmacy", "Pharmacy", "mandatory_irregular"),
-    "8011": ("doctors", "Doctors", "mandatory_irregular"),
-    "8021": ("dentists", "Dentists", "mandatory_irregular"),
-    "8099": ("health_services", "Health services", "mandatory_irregular"),
-    "5200": ("home_supplies", "Home supplies", "mandatory_irregular"),
-    "5251": ("hardware", "Hardware", "mandatory_irregular"),
-    "5712": ("furniture_appliances", "Furniture & appliances", "mandatory_irregular"),
-    "5732": ("electronics", "Electronics", "mandatory_irregular"),
-    "5734": ("software_apps", "Software & apps", "everyday"),
-    "5499": ("kiosks", "Kiosks & convenience", "everyday"),
-    "5812": ("restaurants", "Restaurants", "everyday"),
-    "5813": ("bars", "Bars", "everyday"),
-    "5814": ("fast_food_cafes", "Fast food & cafes", "everyday"),
-    "4121": ("taxis", "Taxis", "everyday"),
-    "7523": ("parking", "Parking", "everyday"),
-    "7832": ("cinemas", "Cinemas", "everyday"),
-    "7922": ("events_tickets", "Events & tickets", "everyday"),
-    "7991": ("attractions", "Attractions", "everyday"),
-    "7996": ("amusement_parks", "Amusement parks", "everyday"),
-    "7999": ("recreation_sports", "Recreation & sports", "everyday"),
-    "5941": ("sporting_goods", "Sporting goods", "everyday"),
-    "5651": ("clothing", "Clothing", "everyday"),
-    "5691": ("clothing", "Clothing", "everyday"),
-    "5942": ("books", "Books", "everyday"),
-    "5945": ("toys_hobbies", "Toys & hobbies", "everyday"),
-    "5999": ("other_retail", "Other shops", "everyday"),
-    "4722": ("travel_agencies", "Travel agencies", "everyday"),
-    "4511": ("flights", "Flights", "everyday"),
-    "7011": ("hotels", "Hotels", "everyday"),
-    "7512": ("car_rental", "Car rental", "everyday"),
+    r["mcc"]: (r["spend_group"], r["label"], r["basket"]) for r in _load_mcc_seed()
 }
 
 FIXED_RULES = {
@@ -59,6 +33,9 @@ FIXED_RULES = {
     "housing_payment": ("spending", "housing", "mandatory_regular"),
     "utilities_payment": ("spending", "utilities", "mandatory_regular"),
 }
+
+
+DEFAULT_TODAY = "2026-09-15"
 
 
 def ingest_dataset(database: Database, data_path: Path) -> None:
@@ -145,14 +122,15 @@ def _insert_transactions(target, source: duckdb.DuckDBPyConnection, path: Path) 
 
 
 def _clear_imported_data(target) -> None:
-    for table in ("monthly_spend", "transactions", "mcc_reference", "meta", "customers"):
+    for table in ("monthly_spend", "transactions", "mcc_reference", "customers"):
         target.execute(f"DELETE FROM {table}")
+    target.execute("DELETE FROM meta WHERE key NOT LIKE 'migration:%'")
 
 
 def _seed_mcc_reference(target) -> None:
     target.executemany(
-        "INSERT INTO mcc_reference(mcc, spend_group, label, category, basket) VALUES (?, ?, ?, '', ?)",
-        [(mcc, group, label, basket) for mcc, (group, label, basket) in MCC_RULES.items()],
+        "INSERT INTO mcc_reference(mcc, spend_group, label, category, basket) VALUES (?, ?, ?, ?, ?)",
+        [(r["mcc"], r["spend_group"], r["label"], r["category"], r["basket"]) for r in _load_mcc_seed()],
     )
 
 
@@ -173,8 +151,8 @@ def _write_metadata(target) -> None:
     target.executemany(
         "INSERT INTO meta(key, value) VALUES (?, ?)",
         [
-            ("dataset_from", start),
-            ("dataset_to", end),
+            *([("dataset_from", start), ("dataset_to", end)] if start else []),
+            ("default_today", DEFAULT_TODAY),
             ("ingested_at", datetime.now(timezone.utc).isoformat()),
         ],
     )

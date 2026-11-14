@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 from sqlmodel import create_engine
@@ -31,18 +32,38 @@ class Database:
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
 
-    def migrate(self) -> None:
+    @contextmanager
+    def session(self):
+        """Short-lived connection: commits on success, rolls back on error, always closes."""
         connection = self.connect()
         try:
-            connection.execute(
-                "CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY NOT NULL)"
-            )
-            applied = {row[0] for row in connection.execute("SELECT name FROM schema_migrations")}
-            for migration in sorted(self.migrations_path.glob("*.sql")):
-                if migration.name in applied:
-                    continue
-                connection.executescript(migration.read_text(encoding="utf-8"))
-                connection.execute("INSERT INTO schema_migrations(name) VALUES (?)", (migration.name,))
+            yield connection
             connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
         finally:
             connection.close()
+
+    def meta(self, key: str) -> str | None:
+        with self.session() as con:
+            row = con.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+        return row[0] if row else None
+
+    def migrate(self) -> None:
+        """Apply db/migrations/*.sql in order. Applied files are recorded in `meta` as `migration:<name>`."""
+        with self.session() as connection:
+            has_meta = connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'meta'"
+            ).fetchone()
+            applied = (
+                {r[0] for r in connection.execute("SELECT key FROM meta WHERE key LIKE 'migration:%'")}
+                if has_meta
+                else set()
+            )
+            for migration in sorted(self.migrations_path.glob("*.sql")):
+                key = f"migration:{migration.name}"
+                if key in applied:
+                    continue
+                connection.executescript(migration.read_text(encoding="utf-8"))
+                connection.execute("INSERT INTO meta(key, value) VALUES (?, ?)", (key, "applied"))
