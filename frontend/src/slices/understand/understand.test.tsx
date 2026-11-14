@@ -73,8 +73,8 @@ describe("basket_trend", () => {
 describe("spending_summary", () => {
   it("shows the exact amount, the count and the largest purchases", () => {
     render(<WidgetHost widget={w("spending_summary", spendingSummaryMock)} api={makeApi()} />);
-    expect(screen.getByTestId("spending-amount").props.children).toBe(euros(8640));
-    expect(screen.getByText(/4 purchases/)).toBeTruthy();
+    expect(screen.getByTestId("spending-amount").props.children).toBe(euros(12480));
+    expect(screen.getByText(/7 purchases/)).toBeTruthy();
     expect(screen.getAllByText("Taxis")).toHaveLength(4);
     expect(screen.getByText(/more than the previous period/)).toBeTruthy();
   });

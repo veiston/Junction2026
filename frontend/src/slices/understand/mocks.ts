@@ -107,9 +107,9 @@ const tx = (id: number, date: string, label: string, cents: number): Transaction
 export const spendingSummaryMock: SpendingSummary = {
   query: { spend_group: "taxis", from_date: "2026-08-01", to_date: "2026-08-31" },
   label: "Taxis",
-  amount_cents: 8640,
-  tx_count: 4,
-  average_tx_cents: 2160,
+  amount_cents: 12480,
+  tx_count: 7,
+  average_tx_cents: 1783,
   previous_period_amount_cents: 5210,
   sample_transactions: [
     tx(1, "2026-08-23", "Taxis", -3120),
@@ -117,7 +117,7 @@ export const spendingSummaryMock: SpendingSummary = {
     tx(3, "2026-08-16", "Taxis", -1840),
     tx(4, "2026-08-02", "Taxis", -1580),
   ],
-  source: source("2026-08-01", "2026-08-31", 4),
+  source: source("2026-08-01", "2026-08-31", 7),
 };
 
 export const spenderProfileMock: SpenderProfile = {
