@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from "react-native";
 import type { ChallengeProgress as ChallengeProgressData } from "@/contracts";
 import type { WidgetProps } from "@/chat/registry";
 import { coachColors, colors, fonts, spacing } from "@/theme";
-import { ConceptNoteBody } from "@/widgets/common/ConceptNote";
 
 import { useStartChallenge } from "../hooks/useStartChallenge";
 import { CompareBars } from "./CompareBars";
@@ -55,7 +54,6 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
         ) : (
           <Body muted>{`${c.start_date} to ${c.end_date}`}</Body>
         )}
-        {d.concept ? <ConceptNoteBody note={d.concept} collapsed /> : null}
         {c.status === "active" ? (
           <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
         ) : null}
@@ -89,7 +87,6 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
             : `You spent ${fmt(-diff)} more than the week before.`}
         </Text>
       ) : null}
-      {d.concept ? <ConceptNoteBody note={d.concept} collapsed /> : null}
       {start.result ? (
         <Text style={styles.verdict} accessibilityLiveRegion="polite">
           Started

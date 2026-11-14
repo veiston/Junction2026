@@ -60,13 +60,13 @@ describe("render from mocks", () => {
     expect(norm(screen.getByTestId("limit-review-result").props.children)).toContain("Over the limit by");
   });
 
-  it("challenge_progress active shows spent vs target, days left and the concept", () => {
+  it("challenge_progress active shows spent vs target and days left", () => {
     show("challenge_progress", habitsMocks.challenge_progress);
     expect(screen.getByText("Halve your taxi spending for 7 days")).toBeTruthy();
     expect(screen.getByLabelText(/Spent so far/)).toBeTruthy();
     expect(screen.getByLabelText(/Your goal /)).toBeTruthy();
     expect(screen.getByText("3 days left · doing well")).toBeTruthy();
-    expect(screen.getByText("Spending pace")).toBeTruthy();
+    expect(screen.queryByText("Spending pace")).toBeNull(); // explained by the Explain button, not twice
   });
 
   it("challenge_progress active at risk", () => {
@@ -91,14 +91,14 @@ describe("render from mocks", () => {
 });
 
 describe("finished experiment", () => {
-  it("won shows target met, before vs now, the difference and the concept", () => {
+  it("won shows target met, before vs now and the difference", () => {
     show("challenge_progress", challengeProgressWonMock);
     expect(screen.getByText("You reached your goal")).toBeTruthy();
     expect(screen.getByLabelText(/Week before .*99,26/)).toBeTruthy();
     expect(screen.getByLabelText(/This week .*38,81/)).toBeTruthy();
     expect(norm(screen.getByTestId("challenge-difference").props.children)).toContain("60,45");
     expect(norm(screen.getByTestId("challenge-difference").props.children)).toContain("less than the week before");
-    expect(screen.getByText("One week is not proof")).toBeTruthy();
+    expect(screen.queryByText("One week is not proof")).toBeNull();
   });
 
   it("lost shows an increase, never a saving", () => {
