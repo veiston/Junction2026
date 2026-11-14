@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
 
 from api.server import create_app  # noqa: E402  (must come after load_dotenv)
+from db_bootstrap import ensure_database  # noqa: E402
+
+ensure_database()  # first start on an empty disk: download the database (see DB_DOWNLOAD_URL)
 
 app = create_app()
 
