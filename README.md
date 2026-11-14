@@ -39,7 +39,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - To start with no challenges: `sqlite3 db/money_coach.sqlite3 "delete from challenges;"` and restart.
 - Optional keys in `.env`: `ELEVENLABS_API_KEY` (read answers aloud), `OLLAMA_BASE_URL` and `OLLAMA_API_KEY` (local model, see `.env.example`).
 
-## 2. Features of the three parts
+## 2. Features
 
 ### Understand My Money
 - Spending in the **three baskets**: euros, percent, number of purchases, top 5 groups, change since last month.
@@ -71,7 +71,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - **Savings goal**: "I want to save 600 EUR for a trip" gives the number of weeks the saving would need (an estimate).
 - Say "I want to skip the challenge" in the chat and the coach does it.
 
-### Features in every part
+### Features everywhere in the app
 - **Ask in your own words.** The coach finds the numbers, then explains them.
 - **Read aloud** and **talk to the coach** with your voice (ElevenLabs, optional key).
 - **Plain-language concepts**: small purchases add up, compare equal periods, fixed vs everyday spending, spending pace, one week is not proof.
@@ -121,7 +121,7 @@ cd frontend && pnpm test && pnpm exec tsc --noEmit
 
 ## 7. More documentation
 
-`docs/vertical-slices.md` (the three parts), `docs/architecture.md`, `docs/requirements.md`, `docs/user-stories.md`, `docs/decisions/` (why we chose things).
+`docs/vertical-slices.md` (plan of each function), `docs/architecture.md`, `docs/requirements.md`, `docs/user-stories.md`, `docs/decisions/` (why we chose things).
 
 ## Team
 
