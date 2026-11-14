@@ -39,21 +39,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - To start with no challenges: `sqlite3 db/money_coach.sqlite3 "delete from challenges;"` and restart.
 - Optional keys in `.env`: `ELEVENLABS_API_KEY` (read answers aloud), `OLLAMA_BASE_URL` and `OLLAMA_API_KEY` (local model, see `.env.example`).
 
-## 2. The challenge, and where to find each answer
-
-| The challenge asks for | Where it is |
-|---|---|
-| Chat with your own money, in your own words | The **AI** tab, in every part |
-| Simple and deeper questions ("taxis last month", "What kind of spender am I?") | Understand My Money |
-| The three baskets | Understand My Money |
-| Benchmarks with open data | Understand My Money |
-| "What is safe to spend this week?" | Plan My Finances |
-| "What if I cut dining out by 20%?" | Plan My Finances |
-| Explain financial concepts in plain language | Every part (five short explanations) |
-| Guide users to healthier money habits | Improve My Habits |
-| A mobile app, or a web app that fits in one | One Expo (React Native) app with phone-sized screens, tested in the browser |
-
-## 3. Features, by part
+## 2. Features, by part
 
 ### Understand My Money
 - Spending in the **three baskets**: euros, percent, number of purchases, top 5 groups, change since last month.
@@ -91,7 +77,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - **Plain-language concepts**: small purchases add up, compare equal periods, fixed vs everyday spending, spending pace, one week is not proof.
 - **Private by design**: you can only see your own data.
 
-## 4. How it works
+## 3. How it works
 
 - The **server calculates every number**. The AI model never writes database queries and never sees your raw transactions or your customer id. It only explains numbers that are already checked.
 - **Gemini** decides what to look up and writes the answer. You can also set up a local model (Gemma with Ollama). Then answers that contain your numbers are written on your own computer.
@@ -104,14 +90,14 @@ backend/    FastAPI, services, tools, tests       docs/       plan, decisions, u
 db/         SQLite database                       scripts/    data loading, local model
 ```
 
-## 5. Tests
+## 4. Tests
 
 ```bash
 cd backend  && uv run pytest -q
 cd frontend && pnpm test && pnpm exec tsc --noEmit
 ```
 
-## 6. Limits
+## 5. Limits
 
 - The free Gemini key has a small daily limit. Use a fresh key for a demo.
 - The data is test data. It ends on 30 September 2026.
@@ -119,7 +105,7 @@ cd frontend && pnpm test && pnpm exec tsc --noEmit
 - English only. No push notifications: the bell shows a red dot inside the app.
 - The Windows scripts are less tested than the macOS ones.
 
-## 7. More
+## 6. More
 
 `docs/vertical-slices.md` (the three parts), `docs/architecture.md`, `docs/requirements.md`, `docs/user-stories.md`, `docs/decisions/` (why we chose things).
 
