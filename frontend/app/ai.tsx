@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AiTopBar } from "@/chat/AiTopBar";
 import { ChatScreen } from "@/chat/ChatScreen";
 import { useChat } from "@/chat/useChat";
-import { greetingFor, useSession } from "@/chat/useSession";
+import { useSession } from "@/chat/useSession";
 import { colors, fontSize, spacing } from "@/theme";
 
 export default function AiScreen() {
@@ -30,7 +30,7 @@ export default function AiScreen() {
             </Pressable>
           </View>
         )}
-        {session.status === "ready" && <ChatScreen chat={chat} greeting={greetingFor(session.me)} />}
+        {session.status === "ready" && <ChatScreen chat={chat} />}
       </View>
     </SafeAreaView>
   );
@@ -38,7 +38,7 @@ export default function AiScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
-  body: { flex: 1, backgroundColor: colors.background },
+  body: { flex: 1, backgroundColor: colors.surface },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
   text: { fontSize: fontSize.body, color: colors.text, textAlign: "center" },
   retry: {

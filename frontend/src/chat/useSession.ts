@@ -11,10 +11,6 @@ export type SessionState =
   | { status: "ready"; me: Me }
   | { status: "error"; me: null; message: string };
 
-export function greetingFor(me: Me | null): string {
-  return me ? "Hi! Ask me anything about your money, or pick a suggestion below." : "Hi! I'm your money coach.";
-}
-
 /** Signs in with a demo session, then loads /me. `retry` starts over. */
 export function useSession(): SessionState & { retry: () => void } {
   const [state, setState] = useState<SessionState>({ status: "loading", me: null });

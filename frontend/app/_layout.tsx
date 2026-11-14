@@ -1,3 +1,10 @@
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  useFonts,
+} from "@expo-google-fonts/plus-jakarta-sans";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -47,6 +54,13 @@ function renderTab(tab: TabConfig) {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  // The screens render with the system font until Plus Jakarta Sans has loaded.
+  useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
 
   return (
     <Tabs
