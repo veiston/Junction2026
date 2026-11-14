@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 
 from contracts.dto.understand import OpenDataReference
-from models.database import PROJECT_ROOT
+from models.database import db_dir
 
-DEFAULT_PATH = PROJECT_ROOT / "db" / "seed" / "statfin_household_spending.json"
+DEFAULT_PATH = db_dir() / "seed" / "statfin_household_spending.json"
 
 
 class JsonOpenDataRepository:
