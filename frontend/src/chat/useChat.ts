@@ -19,7 +19,7 @@ export interface UseChat {
   /** Asks the assistant without adding a customer bubble. */
   ask: (text: string) => void;
   /** Adds a fixed assistant message without calling the model. */
-  note: (text: string) => void;
+  note: (text: string, question?: string) => void;
   /** Re-sends the last failed turn. */
   retry: () => void;
   /** False on the first view (three function buttons shown); true once a message or function was sent. */
@@ -113,10 +113,11 @@ export function useChat(): UseChat {
     [post],
   );
 
-  const note = useCallback((text: string) => {
+  const note = useCallback((text: string, question?: string) => {
     setStarted(true);
     setMessages((m) => [
       ...m,
+      ...(question ? [{ id: `u-${++seq.current}`, role: "user" as const, text: question }] : []),
       {
         id: `n-${++seq.current}`,
         role: "assistant",

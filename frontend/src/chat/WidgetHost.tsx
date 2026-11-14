@@ -6,6 +6,7 @@ import { colors, fonts, fontSize } from "@/theme";
 import { TransactionList } from "@/widgets/common/TransactionList";
 import { WidgetCard } from "@/widgets/common/WidgetCard";
 
+import { postChatNote } from "./chatNote";
 import { registry, type WidgetHostApi } from "./registry";
 
 interface Props {
@@ -58,23 +59,58 @@ export function explainMessage(widget: Widget, formatCents?: (cents: number) => 
   return `Explain in simple words: ${CARD_NAMES[widget.type] ?? "this card"}`;
 }
 
-/** A question the customer would ask, not a command word. */
-const ASK_LABEL: Record<string, string> = {
-  challenge_suggestions: "Why this goal?",
-  challenge_progress: "Why does this matter?",
-};
+interface Ask {
+  /** The question on the button, also shown as the customer's message. */
+  label: string;
+  /** A ready answer built from the card's own numbers: instant, no model call. */
+  answer?: string;
+}
+
+/** The button asks a concrete question; where the card already holds the answer, the chat shows it at once. */
+export function askFor(widget: Widget, fmt: (cents: number) => string): Ask {
+  const data = widget.data as {
+    concept?: { text?: string } | null;
+    challenge?: { status?: string };
+    items?: { rule?: { amount_cents?: number | null }; baseline_cents?: number | null }[];
+  } | null;
+  if (widget.type === "challenge_suggestions") {
+    const first = data?.items?.[0];
+    const goal = first?.rule?.amount_cents;
+    const before = first?.baseline_cents;
+    if (typeof goal === "number" && typeof before === "number") {
+      return {
+        label: "Why this goal?",
+        answer:
+          `Your goal is half of what you spent on this last week (${fmt(before)}), rounded down to whole euros: ${fmt(goal)}. ` +
+          "It is a first step that is realistic, not a punishment. When the week ends you can repeat it or try another challenge.",
+      };
+    }
+    return { label: "Why this goal?" };
+  }
+  if (widget.type === "challenge_progress") {
+    const finished = data?.challenge?.status === "won" || data?.challenge?.status === "lost";
+    const label = finished ? "Is one good week enough?" : "What does this add up to in a year?";
+    return data?.concept?.text ? { label, answer: data.concept.text } : { label };
+  }
+  return { label: "What does this mean?" };
+}
 
 function ExplainButton({ widget, api }: { widget: Widget; api: WidgetHostApi }) {
+  const ask = askFor(widget, api.formatCents);
+  const onPress = () => {
+    if (ask.answer && postChatNote(ask.answer, ask.label)) return;
+    api.sendChat({ message: explainMessage(widget, api.formatCents) });
+  };
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Explain this card"
-      onPress={() => api.sendChat({ message: explainMessage(widget, api.formatCents) })}
+      onPress={onPress}
       style={styles.explain}
       testID="explain-button"
     >
       <Icon name="lightbulb-on-outline" size={16} />
-      <Text style={styles.explainText}>{ASK_LABEL[widget.type] ?? "What does this mean?"}</Text>
+      <Text style={styles.explainText}>{ask.label}</Text>
     </Pressable>
   );
 }

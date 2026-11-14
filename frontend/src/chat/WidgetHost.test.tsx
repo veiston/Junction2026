@@ -46,3 +46,33 @@ describe("Explain button", () => {
     expect(screen.queryByLabelText("Explain this card")).toBeNull();
   });
 });
+
+describe("the button asks what it says and the chat answers at once", () => {
+  it("running challenge: the customer's message is the button text, the answer is the card's own numbers", () => {
+    const { registerChatNote } = require("./chatNote");
+    const seen: { text: string; question?: string }[] = [];
+    const off = registerChatNote((text: string, question?: string) => seen.push({ text, question }));
+    const api = show("challenge_progress", {
+      ...(mocks.challenge_progress as object),
+      concept: { id: "small_purchases_add_up", title: "Small purchases add up", text: "At EUR 99.26 a week it adds up to about EUR 5161.52 a year." },
+    });
+    expect(screen.getByText("What does this add up to in a year?")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Explain this card"));
+    off();
+    expect(seen).toEqual([
+      { text: "At EUR 99.26 a week it adds up to about EUR 5161.52 a year.", question: "What does this add up to in a year?" },
+    ]);
+    expect(api.sendChat).not.toHaveBeenCalled();
+  });
+
+  it("suggestion: why this goal is answered from its own numbers", () => {
+    const { registerChatNote } = require("./chatNote");
+    const seen: { text: string; question?: string }[] = [];
+    const off = registerChatNote((text: string, question?: string) => seen.push({ text, question }));
+    show("challenge_suggestions", mocks.challenge_suggestions);
+    fireEvent.press(screen.getByLabelText("Explain this card"));
+    off();
+    expect(seen[0].question).toBe("Why this goal?");
+    expect(seen[0].text).toMatch(/half of what you spent.*99,26.*49,00/);
+  });
+});
