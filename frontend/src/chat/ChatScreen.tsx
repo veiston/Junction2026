@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api as apiClient } from "@/api/client";
@@ -7,30 +7,50 @@ import { colors, fonts, spacing } from "@/theme";
 import { formatCents } from "@/widgets/common/Money";
 
 import { Composer } from "./Composer";
-import { FunctionCards } from "./FunctionCards";
+import { FUNCTIONS, FunctionCards } from "./FunctionCards";
 import { MessageList } from "./MessageList";
 import { SeeAllPanel } from "./SeeAllPanel";
 import { SuggestionChips } from "./SuggestionChips";
+import { TypingBubble } from "./TypingBubble";
 import type { WidgetHostApi } from "./registry";
+import { typingSteps } from "./typingSteps";
 import type { UseChat } from "./useChat";
 
-/** Chat UI: all data comes from the `chat` hook result passed in. */
-export function ChatScreen({ chat }: { chat: UseChat }) {
-  const { messages, busy, error, send, sendChip, retry, started } = chat;
+/** Chat UI: all data comes from the `chat` hook result passed in. `today` (demo clock) names the month. */
+export function ChatScreen({ chat, today }: { chat: UseChat; today?: string }) {
+  const { messages, busy, error, send, sendChip, pending, retry, started } = chat;
   const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
+  const scroll = useRef<ScrollView>(null);
+
+  /** A function card or a widget's quick action: show the customer's prompt first, then ask. */
+  const pick = useCallback(
+    (action: QuickAction) => sendChip(action, FUNCTIONS.find((f) => f.action === action)?.prompt),
+    [sendChip],
+  );
 
   const host: WidgetHostApi = useMemo(
     () => ({
       request: apiClient.request,
-      sendChat: (req) => (req.quick_action ? sendChip(req.quick_action as QuickAction) : send(req.message ?? "")),
+      sendChat: (req) => (req.quick_action ? pick(req.quick_action as QuickAction) : send(req.message ?? "")),
       formatCents,
     }),
-    [send, sendChip],
+    [send, pick],
   );
+
+  const steps = useMemo(() => typingSteps(pending, today), [pending, today]);
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scroll}
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        // Like a messaging app: keep the newest bubble in view.
+        onContentSizeChange={() => {
+          if (started && !seeAll) scroll.current?.scrollToEnd({ animated: true });
+        }}
+      >
         {seeAll ? (
           <SeeAllPanel title={seeAll.title} filter={seeAll.filter} onClose={() => setSeeAll(null)} />
         ) : (
@@ -43,15 +63,11 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
                   </Text>
                   <Text style={styles.sub}>Choose an option or ask your own question.</Text>
                 </View>
-                <FunctionCards onPick={sendChip} disabled={busy} />
+                <FunctionCards onPick={pick} disabled={busy} />
               </>
             ) : null}
             <MessageList messages={messages} api={host} onSend={send} onSeeAll={setSeeAll} />
-            {busy ? (
-              <Text accessibilityRole="progressbar" style={styles.status}>
-                Thinking…
-              </Text>
-            ) : null}
+            {busy ? <TypingBubble steps={steps} /> : null}
             {error ? (
               <View accessibilityRole="alert" style={styles.error}>
                 <Text style={styles.errorText}>{error}</Text>
@@ -79,7 +95,6 @@ const styles = StyleSheet.create({
   intro: { gap: 4, paddingVertical: 4 },
   heading: { fontSize: 24, lineHeight: 30, fontFamily: fonts.medium, color: colors.text },
   sub: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted },
-  status: { fontSize: 15, fontFamily: fonts.regular, color: colors.textMuted },
   error: { gap: spacing.sm },
   errorText: { fontSize: 15, fontFamily: fonts.regular, color: colors.text },
   retry: { minHeight: 44, justifyContent: "center" },

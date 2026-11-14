@@ -30,7 +30,7 @@ export default function AiScreen() {
             </Pressable>
           </View>
         )}
-        {session.status === "ready" && <ChatScreen chat={chat} />}
+        {session.status === "ready" && <ChatScreen chat={chat} today={session.me.today} />}
       </View>
     </SafeAreaView>
   );

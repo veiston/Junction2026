@@ -15,7 +15,10 @@ export interface UseChat {
   /** Friendly error text for the last failed turn; null when none. */
   error: string | null;
   send: (text: string) => void;
-  sendChip: (action: QuickAction) => void;
+  /** Sends a quick action; `prompt` is shown as the customer's bubble first (like a typed message). */
+  sendChip: (action: QuickAction, prompt?: string) => void;
+  /** The request being answered right now (drives the typing bubble); null when idle. */
+  pending: ChatRequest | null;
   /** Re-sends the last failed turn. */
   retry: () => void;
   /** False on the first view (three function buttons shown); true once a message or function was sent. */
@@ -29,6 +32,7 @@ export function useChat(): UseChat {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [pending, setPending] = useState<ChatRequest | null>(null);
   const conversationId = useRef<string | null>(null);
   const failed = useRef<ChatRequest | null>(null);
   const inFlight = useRef(false);
@@ -42,6 +46,7 @@ export function useChat(): UseChat {
     const mine = generation.current;
     setStarted(true);
     setBusy(true);
+    setPending(req);
     setError(null);
     failed.current = null;
     try {
@@ -81,6 +86,7 @@ export function useChat(): UseChat {
       if (mine === generation.current) {
         inFlight.current = false;
         setBusy(false);
+        setPending(null);
       }
     }
   }, []);
@@ -96,7 +102,9 @@ export function useChat(): UseChat {
   );
 
   const sendChip = useCallback(
-    (action: QuickAction) => {
+    (action: QuickAction, prompt?: string) => {
+      if (inFlight.current) return;
+      if (prompt) setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: prompt }]);
       void post({ quick_action: action });
     },
     [post],
@@ -113,9 +121,10 @@ export function useChat(): UseChat {
     failed.current = null;
     setMessages([]);
     setBusy(false);
+    setPending(null);
     setError(null);
     setStarted(false);
   }, []);
 
-  return { messages, busy, error, send, sendChip, retry, started, reset };
+  return { messages, busy, error, send, sendChip, pending, retry, started, reset };
 }
