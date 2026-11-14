@@ -41,5 +41,9 @@ def get_transaction_service(request: Request) -> Any:
     return _container(request).transactions
 
 
+def get_plan_service(request: Request) -> Any:
+    return _container(request).plan
+
+
 def get_habits_service(request: Request) -> Any:
     return _container(request).habits

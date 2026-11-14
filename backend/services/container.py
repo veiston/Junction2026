@@ -12,11 +12,13 @@ from models.repositories.clock import DemoClock
 from models.repositories.sqlite_conversation_repo import SqliteConversationRepository
 from models.repositories.sqlite_customer_repo import SqliteCustomerRepository
 from models.repositories.sqlite_habits_repo import SqliteChallengeRepository, SqliteLimitRepository
+from models.repositories.sqlite_monthly_spend_repo import SqliteMonthlySpendRepository
 from models.repositories.sqlite_transaction_repo import SqliteTransactionRepository
 from services.chat.orchestrator import ChatOrchestrator
 from services.chat.tool_registry import default_registry
 from services.habits.service import HabitsServiceImpl
 from services.habits.tools import bind_service as bind_habits_tools
+from services.plan.plan_service import PlanServiceImpl
 from services.session_service import DATA_TO, SessionServiceImpl
 from services.transaction_service import TransactionServiceImpl
 
@@ -26,12 +28,22 @@ class _NoKeyLlm:
         raise LlmUnavailable("GEMINI_API_KEY is not set.")
 
 
+def _with_local_model(cloud, config: Config):
+    # Money figures stay on the local model; Gemini only sees non-sensitive turns.
+    from adapters.llm.ollama_client import OllamaClient
+    from adapters.llm.routing_llm import PrivacyRoutingLlm
+
+    local = OllamaClient.from_config(config.ollama_base_url, config.ollama_api_key, config.ollama_model)
+    return PrivacyRoutingLlm(cloud, local)
+
+
 def build_services(config: Config, llm=None) -> SimpleNamespace:
     path = Path(config.db_path)
     db = Database(path if path.is_absolute() else PROJECT_ROOT / path)
     clock = DemoClock(config.demo_today, max_date=DATA_TO)
     transactions = SqliteTransactionRepository(db, clock)
     tx_service = TransactionServiceImpl(transactions, clock)
+    plan = PlanServiceImpl(transactions, SqliteMonthlySpendRepository(db, clock), clock)
     habits = HabitsServiceImpl(SqliteLimitRepository(db), SqliteChallengeRepository(db), transactions, clock)
     bind_habits_tools(habits)
     if llm is None:
@@ -43,6 +55,10 @@ def build_services(config: Config, llm=None) -> SimpleNamespace:
             llm = GeminiClient(genai.Client(api_key=config.gemini_api_key), config.gemini_model)
         else:
             llm = _NoKeyLlm()
-    chat = ChatOrchestrator(llm, default_registry(tx_service), SqliteConversationRepository(db), clock)
+        if config.ollama_base_url:
+            llm = _with_local_model(llm, config)
+    chat = ChatOrchestrator(llm, default_registry(tx_service, plan), SqliteConversationRepository(db), clock)
     session = SessionServiceImpl(SqliteCustomerRepository(db), clock, config.jwt_secret)
-    return SimpleNamespace(session=session, chat=chat, transactions=tx_service, habits=habits, clock=clock)
+    return SimpleNamespace(
+        session=session, chat=chat, transactions=tx_service, plan=plan, habits=habits, clock=clock
+    )

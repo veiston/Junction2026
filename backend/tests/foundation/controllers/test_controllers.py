@@ -40,8 +40,8 @@ def protected():
 
 
 def slice_ops():
-    # built slices (understand, habits) answer for real; the others are still 501 stubs
-    return [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand", "habits")]
+    # built slices answer for real; any slice not listed here is still a 501 stub
+    return [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand", "plan", "habits")]
 
 
 def test_every_openapi_operation_is_mounted(app):

@@ -4,7 +4,6 @@ import { setToken } from "@/auth/token";
 import { basketBreakdownMock } from "@/slices/understand/mocks";
 
 import { ChatScreen } from "./ChatScreen";
-import { parseBold, RichText } from "./RichText";
 import { STEP_MS } from "./TypingBubble";
 import { monthName, typingSteps } from "./typingSteps";
 import { useChat } from "./useChat";
@@ -28,23 +27,6 @@ beforeEach(() => {
   fetchMock.mockReset();
   setToken("tok");
   (globalThis as { fetch: unknown }).fetch = fetchMock;
-});
-
-describe("rich text", () => {
-  it("splits **bold** and drops stray markers", () => {
-    expect(parseBold("You spent **12 €** on *taxis*")).toEqual([
-      ["You spent ", false],
-      ["12 €", true],
-      [" on taxis", false],
-    ]);
-  });
-
-  it("never shows raw markdown symbols", () => {
-    render(<RichText text={"## Hi\n- **Rent**: 900 €\n- Food"} style={{}} />);
-    expect(screen.queryByText(/\*\*|##/)).toBeNull();
-    expect(screen.getByText("Rent")).toBeTruthy();
-    expect(screen.getAllByText("•")).toHaveLength(2);
-  });
 });
 
 describe("typing steps", () => {

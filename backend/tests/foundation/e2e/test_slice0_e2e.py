@@ -93,13 +93,16 @@ def test_401_matrix(client, method, path, kind):
 
 
 def test_every_slice_route_is_501(client, token):
-    slice_ops = [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand", "habits")]
-    assert slice_ops
+    slice_ops = [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand", "plan", "habits")]
+    if not slice_ops:
+        pytest.skip("every slice is built: no 501 stub routes are left")
     for m, p in slice_ops:
         resp = client.request(m, p.replace("{limit_id}", "1"), token=token, json_body=BODIES.get(p))
         assert (resp.status, resp.json["error"]["code"]) == (501, "NOT_IMPLEMENTED"), (m, p)
 
 
+@pytest.mark.skip(reason="every chip has its tool in the real app now; the coming-soon path is covered by "
+                         "test_chip_without_tools_is_coming_soon_and_skips_llm in test_orchestrator.py")
 def test_chat_quick_action_chip_says_coming_soon(client, token):
     resp = client.post("/chat", token=token, json_body={"quick_action": "plan_my_finances"})
     # the orchestrator turns a not-yet-built chip into a friendly "coming soon" message (no widgets)

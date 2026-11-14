@@ -31,6 +31,7 @@ export interface UseChat {
   reset: () => void;
 }
 
+/** What the customer "says" when they pick a function card (same wording as the backend). */
 export const QUICK_ACTION_TEXT: Record<QuickAction, string> = {
   understand_my_money: "Show me where my money goes",
   plan_my_finances: "Help me save for what I want",

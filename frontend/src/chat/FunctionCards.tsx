@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon, type IconName } from "@/components/Icon";
 import type { QuickAction } from "@/contracts";
-import { coachColors, colors, fonts, spacing } from "@/theme";
+import { colors, fonts } from "@/theme";
 
 /** `prompt` (optional) is what the customer "says" when the card is tapped; default QUICK_ACTION_TEXT. */
 export const FUNCTIONS: { action: QuickAction; title: string; description: string; prompt?: string; icon: IconName }[] = [
@@ -42,10 +42,10 @@ export function FunctionCards({ onPick, disabled }: { onPick: (a: QuickAction) =
         >
           <View style={styles.head}>
             <View style={styles.iconCircle}>
-              <Icon name={f.icon} size={18} color={colors.text} />
+              <Icon name={f.icon} size={18} color={colors.primary} />
             </View>
             <Text style={styles.title}>{f.title}</Text>
-            <Icon name="chevron-right" size={20} color={colors.textMuted} />
+            <Icon name="chevron-right" size={20} color={colors.primary} />
           </View>
           <Text style={styles.description}>{f.description}</Text>
         </Pressable>
@@ -60,21 +60,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: coachColors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderColor: "#D2E5D6",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   disabled: { opacity: 0.5 },
-  head: { flexDirection: "row", alignItems: "center", gap: 10 },
+  head: { flexDirection: "row", alignItems: "center", gap: 12 },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: coachColors.surfaceMuted,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#DDF0E2",
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { flex: 1, fontSize: 16, fontFamily: fonts.medium, color: colors.text },
-  description: { fontSize: 12, lineHeight: 17, fontFamily: fonts.regular, color: colors.textMuted, paddingLeft: 42 },
+  title: { flex: 1, fontSize: 16, fontFamily: fonts.semibold, color: "#14331E" },
+  description: { fontSize: 12, lineHeight: 17, fontFamily: fonts.regular, color: colors.textMuted, paddingLeft: 48 },
 });

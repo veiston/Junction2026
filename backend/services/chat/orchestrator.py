@@ -25,7 +25,7 @@ from services.chat.tool_registry import ToolRegistry, UnknownTool
 log = logging.getLogger(__name__)
 
 MAX_TOOL_ROUNDS = 4
-MAX_WIDGETS = 3
+MAX_WIDGETS = 1  # one chart per answer keeps the chat readable
 
 
 _HELP = re.compile(r"\b(what can you do|what do you do|how can you help|what are you able|what can i ask)\b", re.I)
@@ -50,7 +50,7 @@ class ChatOrchestrator:
         self._clock = clock
 
     # ------------------------------------------------------------------ public
-    def handle(self, customer_id: str, request: ChatRequest) -> ChatResponse:
+    def handle(self, customer_id: str, request: ChatRequest, llm_override: LlmClient | None = None) -> ChatResponse:
         if (request.message is None) == (request.quick_action is None):
             raise ValidationFailed("Send exactly one of message or quick_action.")
         if request.message is not None and not request.message.strip():
@@ -83,14 +83,24 @@ class ChatOrchestrator:
         self._conversations.append(conv_id, "user", user_text)
         ctx = ToolContext(customer_id=customer_id, today=self._clock.today(), conversation_id=conv_id)
         pills: list[str] = []
-        text, widgets, sources = self._loop(ctx, history, user_text, force_tool, pills)
+        text, widgets, sources = self._loop(ctx, history, user_text, force_tool, pills, llm_override=llm_override)
         return self._finish(conv_id, text, widgets, sources, asks_for_help(user_text), pills)
 
     # ------------------------------------------------------------------ loop
     def _loop(
-        self, ctx: ToolContext, history: list[LlmMessage], user_text: str, force_tool: str | None,
+        self,
+        ctx: ToolContext,
+        history: list[LlmMessage],
+        user_text: str,
+        force_tool: str | None,
         pills: list[str] | None = None,
+        llm_override: LlmClient | None = None,
     ) -> tuple[str, list[Widget], list[Source]]:
+        client = llm_override or self._llm
+        if llm_override and force_tool and hasattr(self._llm, "generate"):
+            from adapters.llm.routing_llm import PrivacyRoutingLlm
+            client = PrivacyRoutingLlm(self._llm, llm_override)
+
         messages = [
             LlmMessage(role="system", text=prompts.SYSTEM_PROMPT.format(today=ctx.today.isoformat())),
             *history,
@@ -103,7 +113,7 @@ class ChatOrchestrator:
 
         for round_no in range(MAX_TOOL_ROUNDS + 1):
             try:
-                turn: LlmTurn = self._llm.generate(
+                turn: LlmTurn = client.generate(
                     messages, specs, force_tool=force_tool if round_no == 0 else None
                 )
             except LlmUnavailable as e:

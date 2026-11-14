@@ -21,6 +21,11 @@ class Config:
     db_path: str = "db/money_coach.sqlite3"
     coach_origin: str = "http://localhost:5173"
     demo_origin: str = "http://localhost:8081"
+    ollama_base_url: str = ""  # empty = no local model, Gemini answers everything
+    ollama_api_key: str = ""
+    ollama_model: str = "gemma4:e4b"
+    elevenlabs_api_key: str = ""
+    elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None) -> Config:
@@ -35,4 +40,9 @@ class Config:
             db_path=e.get("DB_PATH", d.db_path),
             coach_origin=e.get("COACH_ORIGIN", d.coach_origin),
             demo_origin=e.get("DEMO_ORIGIN", d.demo_origin),
+            ollama_base_url=e.get("OLLAMA_BASE_URL", d.ollama_base_url),
+            ollama_api_key=e.get("OLLAMA_API_KEY", d.ollama_api_key),
+            ollama_model=e.get("OLLAMA_MODEL", d.ollama_model),
+            elevenlabs_api_key=e.get("ELEVENLABS_API_KEY", d.elevenlabs_api_key),
+            elevenlabs_voice_id=e.get("ELEVENLABS_VOICE_ID", d.elevenlabs_voice_id),
         )

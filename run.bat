@@ -14,6 +14,6 @@ if not exist db\money_coach.sqlite3 (
 echo Starting the backend in its own window. Close that window to stop the backend.
 start "Money Coach backend" cmd /k "uv run --directory backend main.py"
 
-set CI=1
+set CI=0
 echo Starting the app on http://localhost:8081 ...
 pnpm --dir frontend exec expo start --web --port 8081
