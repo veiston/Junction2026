@@ -1,24 +1,34 @@
 import os
 from pathlib import Path
-from typing import Literal
 
 from dotenv import load_dotenv
 from google import genai
-from pydantic import BaseModel
+
+from conversation import SYSTEM_PROMPT, Message
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 MODEL = os.environ["GEMINI_DEFAULT_MODEL"]
 
-gemini = genai.Client()  # reads GOOGLE_API_KEY or GEMINI_API_KEY
-
-
-class Message(BaseModel):
-    role: Literal["user", "model"]
-    text: str
-
 
 def chat(messages: list[Message]) -> str:
-    contents = [{"role": message.role, "parts": [{"text": message.text}]} for message in messages]
-    response = gemini.models.generate_content(model=MODEL, contents=contents).text
+    gemini = genai.Client()  # reads GOOGLE_API_KEY or GEMINI_API_KEY
+    contents = [to_gemini(message) for message in messages]
+    config = {"system_instruction": SYSTEM_PROMPT}
+    response = gemini.models.generate_content(model=MODEL, contents=contents, config=config).text
     return response
+
+
+# Gemini reads images and PDFs natively
+def to_gemini(message: Message) -> dict:
+    files = [{"inline_data": {"mime_type": file.mime_type, "data": file.data}} for file in message.attachments]
+    return {"role": message.role, "parts": [{"text": message.text}, *files]}
+
+
+# Module test (Won't be accessed when imported)
+if __name__ == "__main__":
+    from fastapi.testclient import TestClient
+    from main import app
+
+    question = [{"role": "user", "text": "Would a raw banana be a good fit for my diet?"}]
+    print(TestClient(app).post("/chat", json=question).json())

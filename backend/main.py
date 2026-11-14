@@ -1,10 +1,10 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from google.genai.errors import APIError
 
 import gemini_ai
-from gemini_ai import Message
+import local_ai
+from conversation import Message
 
 HOST = "0.0.0.0"  # reachable from device on the same network
 PORT = 8000
@@ -19,6 +19,12 @@ app.add_middleware(
 @app.post("/chat")
 def chat(messages: list[Message]) -> str:
     return gemini_ai.chat(messages)
+
+
+# Call the local ollama model
+@app.post("/chat/local")
+def chat_local(messages: list[Message]) -> str:
+    return local_ai.chat(messages)
 
 
 if __name__ == "__main__":
