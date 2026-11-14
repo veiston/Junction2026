@@ -294,11 +294,11 @@ describe("new challenge button", () => {
   });
 });
 
-describe("what the chat says after Start", () => {
-  it("posts a plain explanation: goal, what to do, how it ends", async () => {
-    const { registerChatNote } = require("@/chat/chatNote");
-    const seen: string[] = [];
-    const off = registerChatNote((t: string) => seen.push(t));
+describe("what the assistant is told after Start", () => {
+  it("asks the assistant, with the goal and how it works as facts", async () => {
+    const { registerChatAsk } = require("@/chat/chatAsk");
+    const seen: { question: string; facts: string }[] = [];
+    const off = registerChatAsk((question: string, facts: string) => seen.push({ question, facts }));
     const request = jest.fn().mockResolvedValue(habitsMocks.challenge_progress);
     show("challenge_suggestions", habitsMocks.challenge_suggestions, makeApi(request));
     await act(async () => {
@@ -306,10 +306,9 @@ describe("what the chat says after Start", () => {
     });
     off();
     expect(seen).toHaveLength(1);
-    expect(seen[0]).toContain("Your 7-day challenge has started.");
-    expect(seen[0]).toMatch(/no more than .*49,00/);
-    expect(seen[0]).toContain("Nothing is blocked and no money moves");
-    expect(seen[0]).toContain("How it ends");
-    expect(seen[0]).toContain("How is my challenge going?");
+    expect(seen[0].question).toBe("I started the challenge. What happens now?");
+    expect(seen[0].facts).toMatch(/no more than .*49,00/);
+    expect(seen[0].facts).toContain("nothing is blocked and no money moves");
+    expect(seen[0].facts).toContain("red dot on the bell");
   });
 });

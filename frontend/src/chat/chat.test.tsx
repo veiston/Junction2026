@@ -209,4 +209,17 @@ describe("first view and the three functions", () => {
     expect(screen.queryByText("Too late")).toBeNull();
     expect(screen.getByText("Understand My Money")).toBeTruthy();
   });
+
+  it("a card question shows only the question and sends the card's numbers to the assistant", async () => {
+    fetchMock.mockResolvedValueOnce(reply("Because it is a realistic first step."));
+    render(<Harness />);
+    await act(async () => {
+      const { postChatAsk } = require("./chatAsk");
+      postChatAsk("Why this goal?", "Goal 49,00 EUR, last week 99,26 EUR.");
+    });
+    await waitFor(() => expect(screen.getByText("Because it is a realistic first step.")).toBeTruthy());
+    expect(screen.getByText("Why this goal?")).toBeTruthy();
+    expect(screen.queryByText(/Card facts/)).toBeNull();
+    expect(bodyOf(fetchMock.mock.calls[0]).message).toBe("Why this goal?\n\nCard facts: Goal 49,00 EUR, last week 99,26 EUR.");
+  });
 });

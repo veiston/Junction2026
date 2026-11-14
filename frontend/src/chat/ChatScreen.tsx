@@ -12,7 +12,7 @@ import { MessageList } from "./MessageList";
 import { SeeAllPanel } from "./SeeAllPanel";
 import { SuggestionChips } from "./SuggestionChips";
 import type { WidgetHostApi } from "./registry";
-import { registerChatNote } from "./chatNote";
+import { registerChatAsk } from "./chatAsk";
 import { QUICK_ACTION_TEXT, type UseChat } from "./useChat";
 
 /** Chat UI: all data comes from the `chat` hook result passed in. */
@@ -23,10 +23,10 @@ const WAIT_TEXT: Record<string, string> = {
 };
 
 export function ChatScreen({ chat }: { chat: UseChat }) {
-  const { messages, busy, error, send, sendChip, note, retry, started } = chat;
+  const { messages, busy, error, send, sendChip, askAbout, retry, started } = chat;
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const waitText = (lastUser && "text" in lastUser && WAIT_TEXT[lastUser.text]) || "Looking at your data. This takes a few seconds.";
-  useEffect(() => registerChatNote(note), [note]);
+  useEffect(() => registerChatAsk(askAbout), [askAbout]);
   const scroll = useRef<ScrollView>(null);
   const ys = useRef<Record<string, number>>({});
   const listY = useRef(0);

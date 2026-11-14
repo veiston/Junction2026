@@ -18,8 +18,8 @@ export interface UseChat {
   sendChip: (action: QuickAction) => void;
   /** Asks the assistant without adding a customer bubble. */
   ask: (text: string) => void;
-  /** Adds a fixed assistant message without calling the model. */
-  note: (text: string, question?: string) => void;
+  /** Asks the assistant a question about a card; only the question is shown as the customer's message. */
+  askAbout: (question: string, facts: string) => void;
   /** Re-sends the last failed turn. */
   retry: () => void;
   /** False on the first view (three function buttons shown); true once a message or function was sent. */
@@ -113,23 +113,13 @@ export function useChat(): UseChat {
     [post],
   );
 
-  const note = useCallback((text: string, question?: string) => {
-    setStarted(true);
-    setMessages((m) => [
-      ...m,
-      ...(question ? [{ id: `u-${++seq.current}`, role: "user" as const, text: question }] : []),
-      {
-        id: `n-${++seq.current}`,
-        role: "assistant",
-        created_at: new Date().toISOString(),
-        text,
-        widgets: [],
-        suggestions: [],
-        sources: [],
-        disclaimer: null,
-      },
-    ]);
-  }, []);
+  const askAbout = useCallback(
+    (question: string, facts: string) => {
+      setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: question }]);
+      void post({ message: `${question}\n\nCard facts: ${facts}`.slice(0, 1000) }); // the API accepts at most 1000 characters
+    },
+    [post],
+  );
 
   const sendChip = useCallback(
     (action: QuickAction) => {
@@ -154,5 +144,5 @@ export function useChat(): UseChat {
     setStarted(false);
   }, []);
 
-  return { messages, busy, error, send, sendChip, ask, note, retry, started, reset };
+  return { messages, busy, error, send, sendChip, ask, askAbout, retry, started, reset };
 }

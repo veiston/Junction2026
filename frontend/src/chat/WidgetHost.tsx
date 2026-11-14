@@ -2,11 +2,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { Widget } from "@/contracts";
 import { Icon } from "@/components/Icon";
-import { colors, fonts, fontSize } from "@/theme";
+import { coachColors, colors, fonts, fontSize } from "@/theme";
 import { TransactionList } from "@/widgets/common/TransactionList";
 import { WidgetCard } from "@/widgets/common/WidgetCard";
 
-import { postChatNote } from "./chatNote";
+import { postChatAsk } from "./chatAsk";
 import { registry, type WidgetHostApi } from "./registry";
 
 interface Props {
@@ -62,56 +62,133 @@ export function explainMessage(widget: Widget, formatCents?: (cents: number) => 
 interface Ask {
   /** The question on the button, also shown as the customer's message. */
   label: string;
-  /** A ready answer built from the card's own numbers: instant, no model call. */
+  /** The card's own numbers, sent with the question so the assistant answers from them. */
   answer?: string;
 }
 
-/** The button asks a concrete question; where the card already holds the answer, the chat shows it at once. */
-export function askFor(widget: Widget, fmt: (cents: number) => string): Ask {
-  const data = widget.data as {
-    concept?: { text?: string } | null;
-    challenge?: { status?: string };
-    items?: { rule?: { amount_cents?: number | null }; baseline_cents?: number | null }[];
-  } | null;
+type Dict = Record<string, unknown>;
+type Challenge = { status?: string; end_date?: string; rule?: { amount_cents?: number | null } };
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+/**
+ * One purpose for the challenge cards: spend less on one habit by testing a small change for a week.
+ * The buttons are the questions the customer has at that moment; each is answered from the card's own numbers.
+ */
+export function asksFor(widget: Widget, fmt: (cents: number) => string): Ask[] {
+  const d = widget.data as unknown as Dict | null;
   if (widget.type === "challenge_suggestions") {
-    const first = data?.items?.[0];
-    const goal = first?.rule?.amount_cents;
-    const before = first?.baseline_cents;
-    if (typeof goal === "number" && typeof before === "number") {
-      return {
+    const first = (d?.items as Dict[] | undefined)?.[0];
+    const goal = num((first?.rule as { amount_cents?: number | null } | undefined)?.amount_cents);
+    const reason = typeof first?.reason === "string" ? first.reason : null;
+    if (!first || goal === null || !reason) return [{ label: "Why this challenge?" }];
+    const saving = num(first.estimated_saving_cents) ?? 0;
+    const yearly = num(first.yearly_saving_cents);
+    return [
+      {
+        label: "Why this habit?",
+        answer: `${reason} It is a regular everyday cost, so a small change shows up quickly.`,
+      },
+      {
         label: "Why this goal?",
+        answer: `Your goal is half of last week: ${fmt(goal)}, rounded down to whole euros. It is a realistic first step, not a punishment.`,
+      },
+      {
+        label: "What do I gain?",
+        answer: `If you reach the goal, you keep about ${fmt(saving)} this week${yearly !== null ? `, roughly ${fmt(yearly)} a year if you keep it up (an estimate)` : ""}.`,
+      },
+      {
+        label: "How does it work?",
         answer:
-          `Your goal is half of what you spent on this last week (${fmt(before)}), rounded down to whole euros: ${fmt(goal)}. ` +
-          "It is a first step that is realistic, not a punishment. When the week ends you can repeat it or try another challenge.",
-      };
-    }
-    return { label: "Why this goal?" };
+          "It lasts 7 days. I count your purchases for you. Nothing is blocked and no money moves. " +
+          "After 7 days I compare with the week before and tell you if you reached your goal.",
+      },
+    ];
   }
   if (widget.type === "challenge_progress") {
-    const finished = data?.challenge?.status === "won" || data?.challenge?.status === "lost";
-    const label = finished ? "Is one good week enough?" : "What does this add up to in a year?";
-    return data?.concept?.text ? { label, answer: data.concept.text } : { label };
+    const c = (d?.challenge ?? {}) as Challenge;
+    const goal = c.rule?.amount_cents;
+    const current = num(d?.current_amount_cents) ?? 0;
+    const before = num(d?.baseline_cents);
+    const days = num(d?.days_left);
+    if (c.status === "won" || c.status === "lost") {
+      const won = c.status === "won";
+      const compare = before !== null ? `You spent ${fmt(current)} this week and ${fmt(before)} the week before.` : `You spent ${fmt(current)} this week.`;
+      return [
+        {
+          label: "What next?",
+          answer: won
+            ? "Repeat it once more to make it a habit, or try another challenge."
+            : "That is fine. Try again for 7 days or pick another challenge.",
+        },
+        {
+          label: "What does the result mean?",
+          answer: `${compare} ${won ? "You reached your goal." : "You did not reach your goal this time."}`,
+        },
+        {
+          label: "Is one good week enough?",
+          answer: "One good week is a good sign, not proof of a new habit. Repeating it tells you more.",
+        },
+      ];
+    }
+    return [
+      {
+        label: "What do I do now?",
+        answer: "Nothing special: live as usual and I count your purchases. Nothing is blocked and no money moves.",
+      },
+      {
+        label: "How am I doing?",
+        answer:
+          `So far you spent ${fmt(current)}${typeof goal === "number" ? ` of ${fmt(goal)}` : ""}` +
+          `${days !== null ? `, ${days} ${days === 1 ? "day" : "days"} left` : ""}. ` +
+          (d?.on_track === false ? "At this pace you may go over, so a skipped purchase would help." : "You are on track."),
+      },
+      {
+        label: "How will I know I won?",
+        answer: `If you spend no more than ${typeof goal === "number" ? fmt(goal) : "the goal"}${c.end_date ? ` until ${c.end_date}` : ""}, you reached it. I compare with the week before.`,
+      },
+      {
+        label: "What if I go over?",
+        answer: "Nothing bad happens. It shows as not reached, and you can try again or pick another challenge.",
+      },
+    ];
   }
-  return { label: "What does this mean?" };
+  return [];
 }
 
-function ExplainButton({ widget, api }: { widget: Widget; api: WidgetHostApi }) {
-  const ask = askFor(widget, api.formatCents);
-  const onPress = () => {
-    if (ask.answer && postChatNote(ask.answer, ask.label)) return;
-    api.sendChat({ message: explainMessage(widget, api.formatCents) });
-  };
+function ExplainButtons({ widget, api }: { widget: Widget; api: WidgetHostApi }) {
+  const asks = asksFor(widget, api.formatCents);
+  if (asks.length === 0) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Explain this card"
+        onPress={() => api.sendChat({ message: explainMessage(widget, api.formatCents) })}
+        style={styles.explain}
+        testID="explain-button"
+      >
+        <Icon name="lightbulb-on-outline" size={16} />
+        <Text style={styles.explainText}>What does this mean?</Text>
+      </Pressable>
+    );
+  }
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Explain this card"
-      onPress={onPress}
-      style={styles.explain}
-      testID="explain-button"
-    >
-      <Icon name="lightbulb-on-outline" size={16} />
-      <Text style={styles.explainText}>{ask.label}</Text>
-    </Pressable>
+    <View style={styles.chips} testID="explain-buttons">
+      {asks.map((ask) => (
+        <Pressable
+          key={ask.label}
+          accessibilityRole="button"
+          accessibilityLabel={ask.label}
+          hitSlop={4}
+          onPress={() => {
+            if (ask.answer && postChatAsk(ask.label, ask.answer)) return;
+            api.sendChat({ message: ask.label });
+          }}
+          style={styles.chip}
+        >
+          <Text style={styles.chipText}>{ask.label}</Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
@@ -137,7 +214,7 @@ export function WidgetHost(props: Props) {
   return (
     <View style={styles.wrap}>
       <Rendered {...props} />
-      {widget.type === "concept_note" ? null : <ExplainButton widget={widget} api={api} />}
+      {widget.type === "concept_note" ? null : <ExplainButtons widget={widget} api={api} />}
     </View>
   );
 }
@@ -153,6 +230,17 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 8,
   },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingVertical: 8 },
+  chip: {
+    minHeight: 32,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: coachColors.border,
+    backgroundColor: colors.surface,
+  },
+  chipText: { fontFamily: fonts.medium, fontSize: 13, color: colors.primary },
   explainText: { fontFamily: fonts.semibold, fontSize: fontSize.small, color: colors.primary },
   fallback: { fontSize: fontSize.small, color: colors.textMuted },
 });
