@@ -78,7 +78,12 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
               <MessageList
                 messages={messages}
                 api={host}
-                onSend={send}
+                onSend={(text) => {
+                  // A pill that repeats a section's request starts that section like its card does.
+                  const action = (Object.keys(QUICK_ACTION_TEXT) as QuickAction[]).find((a) => QUICK_ACTION_TEXT[a] === text);
+                  if (action) sendChip(action);
+                  else send(text);
+                }}
                 onSeeAll={setSeeAll}
                 onMessageLayout={(id, y) => (ys.current[id] = y)}
               />

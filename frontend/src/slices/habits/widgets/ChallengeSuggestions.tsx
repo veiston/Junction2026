@@ -27,7 +27,7 @@ export function startedFacts(t: ChallengeTemplate, fmt: (c: number) => string, e
     goal !== null ? `Goal: spend no more than ${fmt(goal)} on it${endDate ? ` until ${endDate}` : " in the next 7 days"}.` : "",
     before !== null ? `Last week they spent ${fmt(before)} on it.` : "",
     "They do nothing special. Purchases are counted automatically, nothing is blocked and no money moves.",
-    "After 7 days the week is compared with the week before and the result is shown. A red dot on the bell shows when it is ready.",
+    "After 7 days the week is compared with the week before (this is called comparing equal periods: same length, same weekdays, so it is fair) and the result is shown. A red dot on the bell shows when it is ready.",
     "They can ask how the challenge is going at any time.",
   ].filter(Boolean).join(" ");
 }

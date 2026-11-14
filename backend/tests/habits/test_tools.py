@@ -114,3 +114,16 @@ def test_suggestion_facts_carry_the_baskets_and_the_twenty_percent_figure(servic
     assert facts["baskets_last_28_days"] is not None
     assert facts["items"][0]["if_cut_by_20_percent_yearly_cents"] == 2500 * 20 // 100 * 52
     assert len(json.dumps(facts)) < 1500 and "CUST" not in json.dumps(facts)
+
+
+def test_suggestion_facts_name_the_method(service):
+    assert "comparing equal periods" in tool("suggest_challenges").run(CTX, {}).facts["method"]
+
+
+def test_a_finished_challenge_carries_what_you_learned(service):
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    later = ToolContext(customer_id=ME, today=date(2026, 9, 23), conversation_id="c_1")
+    service._clock.set_today(date(2026, 9, 23))
+    item = tool("get_challenge_progress").run(later, {}).facts["items"][0]
+    assert item["status"] in ("won", "lost")
+    assert "comparing equal periods" in item["what_you_learned"] and "not proof" in item["what_you_learned"]

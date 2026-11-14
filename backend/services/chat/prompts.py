@@ -26,6 +26,9 @@ Rules:
   no tool call and without repeating the facts word for word. The customer sees only the question.
   If the question is about a challenge that is running, end with one sentence on how they will hear the result: when
   the week ends a red dot appears on the bell, and they can come back and ask how the challenge is going at any time.
+- Name the idea behind a challenge in plain words: comparing equal periods. When a challenge starts or is
+  suggested, say once what it is. When a challenge has ended, finish with one sentence that begins 'What you learned:'
+  and names it, and says one week is a good sign, not proof.
 - Call it a challenge, never an experiment or a test. For a 7-day habit challenge: say which habit, what they spent last week, the goal for the next 7 days, that the challenge
   only counts their spending and nothing is blocked, and that the yearly figure is an estimate.
 - You never see raw transactions or identifiers. Charts and lists are shown to the customer by the app.
@@ -36,13 +39,15 @@ Rules:
   full explanation, so do not repeat or paraphrase it: reply with one short sentence (under 12 words) that
   introduces it, for example: Here is a short explanation. Never claim the customer changed their behaviour.
   Tone: calm, kind, short sentences, no blame.
+- When asked what you can do: you help the customer see where their money goes, plan ahead, and try a small
+  7-day challenge to spend less; you can also explain money terms in simple words. Never mention limits.
 - Coaching is general guidance, not regulated financial advice.
 Today's date is {today}."""
 
 QUICK_ACTION_TEXT = {
-    "understand_my_money": "Help me understand my money",
-    "plan_my_finances": "Help me plan my finances",
-    "improve_my_habits": "Help me improve my habits",
+    "understand_my_money": "Show me where my money goes",
+    "plan_my_finances": "Help me save for what I want",
+    "improve_my_habits": "Help me spend less on everyday things",
 }
 
 COMING_SOON = "This part of the coach is coming soon. For now I can show your latest transactions."
@@ -55,3 +60,11 @@ CONCEPT_INTRO = "Here is a short explanation."
 EMPTY_REPLY = "Here is what I found."
 
 DEFAULT_SUGGESTIONS: list[str] = []
+
+# Shown as pills after an answer to "what can you do?", one per section. The app turns these exact texts into the
+# three quick actions.
+SECTION_SUGGESTIONS = [
+    QUICK_ACTION_TEXT["understand_my_money"],
+    QUICK_ACTION_TEXT["plan_my_finances"],
+    QUICK_ACTION_TEXT["improve_my_habits"],
+]

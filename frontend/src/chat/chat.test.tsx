@@ -222,4 +222,27 @@ describe("first view and the three functions", () => {
     expect(screen.queryByText(/Card facts/)).toBeNull();
     expect(bodyOf(fetchMock.mock.calls[0]).message).toBe("Why this goal?\n\nCard facts: Goal 49,00 EUR, last week 99,26 EUR.");
   });
+
+  it("a pill that repeats a section's request starts that section", async () => {
+    fetchMock.mockResolvedValueOnce(
+      json(200, {
+        conversation_id: "c1",
+        message: {
+          id: "m1", role: "assistant", created_at: "2026-09-15T10:00:00Z", text: "I can help.", widgets: [],
+          suggestions: ["Show me where my money goes", "Help me save for what I want", "Help me spend less on everyday things"],
+          sources: [], disclaimer: null,
+        },
+      }),
+    );
+    fetchMock.mockResolvedValueOnce(reply("ok"));
+    render(<Harness />);
+    fireEvent.changeText(screen.getByPlaceholderText("Ask anything about your money..."), "what can you do");
+    fireEvent.press(screen.getByLabelText("Send"));
+    await waitFor(() => expect(screen.getByText("Help me spend less on everyday things")).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText("Help me spend less on everyday things"));
+    });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(bodyOf(fetchMock.mock.calls[1])).toEqual({ quick_action: "improve_my_habits", conversation_id: "c1" });
+  });
 });

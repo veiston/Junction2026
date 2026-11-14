@@ -100,7 +100,8 @@ export function asksFor(widget: Widget, fmt: (cents: number) => string): Ask[] {
         label: "How does it work?",
         answer:
           "It lasts 7 days. I count your purchases for you. Nothing is blocked and no money moves. " +
-          "After 7 days I compare with the week before and tell you if you reached your goal.",
+          "After 7 days I compare with the week before and tell you if you reached your goal. " +
+          "This way of checking is called comparing equal periods: same length, same weekdays, so it is fair.",
       },
     ];
   }
@@ -144,7 +145,7 @@ export function asksFor(widget: Widget, fmt: (cents: number) => string): Ask[] {
       },
       {
         label: "How will I know I won?",
-        answer: `If you spend no more than ${typeof goal === "number" ? fmt(goal) : "the goal"}${c.end_date ? ` until ${c.end_date}` : ""}, you reached it. I compare with the week before.`,
+        answer: `If you spend no more than ${typeof goal === "number" ? fmt(goal) : "the goal"}${c.end_date ? ` until ${c.end_date}` : ""}, you reached it. I compare with the week before (comparing equal periods).`,
       },
       {
         label: "What if I go over?",

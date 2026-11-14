@@ -114,6 +114,10 @@ class ReviewLimitTool(_HabitsTool):
         return ToolResult(facts=facts, widgets=[_widget("limit_review", r)], sources=[r.source])
 
 
+LEARNED = ("You compared two equal weeks, which is called comparing equal periods. That is how to tell whether a "
+           "change really worked. One week is a good sign, not proof, so repeating it tells you more.")
+
+
 class SuggestChallengesTool(_HabitsTool):
     name = "suggest_challenges"
     description = (
@@ -156,6 +160,8 @@ class SuggestChallengesTool(_HabitsTool):
         facts = {
             "count": len(s.items),
             "baskets_last_28_days": baskets,
+            "method": ("This is called comparing equal periods: this week against the week before, same length and "
+                       "same weekdays, so the comparison is fair. Name it."),
             "items": [{"title": t.title, "duration_days": int(t.duration_days),
                        "baseline_cents": t.baseline_cents, "baseline_count": t.baseline_count,
                        "target_cents": t.rule.amount_cents, "estimated_saving_cents": t.estimated_saving_cents,
@@ -190,7 +196,9 @@ class GetChallengeProgressTool(_HabitsTool):
                        "on_track": i.on_track, "current_amount_cents": i.current_amount_cents,
                        "current_count": i.current_count, "baseline_cents": i.baseline_cents,
                        "difference_cents": i.difference_cents, "change_pct": i.change_pct,
-                       "next_step": i.next_step} for i in shown],
+                       "next_step": i.next_step,
+                       **({"what_you_learned": LEARNED} if i.challenge.status.value in ("won", "lost") else {})}
+                      for i in shown],
         }
         sources: list[Source] = [i.source for i in shown]
         return ToolResult(facts=facts, widgets=[_widget("challenge_progress", i) for i in shown], sources=sources)

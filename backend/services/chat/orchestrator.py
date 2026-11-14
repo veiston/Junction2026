@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -25,6 +26,14 @@ log = logging.getLogger(__name__)
 
 MAX_TOOL_ROUNDS = 4
 MAX_WIDGETS = 3
+
+
+_HELP = re.compile(r"\b(what can you do|what do you do|how can you help|what are you able|what can i ask)\b", re.I)
+
+
+def asks_for_help(text: str) -> bool:
+    """True when the customer asks what the coach can do, so the three sections are offered as pills."""
+    return bool(_HELP.search(text))
 
 
 class ChatOrchestrator:
@@ -74,7 +83,7 @@ class ChatOrchestrator:
         self._conversations.append(conv_id, "user", user_text)
         ctx = ToolContext(customer_id=customer_id, today=self._clock.today(), conversation_id=conv_id)
         text, widgets, sources = self._loop(ctx, history, user_text, force_tool)
-        return self._finish(conv_id, text, widgets, sources)
+        return self._finish(conv_id, text, widgets, sources, asks_for_help(user_text))
 
     # ------------------------------------------------------------------ loop
     def _loop(
@@ -134,7 +143,9 @@ class ChatOrchestrator:
         return prompts.TOO_MANY_ROUNDS, widgets, sources  # pragma: no cover
 
     # ------------------------------------------------------------------ output
-    def _finish(self, conv_id: str, text: str, widgets: list[Widget], sources: list[Source]) -> ChatResponse:
+    def _finish(
+        self, conv_id: str, text: str, widgets: list[Widget], sources: list[Source], show_sections: bool = False
+    ) -> ChatResponse:
         widgets = widgets[:MAX_WIDGETS]
         self._conversations.append(
             conv_id, "assistant", text, json.dumps([w.model_dump(mode="json") for w in widgets])
@@ -145,7 +156,7 @@ class ChatOrchestrator:
             created_at=datetime.now(timezone.utc),
             text=text,
             widgets=widgets,
-            suggestions=list(prompts.DEFAULT_SUGGESTIONS),
+            suggestions=list(prompts.SECTION_SUGGESTIONS if show_sections else prompts.DEFAULT_SUGGESTIONS),
             sources=sources,
             disclaimer=None,
         )

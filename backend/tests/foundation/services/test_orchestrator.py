@@ -234,3 +234,21 @@ def test_a_concept_card_is_the_whole_answer_so_the_text_is_one_short_sentence(wo
 
 def test_prompt_tells_the_assistant_to_say_how_the_customer_will_hear_the_result():
     assert "red dot appears on the bell" in prompts.SYSTEM_PROMPT and "Card facts:" in prompts.SYSTEM_PROMPT
+
+
+@pytest.mark.parametrize("text", ["what can you do", "What can you do?", "how can you help me"])
+def test_asking_what_the_coach_can_do_offers_the_three_sections(world, text):
+    orch, llm, _ = world
+    llm.push(say("I can help with your money."))
+    r = ask(orch, text)
+    assert [x.root for x in r.message.suggestions] == prompts.SECTION_SUGGESTIONS and len(prompts.SECTION_SUGGESTIONS) == 3
+
+
+def test_other_questions_get_no_pills(world):
+    orch, llm, _ = world
+    llm.push(say("ok"))
+    assert ask(orch, "show my latest transactions").message.suggestions == []
+
+
+def test_prompt_asks_for_the_idea_to_be_named_and_a_what_you_learned_line():
+    assert "comparing equal periods" in prompts.SYSTEM_PROMPT and "What you learned:" in prompts.SYSTEM_PROMPT
