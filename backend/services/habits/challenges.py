@@ -11,6 +11,7 @@ from contracts.dto.habits import (
 )
 from contracts.interfaces.repositories.habits import ChallengeRecord
 from services.chat.glossary import euros, render_concept
+from services.habits import patterns
 from services.habits.limits import (
     everyday_rows,
     group_totals,
@@ -102,6 +103,11 @@ class ChallengeCalculator:
         if skip_if_over_today and self._group_spend(customer_id, group, today, today)[0] > target:
             return None  # already over the goal today, so this challenge could not be won
         saving = baseline - target
+        week_rows = [t for t in everyday_rows(self._tx.all_between(
+            customer_id, today - timedelta(days=EXPERIMENT_DAYS), today - timedelta(days=1)))
+            if t.spend_group.value == group]
+        usual, _ = self._group_spend(customer_id, group, today - timedelta(days=28), today - timedelta(days=8))
+        pattern = patterns.detect(week_rows, baseline, usual // 3)
         name = g.label.lower()
         if target == 0:
             title = f"A week without {name}"
@@ -114,7 +120,7 @@ class ChallengeCalculator:
             id=f"max_amount_{group}_{EXPERIMENT_DAYS}d", title=title, description=description,
             spend_group=g.spend_group, rule=ChallengeRule(kind="max_amount", amount_cents=target),
             duration_days=EXPERIMENT_DAYS, estimated_saving_cents=saving,
-            reason=f"{count} {noun} on {name}, {euros(baseline)} in the last {EXPERIMENT_DAYS} days.",
+            reason=f"{count} {noun} on {name}, {euros(baseline)} in the last {EXPERIMENT_DAYS} days. {pattern.sentence}",
             baseline_cents=baseline, baseline_count=count, yearly_saving_cents=saving * WEEKS_PER_YEAR,
             concept=render_concept("compare_equal_periods"),
         )

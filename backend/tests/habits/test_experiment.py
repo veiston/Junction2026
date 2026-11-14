@@ -211,3 +211,10 @@ def test_basket_split_over_the_last_28_days():
 def test_basket_split_is_none_without_spending():
     svc, *_ = build([])
     assert svc.basket_split(ME) is None
+
+
+def test_the_reason_names_the_spending_pattern():
+    svc, *_ = build(rows("taxis", TAXIS))
+    (t,) = svc.challenge_suggestions(ME).items
+    assert "3 purchases on taxis, EUR 99.26 in the last 7 days." in t.reason
+    assert "up from about EUR 10 in a usual week" in t.reason  # the earlier weeks were much quieter
