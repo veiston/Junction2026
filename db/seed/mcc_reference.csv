@@ -1,0 +1,37 @@
+mcc,spend_group,label,category,basket
+5411,supermarkets,Supermarkets,Groceries,mandatory_regular
+5422,butchers,Butchers,Groceries,mandatory_regular
+5451,dairy,Dairy shops,Groceries,mandatory_regular
+4111,public_transport,Public transport,Transportation,mandatory_regular
+5541,fuel,Fuel,Transportation,mandatory_regular
+5542,fuel,Fuel,Transportation,mandatory_regular
+5912,pharmacy,Pharmacy,Health,mandatory_irregular
+8011,doctors,Doctors,Health,mandatory_irregular
+8021,dentists,Dentists,Health,mandatory_irregular
+8099,health_services,Health services,Health,mandatory_irregular
+5200,home_supplies,Home supplies,Home & Tech,mandatory_irregular
+5251,hardware,Hardware,Home & Tech,mandatory_irregular
+5712,furniture_appliances,Furniture & appliances,Home & Tech,mandatory_irregular
+5732,electronics,Electronics,Home & Tech,mandatory_irregular
+5734,software_apps,Software & apps,Home & Tech,everyday
+5499,kiosks,Kiosks & convenience,Groceries,everyday
+5812,restaurants,Restaurants,Restaurants,everyday
+5813,bars,Bars,Restaurants,everyday
+5814,fast_food_cafes,Fast food & cafés,Restaurants,everyday
+4121,taxis,Taxis,Transportation,everyday
+7523,parking,Parking,Transportation,everyday
+7832,cinemas,Cinemas,Entertainment,everyday
+7922,events_tickets,Events & tickets,Entertainment,everyday
+7991,attractions,Attractions,Entertainment,everyday
+7996,amusement_parks,Amusement parks,Entertainment,everyday
+7999,recreation_sports,Recreation & sports,Entertainment,everyday
+5941,sporting_goods,Sporting goods,Lifestyle,everyday
+5651,clothing,Clothing,Lifestyle,everyday
+5691,clothing,Clothing,Lifestyle,everyday
+5942,books,Books,Lifestyle,everyday
+5945,toys_hobbies,Toys & hobbies,Lifestyle,everyday
+5999,other_retail,Other shops,Lifestyle,everyday
+4722,travel_agencies,Travel agencies,Travel,everyday
+4511,flights,Flights,Travel,everyday
+7011,hotels,Hotels,Travel,everyday
+7512,car_rental,Car rental,Travel,everyday

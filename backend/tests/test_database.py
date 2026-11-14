@@ -27,7 +27,7 @@ class DatabaseMigrationTests(unittest.TestCase):
                     )
                 }
                 migrations = connection.execute(
-                    "SELECT name FROM schema_migrations ORDER BY name"
+                    "SELECT key FROM meta WHERE key LIKE 'migration:%' ORDER BY key"
                 ).fetchall()
             finally:
                 connection.close()
@@ -41,10 +41,9 @@ class DatabaseMigrationTests(unittest.TestCase):
                 "meta",
                 "conversations",
                 "messages",
-                "schema_migrations",
             }.issubset(tables)
         )
-        self.assertEqual([("0001_core.sql",), ("0002_chat.sql",)], migrations)
+        self.assertEqual([("migration:0001_core.sql",), ("migration:0002_chat.sql",)], migrations)
 
 
 if __name__ == "__main__":
