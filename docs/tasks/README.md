@@ -57,7 +57,7 @@ flowchart LR
 | A | `foundation-adapter-llm` | `../Junction2026-adapter-llm` | — | [x] |
 | A | `foundation-frontend-foundation` | `../Junction2026-frontend-foundation` | — | [x] |
 | A | `foundation-embedded-demo` | `../Junction2026-embedded-demo` | — | [x] |
-| B | `foundation-adapter-db` | `../Junction2026-adapter-db` | models-and-ports | [ ] |
+| B | `foundation-adapter-db` | `../Junction2026-adapter-db` | models-and-ports | [x] |
 | B | `foundation-services` | `../Junction2026-services` | models-and-ports | [ ] |
 | B | `foundation-controllers` | `../Junction2026-controllers` | models-and-ports | [x] |
 | B | `foundation-frontend-hooks` | `../Junction2026-frontend-hooks` | frontend-foundation | [x] |
