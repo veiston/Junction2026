@@ -129,11 +129,11 @@ describe("finished experiment", () => {
     expect(screen.getByText("You already have this challenge running.")).toBeTruthy();
   });
 
-  it("Try another category sends the chat message", () => {
+  it("Try a new challenge sends the chat message", () => {
     const api = makeApi();
     show("challenge_progress", challengeProgressWonMock, api);
-    fireEvent.press(screen.getByLabelText("Try another category"));
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another habit to test" });
+    fireEvent.press(screen.getByLabelText("Try a new challenge"));
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
   });
 
   it("old data without the new fields does not crash", () => {
@@ -156,7 +156,7 @@ describe("finished experiment", () => {
       next_step: null,
     };
     expect(() => show("challenge_progress", nulls)).not.toThrow();
-    expect(screen.getByText("Try another category")).toBeTruthy();
+    expect(screen.getByText("Try a new challenge")).toBeTruthy();
   });
 
   it("template with null new fields renders without baseline or concept", () => {
@@ -294,5 +294,14 @@ describe("experiment flow through the chat", () => {
     const end = (habitsMocks.challenge_progress as { challenge: { end_date: string } }).challenge.end_date;
     expect(request).toHaveBeenCalledWith("PUT", "/demo/clock", { today: end });
     expect(api.sendChat).toHaveBeenCalledWith({ message: "How is my challenge going?" });
+  });
+});
+
+describe("new challenge button", () => {
+  it("is on a running challenge and asks for another challenge", () => {
+    const api = makeApi();
+    show("challenge_progress", habitsMocks.challenge_progress, api);
+    fireEvent.press(screen.getByLabelText("Try a new challenge"));
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
   });
 });

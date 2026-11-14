@@ -117,15 +117,23 @@ class ReviewLimitTool(_HabitsTool):
 class SuggestChallengesTool(_HabitsTool):
     name = "suggest_challenges"
     description = (
-        "Find one regular everyday habit in the customer's own transactions and offer a 7-day experiment, "
+        "Find one regular everyday habit in the customer's own transactions and offer a 7-day challenge, "
         "to be compared with the 7 days before. "
-        "Use for 'help me improve my habits', 'give me a challenge', 'how can I spend less on X'."
+        "Use for 'help me improve my habits', 'give me a challenge', 'how can I spend less on X'. "
+        "Set another=true when the customer asks for another, a different or a new habit or challenge."
     )
+    parameters = {
+        "type": "object",
+        "properties": {"another": {"type": "boolean"}},
+        "additionalProperties": False,
+    }
 
     def run(self, ctx: ToolContext, arguments: dict[str, Any]) -> ToolResult:
-        _check_args(arguments, set())
-        running = [i for i in self._svc().list_challenges(ctx.customer_id).items if i.challenge.status.value == "active"]
-        if running:
+        _check_args(arguments, {"another"})
+        another = arguments.get("another") is True
+        all_items = self._svc().list_challenges(ctx.customer_id).items
+        running = [i for i in all_items if i.challenge.status.value == "active"]
+        if running and not another:
             current = running[0]
             facts = {
                 "already_running": True,
@@ -137,10 +145,11 @@ class SuggestChallengesTool(_HabitsTool):
             return ToolResult(facts=facts, widgets=[_widget("challenge_progress", current)], sources=[current.source])
         s = self._svc().challenge_suggestions(ctx.customer_id)
         # A habit the customer just finished is repeated with its own button; here they get a different one.
-        finished = [i for i in self._svc().list_challenges(ctx.customer_id).items
-                    if i.challenge.status.value in ("won", "lost")]
+        finished = [i for i in all_items if i.challenge.status.value in ("won", "lost")]
         last_group = max(finished, key=lambda i: i.challenge.id).challenge.spend_group if finished else None
-        fresh = [t for t in s.items if t.spend_group != last_group] or s.items
+        busy = {i.challenge.spend_group for i in running}
+        fresh = [t for t in s.items if t.spend_group != last_group and t.spend_group not in busy]
+        fresh = fresh or ([] if busy else s.items)
         # One habit at a time: the card and the reply must describe the same one.
         s = s.model_copy(update={"items": fresh[:1]})
         facts = {
@@ -151,8 +160,8 @@ class SuggestChallengesTool(_HabitsTool):
                        "yearly_saving_cents": t.yearly_saving_cents, "reason": t.reason} for t in s.items],
             "note": ("Describe only this habit. The customer starts the challenge with the button on the card. The yearly figure is an "
                      "estimate, say so." if s.items
-                     else "No regular everyday habit found yet. Say there is nothing suitable for an experiment "
-                          "right now and point to the spending analysis."),
+                     else "No other regular everyday habit to test right now. Say so kindly and point to the "
+                          "spending analysis."),
         }
         widgets = [_widget("challenge_suggestions", s)] if s.items else []
         return ToolResult(facts=facts, widgets=widgets)

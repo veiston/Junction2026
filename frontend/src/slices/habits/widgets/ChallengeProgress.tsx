@@ -11,7 +11,7 @@ import { CompareBars } from "./CompareBars";
 import { plural } from "./format";
 import { Body, Card, ErrorText, PrimaryButton, ProgressBar, SecondaryButton, Title } from "./ui";
 
-export const ANOTHER_HABIT_MESSAGE = "Show me another habit to test";
+export const ANOTHER_HABIT_MESSAGE = "Show me another challenge to try";
 
 export const PROGRESS_MESSAGE = "How is my challenge going?";
 
@@ -57,6 +57,9 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
           <Body muted>{`${c.start_date} to ${c.end_date}`}</Body>
         )}
         {d.concept ? <ConceptNoteBody note={d.concept} collapsed /> : null}
+        {c.status === "active" ? (
+          <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
+        ) : null}
         {c.status === "active" ? (
           <SecondaryButton
             label="Demo: a week passes, show the result"
@@ -121,7 +124,7 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
             disabled={start.loading || start.alreadyActive || start.notFound}
             onPress={() => start.start(c.template_id)}
           />
-          <SecondaryButton label="Try another category" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
+          <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
         </View>
       )}
     </Card>
