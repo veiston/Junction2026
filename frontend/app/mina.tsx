@@ -1,4 +1,6 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Switch, View } from "react-native";
+
+import { setModelProvider, useModelProvider } from "@/api/modelProvider";
 
 import type { IconName } from "@/components/Icon";
 import { ListGroup } from "@/components/ListGroup";
@@ -16,8 +18,25 @@ const SERVICE_ROWS: { icon: IconName; title: string }[] = [
 
 // TODO: Everything should be in English so accessible to international judges / hacker-voters
 export default function ProfileScreen() {
+  const useLocalModel = useModelProvider() === "local";
   return (
     <Screen topColor={colors.background}>
+      <SectionHeader title="AI coach" />
+      <ListGroup>
+        <ListRow
+          icon="robot-outline"
+          title="Use local model"
+          subtitle="A private model running on S-Bank servers "
+          trailing={
+            <Switch
+              accessibilityLabel="Use local model"
+              value={useLocalModel}
+              onValueChange={(on) => setModelProvider(on ? "local" : "cloud")}
+              trackColor={{ true: colors.primary }}
+            />
+          }
+        />
+      </ListGroup>
       <ListGroup>
         <ListRow icon="logout" title="Kirjaudu ulos" />
       </ListGroup>

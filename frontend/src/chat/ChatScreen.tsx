@@ -106,7 +106,11 @@ export function ChatScreen({ chat, today }: { chat: UseChat; today?: string }) {
                 onSeeAll={setSeeAll}
                 onPlayTts={voice.playMessageTts}
                 playingMessageId={voice.playingMessageId}
-                onMessageLayout={(id, y) => (ys.current[id] = y)}
+                onMessageLayout={(id, y) => {
+                  ys.current[id] = y;
+                  // The list can resize before the new message reports where it starts; retry now that it has.
+                  scrollToNewest();
+                }}
               />
             </View>
             {busy ? <TypingBubble steps={steps} /> : null}

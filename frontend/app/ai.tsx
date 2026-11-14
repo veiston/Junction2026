@@ -18,8 +18,7 @@ export default function AiScreen() {
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
       <AiTopBar
-        onBack={() => router.navigate("/")}
-        onShowFunctions={chat.reset}
+        onBack={() => (chat.started ? chat.reset() : router.navigate("/"))}
         notices={notices.items}
         onNotice={(n) => {
           notices.dismiss(n.id);

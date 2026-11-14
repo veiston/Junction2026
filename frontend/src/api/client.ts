@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/config";
 import { getToken } from "@/auth/token";
+import { getModelProvider } from "./modelProvider";
 import type { DemoSessionRequest, ErrorBody, ErrorResponse, Me, SessionToken } from "@/contracts";
 
 export class ApiError extends Error {
@@ -28,6 +29,7 @@ export async function request<T>(
   const headers: Record<string, string> = { Accept: "application/json" };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (path === "/chat" && getModelProvider() === "local") headers["X-Model-Provider"] = "local";
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
   const controller = new AbortController();

@@ -1,4 +1,5 @@
 import { setToken } from "@/auth/token";
+import { setModelProvider } from "./modelProvider";
 import { api, ApiError, CHAT_TIMEOUT_MS, request } from "./client";
 
 const fetchMock = jest.fn();
@@ -6,6 +7,7 @@ const fetchMock = jest.fn();
 beforeEach(() => {
   fetchMock.mockReset();
   setToken(null);
+  setModelProvider("cloud");
   (globalThis as { fetch: unknown }).fetch = fetchMock;
 });
 
@@ -28,6 +30,17 @@ describe("request", () => {
     expect(init.headers.Authorization).toBeUndefined();
     expect(init.headers["Content-Type"]).toBe("application/json");
     expect(init.body).toBe('{"a":1}');
+  });
+
+  it("asks for the local model on chat requests only when it is switched on", async () => {
+    fetchMock.mockResolvedValue(json(200, {}));
+    await request("POST", "/chat", { message: "hi" });
+    expect(fetchMock.mock.calls[0][1].headers["X-Model-Provider"]).toBeUndefined();
+    setModelProvider("local");
+    await request("POST", "/chat", { message: "hi" });
+    await request("GET", "/me");
+    expect(fetchMock.mock.calls[1][1].headers["X-Model-Provider"]).toBe("local");
+    expect(fetchMock.mock.calls[2][1].headers["X-Model-Provider"]).toBeUndefined();
   });
 
   it("throws ApiError with the server error body", async () => {

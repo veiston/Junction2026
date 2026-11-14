@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { ScrollView } from "react-native";
 
 import { setToken } from "@/auth/token";
 import { transactionListMock } from "@/dev/mocks";
@@ -87,6 +88,23 @@ describe("chat", () => {
     render(<Harness />);
     fireEvent.press(screen.getByText("Plan My Finances"));
     expect(await screen.findByText("Help me save for what I want")).toBeTruthy();
+  });
+
+  it("scrolls to a new reply even when the list resizes before the reply reports its position", async () => {
+    fetchMock.mockResolvedValue(reply("About coffee"));
+    const scrollTo = jest.spyOn(ScrollView.prototype, "scrollTo").mockImplementation(() => {});
+    render(<Harness />);
+    fireEvent.press(screen.getByText("Coffee spend"));
+    const bubble = await screen.findByTestId("bubble-coach");
+    // The container reports its new size first (react-native-web orders observers this way) ...
+    fireEvent(screen.UNSAFE_getByType(ScrollView), "contentSizeChange", 300, 900);
+    expect(scrollTo).not.toHaveBeenCalled();
+    // ... and only then does the reply report where it starts.
+    let node = bubble.parent;
+    while (node && !node.props.onLayout) node = node.parent;
+    fireEvent(node as NonNullable<typeof node>, "layout", { nativeEvent: { layout: { x: 0, y: 120, width: 300, height: 80 } } });
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: expect.any(Number), animated: true }));
+    scrollTo.mockRestore();
   });
 
   it("a failed turn shows a friendly message and Retry resends it", async () => {

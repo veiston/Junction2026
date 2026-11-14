@@ -7,23 +7,20 @@ import { coachColors, colors, fonts, radius, spacing } from "@/theme";
 import type { Notice } from "./useNotifications";
 
 interface Props {
-  /** Back button: leave the coach and go to the app's main page. */
+  /** Back button: from a conversation to the three functions; from the three functions to the main page. */
   onBack: () => void;
-  /** Menu item: back to the first view with the three functions. */
-  onShowFunctions: () => void;
   /** Unread notices shown under the bell. */
   notices?: Notice[];
   onNotice?: (notice: Notice) => void;
 }
 
-export function AiTopBar({ onBack, onShowFunctions, notices = [], onNotice }: Props) {
-  const [open, setOpen] = useState(false);
+export function AiTopBar({ onBack, notices = [], onNotice }: Props) {
   const [bell, setBell] = useState(false);
 
   return (
     <View style={styles.wrap}>
       <View style={styles.bar}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to main page" onPress={onBack} style={styles.plain}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.plain}>
           <Icon name="arrow-left" size={24} color={colors.text} />
         </Pressable>
         <View style={styles.logo}>
@@ -38,24 +35,11 @@ export function AiTopBar({ onBack, onShowFunctions, notices = [], onNotice }: Pr
           accessibilityLabel={notices.length > 0 ? `Notifications, ${notices.length} new` : "Notifications"}
           onPress={() => {
             setBell((b) => !b);
-            setOpen(false);
           }}
           style={styles.plain}
         >
           <Icon name="bell-outline" size={24} color={colors.text} />
           {notices.length > 0 ? <View style={styles.dot} testID="bell-dot" /> : null}
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Menu"
-          accessibilityState={{ expanded: open }}
-          onPress={() => {
-            setOpen((o) => !o);
-            setBell(false);
-          }}
-          style={styles.menuButton}
-        >
-          <Icon name="menu" size={22} color={colors.text} />
         </Pressable>
       </View>
       {bell ? (
@@ -81,20 +65,6 @@ export function AiTopBar({ onBack, onShowFunctions, notices = [], onNotice }: Pr
           )}
         </View>
       ) : null}
-      {open ? (
-        <View accessibilityRole="menu" style={styles.menu}>
-          <Pressable
-            accessibilityRole="menuitem"
-            onPress={() => {
-              setOpen(false);
-              onShowFunctions();
-            }}
-            style={styles.item}
-          >
-            <Text style={styles.itemText}>Back to the three functions</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -107,16 +77,6 @@ const styles = StyleSheet.create({
   brand: { fontSize: 12, letterSpacing: 0.8, fontFamily: fonts.bold, color: colors.primary },
   spacer: { flex: 1 },
   dot: { position: "absolute", top: 10, right: 11, width: 10, height: 10, borderRadius: 5, backgroundColor: "#D64545" },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: coachColors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: coachColors.border,
-  },
   menu: {
     position: "absolute",
     top: "100%",

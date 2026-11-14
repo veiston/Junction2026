@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Cross-platform script to host Ollama and expose it via an ngrok tunnel.
 
-Reads configuration from .env and .env.local.
+Reads configuration from .env and .env.local. Once the tunnel is up it writes
+OLLAMA_BASE_URL and OLLAMA_API_KEY into .env, so the backend can use it after a restart.
 """
 from __future__ import annotations
 
+import json
 import os
+import re
+import secrets
 import shutil
 import signal
 import subprocess
@@ -32,6 +36,38 @@ def load_env(env_path: Path) -> dict[str, str]:
     return env
 
 
+NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels"
+DEFAULT_MODEL = "gemma4:e4b"
+
+
+def read_public_url(api_url: str = NGROK_API_URL, wait_s: float = 30.0) -> str | None:
+    """Ask the local ngrok agent for the https address of the tunnel."""
+    deadline = time.monotonic() + wait_s
+    while True:
+        try:
+            with urllib.request.urlopen(api_url, timeout=2) as resp:
+                for tunnel in json.load(resp).get("tunnels", []):
+                    if str(tunnel.get("public_url", "")).startswith("https://"):
+                        return tunnel["public_url"]
+        except Exception:
+            pass
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(0.5)
+
+
+def update_env_file(env_path: Path, values: dict[str, str]) -> None:
+    """Set KEY=value lines in a .env file, replacing existing ones and keeping everything else."""
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.is_file() else []
+    remaining = dict(values)
+    for i, line in enumerate(lines):
+        match = re.match(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", line)
+        if match and match.group(1) in remaining:
+            lines[i] = f"{match.group(1)}={remaining.pop(match.group(1))}"
+    lines += [f"{key}={value}" for key, value in remaining.items()]
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     root_dir = Path(__file__).resolve().parent
 
@@ -44,7 +80,13 @@ def main() -> int:
 
     host = get_conf("OLLAMA_HOST", "127.0.0.1")
     port = get_conf("OLLAMA_PORT", "11434")
-    basic_auth = get_conf("NGROK_BASIC_AUTH", "admin:otter1xx")
+    model = get_conf("OLLAMA_MODEL", DEFAULT_MODEL)
+    basic_auth = get_conf("NGROK_BASIC_AUTH", "")
+    if not basic_auth:
+        # The tunnel is public: never fall back to a password that is written in the repo.
+        basic_auth = f"admin:{secrets.token_urlsafe(18)}"
+        update_env_file(root_dir / ".env", {"NGROK_BASIC_AUTH": basic_auth})
+        print("Created a random tunnel password and saved it as NGROK_BASIC_AUTH in .env")
     ctx_len = get_conf("OLLAMA_CONTEXT_LENGTH", "32768")
     kv_cache = get_conf("OLLAMA_KV_CACHE_TYPE", "q8_0")
     flash_attn = get_conf("OLLAMA_FLASH_ATTENTION", "1")
@@ -113,6 +155,10 @@ def main() -> int:
     else:
         print("Ollama is ready!")
 
+    if ready:
+        print(f"Pulling {model} (first time can take a while)...")
+        subprocess.run([ollama_bin, "pull", model], check=False)
+
     # 6. Launch ngrok
     ngrok_cmd = [
         ngrok_bin,
@@ -124,12 +170,24 @@ def main() -> int:
         ngrok_cmd.append(f"--basic-auth={basic_auth}")
 
     print(f"Launching ngrok forwarding to {host}:{port} with basic auth...")
+    ngrok_proc = subprocess.Popen(ngrok_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        ngrok_proc = subprocess.Popen(ngrok_cmd)
+        public_url = read_public_url()
+        if public_url is None:
+            print(
+                "Could not read the ngrok URL. Run 'ngrok config add-authtoken <token>' once, then retry.",
+                file=sys.stderr,
+            )
+        else:
+            update_env_file(root_dir / ".env", {"OLLAMA_BASE_URL": public_url, "OLLAMA_API_KEY": basic_auth})
+            print(f"\nOLLAMA_BASE_URL={public_url}")
+            print("OLLAMA_API_KEY is the NGROK_BASIC_AUTH value")
+            print("Both are saved in .env. Restart the backend to use them. Press Ctrl+C to stop.")
         ngrok_proc.wait()
     except KeyboardInterrupt:
         pass
     finally:
+        ngrok_proc.terminate()
         cleanup()
 
     return 0
