@@ -105,3 +105,12 @@ def test_customer_id_from_the_model_is_ignored(registry):
     # the registry drops customer_id: the tool always reads the customer of the token (ctx)
     r = registry.run(CTX, "get_basket_breakdown", {"customer_id": "CUST00002"})
     assert r.facts["total_spending_cents"] == 154880
+
+
+@pytest.mark.parametrize("name,args", [
+    ("get_basket_breakdown", {}), ("get_basket_trend", {}), ("get_spending", {"basket": "everyday"}),
+    ("get_spender_profile", {}), ("compare_with_peers", {"key": "everyday"}),
+])
+def test_every_tool_tells_the_model_to_keep_the_reply_short(registry, name, args):
+    hint = registry.run(CTX, name, args).facts["reply_hint"]
+    assert "sentence" in hint and len(hint) < 250

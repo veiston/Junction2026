@@ -4,22 +4,26 @@ import { Icon, type IconName } from "@/components/Icon";
 import type { QuickAction } from "@/contracts";
 import { coachColors, colors, fonts, spacing } from "@/theme";
 
-export const FUNCTIONS: { action: QuickAction; title: string; description: string; icon: IconName }[] = [
+/** `prompt` is what the customer "says" in the chat when the card is tapped. */
+export const FUNCTIONS: { action: QuickAction; title: string; description: string; prompt: string; icon: IconName }[] = [
   {
     action: "understand_my_money",
     title: "Understand My Money",
+    prompt: "Show me my spending analysis and monthly trends",
     description: "Spending analysis · Subscriptions · Monthly trends · Finnish household comparisons",
     icon: "chart-donut",
   },
   {
     action: "plan_my_finances",
     title: "Plan My Finances",
+    prompt: "Help me plan my finances",
     description: "Balance forecasts · Upcoming bills · Spending alerts · Purchase simulator",
     icon: "calendar-month-outline",
   },
   {
     action: "improve_my_habits",
     title: "Improve My Habits",
+    prompt: "Help me improve my habits",
     description: "Personalized challenges · Savings simulations · Progress tracking · Learning feedback",
     icon: "school-outline",
   },
