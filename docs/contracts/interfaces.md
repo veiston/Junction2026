@@ -1,4 +1,4 @@
-# Ports (interfaces)
+# Interfaces
 
 Source of truth: `contracts/interfaces/`. **Inbound** = what the application offers.
 **Outbound** = what it needs from outside. **Plug-in** = how a slice attaches to the foundation
