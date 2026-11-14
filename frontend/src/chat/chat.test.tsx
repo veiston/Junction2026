@@ -82,6 +82,13 @@ describe("chat", () => {
     expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({ quick_action: "plan_my_finances" });
   });
 
+  it("picking a function shows it as the customer's own message", async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    render(<Harness />);
+    fireEvent.press(screen.getByText("Plan My Finances"));
+    expect(await screen.findByText("Help me save for what I want")).toBeTruthy();
+  });
+
   it("a failed turn shows a friendly message and Retry resends it", async () => {
     fetchMock.mockResolvedValueOnce(err(502, "LLM_UNAVAILABLE")).mockResolvedValueOnce(reply("Recovered"));
     render(<Harness />);

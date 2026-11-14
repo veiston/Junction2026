@@ -102,9 +102,13 @@ understand-frontend-ui · understand-frontend-hooks · understand-tests
 ## Slice 2 — Plan my finances (Worker 2)
 
 - **Goal:** look forward: forecast, safe-to-spend, what-if.
-- **After it I can:** tap *Plan my finances* → 30-day forecast; switch to 60/90; ask "what is safe to spend this week", "what if I spend 20 % less on restaurants" and move the slider; see bills and alerts.
+- **After it I can:** tap *Plan my finances* → 30-day forecast; switch öto 60/90; ask "what is safe to spend this week", "what if I spend 20 % less on restaurants" and move the slider; see bills and alerts.
 - **Stories:** US-P1 … US-P5.
 - **Done when:** the 5 plan endpoints and 5 tools pass their tests (safe-to-spend steps add up; forecast has horizon+1 points; what-if with 0 % equals the baseline); the 5 widgets are approved by you.
+
+Also add elevenlabs support. Each AI messagebubble should have a tiny svg speaker icon on the bottom right. When tapped, it should play the message text using the ElevenLabs API. The ElevenLabs API key should be stored in the .env file as ELEVENLABS_API_KEY.
+
+Use the local ollama served AI model for sensitive data (like transactions) and Gemini for everything else. The local model is gemma4:e4b and served through ollama. It should be served somewhere on the local machine with the optional host_ollama.py script and serve it on the public network with ngrok or something more suitable. It needs to be secure and highly intuitive.
 
 ```mermaid
 sequenceDiagram

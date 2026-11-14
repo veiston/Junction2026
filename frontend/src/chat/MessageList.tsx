@@ -1,9 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { TransactionListData } from "@/contracts";
-import { colors, fontSize, radius, spacing } from "@/theme";
+import { SvgSpeakerIcon } from "@/components/SvgSpeakerIcon";
+import { coachColors, colors, fontSize, radius, spacing } from "@/theme";
 import { SourceLine } from "@/widgets/common/SourceLine";
 
+import { MarkdownText } from "./MarkdownText";
 import type { ChatMessage } from "./useChat";
 import { WidgetHost } from "./WidgetHost";
 import type { WidgetHostApi } from "./registry";
@@ -14,11 +16,16 @@ interface Props {
   /** Tapping a follow-up suggestion sends it as a message. */
   onSend: (text: string) => void;
   onSeeAll: (data: TransactionListData) => void;
+  /** Read one assistant message aloud (tapping again stops it). */
+  onPlayTts: (messageId: string, text: string) => void;
+  playingMessageId: string | null;
   /** Reports where each message starts, so the screen can scroll to it. */
   onMessageLayout?: (id: string, y: number) => void;
 }
 
-export function MessageList({ messages, api, onSend, onSeeAll, onMessageLayout }: Props) {
+const SPEAK_BUTTON_SIZE = 28;
+
+export function MessageList({ messages, api, onSend, onSeeAll, onPlayTts, playingMessageId, onMessageLayout }: Props) {
   return (
     <View style={styles.list} accessibilityLabel="Conversation">
       {messages.map((m) =>
@@ -28,7 +35,19 @@ export function MessageList({ messages, api, onSend, onSeeAll, onMessageLayout }
           </View>
         ) : (
           <View key={m.id} style={styles.assistant} onLayout={(e) => onMessageLayout?.(m.id, e.nativeEvent.layout.y)}>
-            <Text style={styles.text}>{m.text.replace(/\*\*/g, "")}</Text>
+            {m.text ? (
+              <View style={styles.bubble}>
+                <MarkdownText content={m.text} style={styles.text} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={playingMessageId === m.id ? "Stop reading" : "Read aloud"}
+                  onPress={() => onPlayTts(m.id, m.text)}
+                  style={styles.speak}
+                >
+                  <SvgSpeakerIcon color={colors.primary} playing={playingMessageId === m.id} />
+                </Pressable>
+              </View>
+            ) : null}
             {m.widgets.map((w) => (
               <WidgetHost key={w.id} widget={w} api={api} onSeeAll={onSeeAll as never} />
             ))}
@@ -64,7 +83,24 @@ const styles = StyleSheet.create({
   },
   userText: { fontSize: fontSize.small, color: colors.onPrimary },
   assistant: { alignSelf: "stretch", gap: spacing.sm },
+  bubble: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: coachColors.border,
+    backgroundColor: colors.surface,
+  },
   text: { fontSize: fontSize.small, color: colors.text },
+  speak: {
+    alignSelf: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
+    width: SPEAK_BUTTON_SIZE,
+    height: SPEAK_BUTTON_SIZE,
+    borderRadius: radius.round,
+    backgroundColor: coachColors.sendButton,
+  },
   disclaimer: { fontSize: fontSize.small - 3, color: colors.textSubtle },
   suggestions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {

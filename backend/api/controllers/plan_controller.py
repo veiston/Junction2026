@@ -1,29 +1,66 @@
-"""Slice stub: every route answers 501 until the plan slice is merged."""
-
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from typing import Annotated, Any
 
-from api.controllers._stub import not_implemented
+from fastapi import APIRouter, Depends, Query
 
-router = APIRouter(dependencies=[Depends(not_implemented)])
+from api.dependencies import get_plan_service
+from api.security import CustomerId
+from contracts.dto.plan import (
+    BalanceForecast,
+    ExpenseAlerts,
+    HorizonDays,
+    SafeToSpend,
+    UpcomingBills,
+    WhatIfRequest,
+    WhatIfResult,
+)
+from services.plan.alerts import MAX_ALERT_DAYS, MIN_ALERT_DAYS
+
+DEFAULT_ALERT_DAYS = 90
+
+router = APIRouter()
 
 
-@router.get("/plan/forecast")
-def get_plan_forecast() -> None: ...
+@router.get("/plan/forecast", response_model=BalanceForecast)
+def get_plan_forecast(
+    cid: CustomerId,
+    svc: Annotated[Any, Depends(get_plan_service)],
+    horizon_days: HorizonDays = HorizonDays.integer_30,
+) -> Any:
+    return svc.forecast(cid, horizon_days)
 
 
-@router.get("/plan/bills")
-def get_plan_bills() -> None: ...
+@router.get("/plan/bills", response_model=UpcomingBills)
+def get_plan_bills(
+    cid: CustomerId,
+    svc: Annotated[Any, Depends(get_plan_service)],
+    horizon_days: HorizonDays = HorizonDays.integer_30,
+) -> Any:
+    return svc.upcoming_bills(cid, horizon_days)
 
 
-@router.get("/plan/alerts")
-def get_plan_alerts() -> None: ...
+@router.get("/plan/alerts", response_model=ExpenseAlerts)
+def get_plan_alerts(
+    cid: CustomerId,
+    svc: Annotated[Any, Depends(get_plan_service)],
+    days: Annotated[int, Query(ge=MIN_ALERT_DAYS, le=MAX_ALERT_DAYS)] = DEFAULT_ALERT_DAYS,
+) -> Any:
+    return svc.expense_alerts(cid, days)
 
 
-@router.get("/plan/safe-to-spend")
-def get_plan_safe_to_spend() -> None: ...
+@router.get("/plan/safe-to-spend", response_model=SafeToSpend)
+def get_plan_safe_to_spend(
+    cid: CustomerId,
+    svc: Annotated[Any, Depends(get_plan_service)],
+) -> Any:
+    return svc.safe_to_spend(cid)
 
 
-@router.post("/plan/what-if")
-def post_plan_what_if() -> None: ...
+@router.post("/plan/what-if", response_model=WhatIfResult)
+def post_plan_what_if(
+    body: WhatIfRequest,
+    cid: CustomerId,
+    svc: Annotated[Any, Depends(get_plan_service)],
+) -> Any:
+    return svc.what_if(cid, body)

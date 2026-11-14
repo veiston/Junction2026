@@ -43,7 +43,10 @@ export default function WidgetGallery() {
         ))}
         <View style={styles.item}>
           <Text style={styles.type}>unknown type (fallback)</Text>
-          <WidgetHost widget={{ id: "mock_unknown", version: 1, type: "what_if", data: {} } as Widget} api={host} />
+          <WidgetHost
+            widget={{ id: "mock_unknown", version: 1, type: "limit_review", data: {} } as Widget}
+            api={host}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

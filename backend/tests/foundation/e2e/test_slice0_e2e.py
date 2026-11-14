@@ -93,7 +93,7 @@ def test_401_matrix(client, method, path, kind):
 
 
 def test_every_slice_route_is_501(client, token):
-    slice_ops = [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "habits")]
+    slice_ops = [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "plan", "habits")]
     assert slice_ops
     for m, p in slice_ops:
         resp = client.request(m, p.replace("{limit_id}", "1"), token=token, json_body=BODIES.get(p))

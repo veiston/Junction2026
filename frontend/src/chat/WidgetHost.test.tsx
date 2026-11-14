@@ -24,7 +24,7 @@ describe("question buttons only where they mean something", () => {
   });
 
   it("a card with no component yet has none", () => {
-    show("what_if", {});
+    show("spender_profile", {});
     expect(screen.getByTestId("widget-fallback")).toBeTruthy();
     expect(screen.queryByTestId("explain-buttons")).toBeNull();
   });

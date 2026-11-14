@@ -40,7 +40,7 @@ def protected():
 
 
 def slice_ops():
-    return [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "habits")]
+    return [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "plan", "habits")]
 
 
 def test_every_openapi_operation_is_mounted(app):
