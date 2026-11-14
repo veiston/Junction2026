@@ -77,7 +77,21 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - **Plain-language concepts**: small purchases add up, compare equal periods, fixed vs everyday spending, spending pace, one week is not proof.
 - **Private by design**: you can only see your own data.
 
-## 3. How it works
+## 3. Why it matters
+
+**For the customer**
+- You see where your money goes, in euros, split into three baskets. Not just a list of transactions.
+- You learn by doing: a 7-day challenge on one real habit, then a result and one lesson.
+- Every number comes with a short explanation in plain words. No jargon, no blame.
+- You stay in control. Nothing is blocked and no money moves.
+
+**For S-Pankki**
+- Customers talk with their own data and explore it freely. S-Bank says no Finnish bank offers this yet.
+- Customers can trust the answers: the server calculates every number, and the AI model only explains them.
+- It teaches financial skills in everyday life, which helps young adults most.
+- It is one app made for the phone, so it fits the S-mobiili idea.
+
+## 4. How it works
 
 - The **server calculates every number**. The AI model never writes database queries and never sees your raw transactions or your customer id. It only explains numbers that are already checked.
 - **Gemini** decides what to look up and writes the answer. You can also set up a local model (Gemma with Ollama). Then answers that contain your numbers are written on your own computer.
@@ -90,14 +104,14 @@ backend/    FastAPI, services, tools, tests       docs/       plan, decisions, u
 db/         SQLite database                       scripts/    data loading, local model
 ```
 
-## 4. Tests
+## 5. Tests
 
 ```bash
 cd backend  && uv run pytest -q
 cd frontend && pnpm test && pnpm exec tsc --noEmit
 ```
 
-## 5. Limits
+## 6. Limits
 
 - The free Gemini key has a small daily limit. Use a fresh key for a demo.
 - The data is test data. It ends on 30 September 2026.
@@ -105,7 +119,7 @@ cd frontend && pnpm test && pnpm exec tsc --noEmit
 - English only. No push notifications: the bell shows a red dot inside the app.
 - The Windows scripts are less tested than the macOS ones.
 
-## 6. More
+## 7. More
 
 `docs/vertical-slices.md` (the three parts), `docs/architecture.md`, `docs/requirements.md`, `docs/user-stories.md`, `docs/decisions/` (why we chose things).
 
