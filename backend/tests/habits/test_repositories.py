@@ -103,4 +103,4 @@ def test_migration_applies_on_existing_db(tmp_path):
     copy2 = tmp_path / "copy2.sqlite3"
     shutil.copy(REAL_DB, copy2)
     repo = SqliteLimitRepository(Database(copy2))
-    assert repo.active_for_month(ME, "2026-09") is None
+    assert repo.active_for_month("CUST_NONE", "2026-09") is None
