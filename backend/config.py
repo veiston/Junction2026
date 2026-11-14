@@ -14,13 +14,13 @@ def _bool(value: str) -> bool:
 @dataclass(frozen=True)
 class Config:
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.6-flash"
     jwt_secret: str = "dev-secret-change-me"
     demo_mode: bool = True
     demo_today: date = date(2026, 9, 15)
     db_path: str = "db/money_coach.sqlite3"
     coach_origin: str = "http://localhost:5173"
-    demo_origin: str = "http://localhost:5174"
+    demo_origin: str = "http://localhost:8081"
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None) -> Config:
