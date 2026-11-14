@@ -45,3 +45,13 @@ def test_challenge_flow(http):
     assert c.post("/habits/challenges", token=TOKEN, json_body={"template_id": "nope_x_7d"}).status == 404
     items = c.get("/habits/challenges", token=TOKEN).json["items"]
     assert len(items) == 1 and items[0]["challenge"]["template_id"] == "max_amount_taxis_7d"
+
+
+def test_stop_challenge_over_http(http):
+    c = http.client
+    assert c.post("/habits/challenges/1/stop", token=TOKEN).status == 404
+    first = c.post("/habits/challenges", token=TOKEN, json_body={"template_id": "max_amount_taxis_7d"})
+    assert first.status == 201
+    stopped = c.post(f"/habits/challenges/{first.json['challenge']['id']}/stop", token=TOKEN)
+    assert stopped.status == 200 and stopped.json["challenge"]["status"] == "cancelled"
+    assert c.post("/habits/challenges/1/stop").status == 401

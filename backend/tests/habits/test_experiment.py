@@ -227,3 +227,28 @@ def test_only_one_challenge_runs_at_a_time():
         svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_bars_7d"))
     clock.set_today(date(2026, 9, 22))  # the first one is over, so a new one can start
     assert svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_bars_7d")).challenge.status.value == "active"
+
+
+def test_stopping_a_challenge_ends_it_without_a_verdict_and_frees_the_slot():
+    svc, clock, challenges = build(rows("taxis", TAXIS))
+    started = start(svc)
+    stopped = svc.stop_challenge(ME, started.challenge.id)
+    assert stopped.challenge.status.value == "cancelled" and stopped.concept is None and stopped.next_step is None
+    assert challenges.rows[0].status == "cancelled"
+    # a new challenge can start right away, and a stopped one stays stopped when the week passes
+    assert svc.start_challenge(ME, StartChallengeRequest(template_id=TAXI_ID)).challenge.status.value == "active"
+    clock.set_today(date(2026, 9, 25))
+    statuses = sorted(i.challenge.status.value for i in svc.list_challenges(ME).items)
+    assert statuses == ["cancelled", "lost"] or statuses == ["cancelled", "won"]
+
+
+def test_stopping_a_missing_or_foreign_challenge_is_not_found_and_a_finished_one_is_a_conflict():
+    svc, clock, _ = build(rows("taxis", TAXIS))
+    with pytest.raises(NotFound):
+        svc.stop_challenge(ME, 999)
+    started = start(svc)
+    with pytest.raises(NotFound):
+        svc.stop_challenge(OTHER, started.challenge.id)
+    clock.set_today(date(2026, 9, 22))
+    with pytest.raises(Conflict):
+        svc.stop_challenge(ME, started.challenge.id)

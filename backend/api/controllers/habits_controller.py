@@ -57,3 +57,8 @@ def get_habits_challenges(cid: CustomerId, svc: Habits) -> Any:
 @router.post("/habits/challenges", response_model=ChallengeProgress, status_code=201)
 def post_habits_challenges(body: StartChallengeRequest, cid: CustomerId, svc: Habits) -> Any:
     return svc.start_challenge(cid, body)
+
+
+@router.post("/habits/challenges/{challenge_id}/stop", response_model=ChallengeProgress)
+def post_habits_challenges_challenge_id_stop(challenge_id: int, cid: CustomerId, svc: Habits) -> Any:
+    return svc.stop_challenge(cid, challenge_id)

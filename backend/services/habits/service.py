@@ -1,6 +1,7 @@
 """HabitsService: spending limits and challenges. Clock-aware; never reads the real date."""
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import timedelta
 
 from contracts.dto.habits import (
@@ -94,6 +95,17 @@ class HabitsServiceImpl:
             start_date=today, end_date=today + timedelta(days=int(template.duration_days)), status="active",
         ))
         return self._challenge_calc.progress(record, today)[0]
+
+    def stop_challenge(self, customer_id: str, challenge_id: int) -> ChallengeProgress:
+        today = self._clock.today()
+        self.list_challenges(customer_id)  # settles finished challenges first
+        record = next((r for r in self._challenges.list(customer_id) if r.id == challenge_id), None)
+        if record is None:
+            raise NotFound("Challenge not found.")
+        if self._challenge_calc.progress(record, today)[1] != "active":
+            raise Conflict("This challenge has already finished.")
+        self._challenges.set_status(customer_id, challenge_id, "cancelled")
+        return self._challenge_calc.progress(replace(record, status="cancelled"), today)[0]
 
     def list_challenges(self, customer_id: str) -> ChallengeList:
         today = self._clock.today()

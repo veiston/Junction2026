@@ -216,7 +216,8 @@ class GetChallengeProgressTool(_HabitsTool):
             return ToolResult(facts={"has_challenges": False, "note": "No challenge started yet. Offer suggestions."})
         active = [i for i in items if i.challenge.status.value == "active"]
         # One challenge at a time: the running one, else the most recent one that finished.
-        shown = active[:1] or [max(items, key=lambda i: i.challenge.id)]
+        finished = [i for i in items if i.challenge.status.value in ("won", "lost")]
+        shown = active[:1] or [max(finished or items, key=lambda i: i.challenge.id)]
         facts = {
             "has_challenges": True,
             "items": [{"title": i.challenge.title, "status": i.challenge.status.value, "days_left": i.days_left,

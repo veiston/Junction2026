@@ -23,7 +23,7 @@ BODIES = {
 
 
 def concrete(path: str) -> str:
-    return path.replace("{limit_id}", "1")
+    return path.replace("{limit_id}", "1").replace("{challenge_id}", "1")
 
 
 def assert_envelope(resp, status, code):

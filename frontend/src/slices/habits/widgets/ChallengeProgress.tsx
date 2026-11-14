@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { postChatAsk } from "@/chat/chatAsk";
 import type { ChallengeProgress as ChallengeProgressData } from "@/contracts";
 import type { WidgetProps } from "@/chat/registry";
 import { coachColors, colors, fonts, spacing } from "@/theme";
@@ -7,7 +9,7 @@ import { coachColors, colors, fonts, spacing } from "@/theme";
 import { useStartChallenge } from "../hooks/useStartChallenge";
 import { CompareBars } from "./CompareBars";
 import { plural } from "./format";
-import { Body, Card, ErrorText, PrimaryButton, ProgressBar, SecondaryButton, Title } from "./ui";
+import { Body, Card, ErrorText, PrimaryButton, ProgressBar, SecondaryButton, StopButton, Title } from "./ui";
 
 export const ANOTHER_HABIT_MESSAGE = "Show me another challenge to try";
 
@@ -18,6 +20,7 @@ const has = (n: number | null | undefined): n is number => typeof n === "number"
 export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgressData>) {
   const d = widget.data;
   const start = useStartChallenge(api);
+  const [stopState, setStopState] = useState<"idle" | "busy" | "stopped" | "failed">("idle");
   if (!d?.challenge) return null;
   const c = d.challenge;
   const fmt = api.formatCents;
@@ -54,9 +57,33 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
         ) : (
           <Body muted>{`${c.start_date} to ${c.end_date}`}</Body>
         )}
-        {c.status === "active" ? (
-          <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
+        {c.status === "active" && stopState !== "stopped" ? (
+          <View style={styles.row}>
+            <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
+            <View style={styles.spacer} />
+            <StopButton
+              label={stopState === "busy" ? "Stopping..." : "Stop challenge"}
+              disabled={stopState === "busy"}
+              onPress={async () => {
+                setStopState("busy");
+                try {
+                  await api.request("POST", `/habits/challenges/${c.id}/stop`);
+                  setStopState("stopped");
+                  postChatAsk(
+                    "I stopped the challenge. What now?",
+                    `The customer stopped their 7-day challenge "${c.title}" before it ended, with ${plural(d.days_left ?? 0, "day", "days")} left. ` +
+                      `They had spent ${fmt(current)} so far. It ends without a result and nothing is lost. ` +
+                      "They can start another challenge any time.",
+                  );
+                } catch {
+                  setStopState("failed");
+                }
+              }}
+            />
+          </View>
         ) : null}
+        {stopState === "stopped" ? <Body muted>Challenge stopped.</Body> : null}
+        {stopState === "failed" ? <ErrorText>Could not stop the challenge. Try again.</ErrorText> : null}
       </Card>
     );
   }
@@ -115,6 +142,8 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
 }
 
 const styles = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "center" },
+  spacer: { flex: 1 },
   status: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18 },
   verdict: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
   verdictMet: { backgroundColor: coachColors.surfaceMuted },

@@ -312,3 +312,40 @@ describe("what the assistant is told after Start", () => {
     expect(seen[0].facts).toContain("red dot on the bell");
   });
 });
+
+describe("stop challenge", () => {
+  it("stops the running challenge, tells the assistant and hides the buttons", async () => {
+    const { registerChatAsk } = require("@/chat/chatAsk");
+    const asked: string[][] = [];
+    const off = registerChatAsk((q: string, f: string) => asked.push([q, f]));
+    const request = jest.fn().mockResolvedValue({});
+    const api = makeApi(request);
+    show("challenge_progress", habitsMocks.challenge_progress, api);
+    expect(screen.getByLabelText("Try a new challenge")).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Stop challenge"));
+    });
+    off();
+    const id = (habitsMocks.challenge_progress as { challenge: { id: number } }).challenge.id;
+    expect(request).toHaveBeenCalledWith("POST", `/habits/challenges/${id}/stop`);
+    expect(asked[0][0]).toBe("I stopped the challenge. What now?");
+    expect(asked[0][1]).toMatch(/stopped their 7-day challenge/);
+    expect(screen.getByText("Challenge stopped.")).toBeTruthy();
+    expect(screen.queryByLabelText("Stop challenge")).toBeNull();
+  });
+
+  it("shows an error and keeps the button when stopping fails", async () => {
+    const request = jest.fn().mockRejectedValue({ status: 409, message: "x" });
+    show("challenge_progress", habitsMocks.challenge_progress, makeApi(request));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Stop challenge"));
+    });
+    expect(screen.getByText("Could not stop the challenge. Try again.")).toBeTruthy();
+    expect(screen.getByLabelText("Stop challenge")).toBeTruthy();
+  });
+
+  it("a finished challenge has no stop button", () => {
+    show("challenge_progress", challengeProgressWonMock);
+    expect(screen.queryByLabelText("Stop challenge")).toBeNull();
+  });
+});

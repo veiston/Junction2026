@@ -59,6 +59,25 @@ export function SecondaryButton({ label, onPress }: { label: string; onPress: ()
   );
 }
 
+/** Amber outline: a different colour on purpose, because it ends something. */
+export const stopAmber = "#B45309";
+
+export function StopButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      hitSlop={6}
+      onPress={onPress}
+      style={[styles.stop, disabled && styles.buttonDisabled]}
+    >
+      <Text style={styles.stopText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function ProgressBar({
   fraction,
   color,
@@ -122,6 +141,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   secondaryText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.primary },
+  stop: {
+    minHeight: 36,
+    alignSelf: "flex-start",
+    borderRadius: radius.round,
+    borderWidth: 1,
+    borderColor: stopAmber,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  stopText: { fontFamily: fonts.semibold, fontSize: 14, color: stopAmber },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.onPrimary },
   track: { height: 10, borderRadius: 5, backgroundColor: coachColors.surfaceMuted, overflow: "hidden" },
