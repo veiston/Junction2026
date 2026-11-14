@@ -26,25 +26,23 @@ flowchart LR
 
 ## Slice 0 — Foundation (walking skeleton)
 
-- **Goal:** the thinnest end-to-end path: embedded-demo → coach → chat → LLM → one tool → widget, on real data.
-- **After it I can:** open the AI tab in embedded-demo, see the coach with three chips, ask "show my latest transactions" and get a text answer plus a transaction list with "See all". The three chips answer "coming soon" (501 stubs).
+- **Goal:** the thinnest end-to-end path: app → coach → chat → LLM → one tool → widget, on real data.
+- **After it I can:** open the AI tab, see the coach with three chips, ask "show my latest transactions" and get a text answer plus a transaction list with "See all". The three chips answer "coming soon" (501 stubs).
 - **Stories:** US-F1, US-F2, US-F3 (wiring), US-F4, US-F5, US-F6.
-- **Started with one command:** `./run.sh` (backend + coach + embedded-demo); `python scripts/ingest.py` once before.
+- **Started with one command:** `./run.sh` (backend + the Expo app); `python scripts/ingest.py` once before.
 - **Done when:** ingest builds the DB with the rules in er.md §4 (tests on sample rows); token flow works (401 tests); the chat answers via Gemini with a transaction_list widget; slice stubs return 501; `/dev/gallery` renders; all foundation tests pass.
 
 ```mermaid
 sequenceDiagram
   actor U as Customer
-  participant ED as embedded-demo
-  participant CO as coach (React)
+  participant CO as app (Expo, AI tab)
   participant API as FastAPI
   participant OR as Orchestrator
   participant G as Gemini
   participant DB as SQLite
-  U->>ED: tap AI tab
-  ED->>API: POST /demo/session {customer_id}
-  API-->>ED: {token}
-  ED->>CO: load URL #token=…
+  U->>CO: tap AI tab
+  CO->>API: POST /demo/session {customer_id}
+  API-->>CO: {token}
   CO->>API: GET /me (Bearer)
   U->>CO: "show my latest transactions"
   CO->>API: POST /chat
@@ -61,7 +59,7 @@ sequenceDiagram
 
 **Tasks (one branch `foundation`, decision 0012):** foundation-adapter-db · foundation-adapter-llm ·
 foundation-models-and-ports · foundation-services · foundation-controllers ·
-foundation-frontend-foundation · foundation-frontend-hooks · foundation-embedded-demo · foundation-tests
+foundation-frontend-foundation · foundation-frontend-hooks · foundation-tests
 
 ---
 

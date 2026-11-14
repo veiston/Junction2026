@@ -7,7 +7,7 @@ Format: **As a …, I want … so that …** — *Accepted when …*. Priority M
 
 | Id | Story | Accepted when | Prio | Use case |
 |---|---|---|---|---|
-| US-F1 | As a customer, I want to open the coach from the S-mobiili AI tab already signed in, so that I don't log in twice. | Tapping the AI tab in embedded-demo shows the coach with the persona's name-free greeting; no login screen; reload keeps working until the token expires (60 min). | M | UC-01 |
+| US-F1 | As a customer, I want to open the coach from the S-mobiili AI tab already signed in, so that I don't log in twice. | Tapping the AI tab shows the coach with the persona's name-free greeting; no login screen; reload keeps working until the token expires (60 min). | M | UC-01 |
 | US-F2 | As a customer, I want to ask any question in my own words, so that I explore my money freely (MyData). | A typed question returns an assistant message with text, sources, and 0–3 widgets; an off-topic question gets a polite redirect; a model failure shows a friendly error, not a crash. | M | UC-02 |
 | US-F3 | As a customer, I want three suggested actions, so that I can start without knowing what to ask. | Three chips are shown on an empty chat; each chip triggers its fixed first tool and returns its widget. | M | UC-03 |
 | US-F4 | As a customer, I want to see the transactions behind a number, so that I can trust it. | `list_transactions` returns a transaction_list widget; "See all" pages through matching rows; totals match the widget that linked to it. | M | UC-04 |

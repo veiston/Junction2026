@@ -83,7 +83,7 @@ paths:
     post:
       x-owner: foundation
       operationId: createDemoSession
-      summary: Simulates S-mobiili login. Exists only when DEMO_MODE=true. Called by embedded-demo.
+      summary: Simulates S-mobiili login. Exists only when DEMO_MODE=true. Called by the app.
       security: []
       requestBody:
         required: true
