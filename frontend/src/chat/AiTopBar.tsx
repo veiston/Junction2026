@@ -4,15 +4,21 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@/components/Icon";
 import { coachColors, colors, fonts, radius, spacing } from "@/theme";
 
+import type { Notice } from "./useNotifications";
+
 interface Props {
   /** Back button: leave the coach and go to the app's main page. */
   onBack: () => void;
   /** Menu item: back to the first view with the three functions. */
   onShowFunctions: () => void;
+  /** Unread notices shown under the bell. */
+  notices?: Notice[];
+  onNotice?: (notice: Notice) => void;
 }
 
-export function AiTopBar({ onBack, onShowFunctions }: Props) {
+export function AiTopBar({ onBack, onShowFunctions, notices = [], onNotice }: Props) {
   const [open, setOpen] = useState(false);
+  const [bell, setBell] = useState(false);
 
   return (
     <View style={styles.wrap}>
@@ -27,19 +33,54 @@ export function AiTopBar({ onBack, onShowFunctions }: Props) {
           S-MONEY · COACH
         </Text>
         <View style={styles.spacer} />
-        <View style={styles.plain} accessibilityLabel="Notifications">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={notices.length > 0 ? `Notifications, ${notices.length} new` : "Notifications"}
+          onPress={() => {
+            setBell((b) => !b);
+            setOpen(false);
+          }}
+          style={styles.plain}
+        >
           <Icon name="bell-outline" size={24} color={colors.text} />
-        </View>
+          {notices.length > 0 ? <View style={styles.dot} testID="bell-dot" /> : null}
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Menu"
           accessibilityState={{ expanded: open }}
-          onPress={() => setOpen((o) => !o)}
+          onPress={() => {
+            setOpen((o) => !o);
+            setBell(false);
+          }}
           style={styles.menuButton}
         >
           <Icon name="menu" size={22} color={colors.text} />
         </Pressable>
       </View>
+      {bell ? (
+        <View style={styles.menu} testID="bell-list">
+          {notices.length === 0 ? (
+            <View style={styles.item}>
+              <Text style={styles.itemText}>No new notifications</Text>
+            </View>
+          ) : (
+            notices.map((n) => (
+              <Pressable
+                key={n.id}
+                accessibilityRole="button"
+                onPress={() => {
+                  setBell(false);
+                  onNotice?.(n);
+                }}
+                style={styles.item}
+              >
+                <Text style={styles.itemText}>{n.text}</Text>
+              </Pressable>
+            ))
+          )}
+        </View>
+      ) : null}
       {open ? (
         <View accessibilityRole="menu" style={styles.menu}>
           <Pressable
@@ -65,6 +106,7 @@ const styles = StyleSheet.create({
   logo: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
   brand: { fontSize: 12, letterSpacing: 0.8, fontFamily: fonts.bold, color: colors.primary },
   spacer: { flex: 1 },
+  dot: { position: "absolute", top: 10, right: 11, width: 10, height: 10, borderRadius: 5, backgroundColor: "#D64545" },
   menuButton: {
     width: 44,
     height: 44,
