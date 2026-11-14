@@ -312,22 +312,3 @@ describe("what the assistant is told after Start", () => {
     expect(seen[0].facts).toContain("red dot on the bell");
   });
 });
-
-describe("developer button", () => {
-  it("DEV: finish challenge moves the demo clock to the end date and asks for the result", async () => {
-    const request = jest.fn().mockResolvedValue({});
-    const api = makeApi(request);
-    show("challenge_progress", habitsMocks.challenge_progress, api);
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText("DEV: finish challenge"));
-    });
-    const end = (habitsMocks.challenge_progress as { challenge: { end_date: string } }).challenge.end_date;
-    expect(request).toHaveBeenCalledWith("PUT", "/demo/clock", { today: end });
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "How is my challenge going?" });
-  });
-
-  it("is not shown on a finished challenge", () => {
-    show("challenge_progress", challengeProgressWonMock);
-    expect(screen.queryByLabelText("DEV: finish challenge")).toBeNull();
-  });
-});

@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AiTabButton } from "@/components/AiTabButton";
 import { Icon, type IconName } from "@/components/Icon";
 import { brand } from "@/config";
+import { DevPanel } from "@/dev/DevPanel";
 import { colors, iconSize } from "@/theme";
 
 const TAB_BAR_HEIGHT = 64;
@@ -63,6 +64,7 @@ export default function TabLayout() {
   });
 
   return (
+    <>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -76,5 +78,7 @@ export default function TabLayout() {
       {TABS_AFTER_AI.map(renderTab)}
       <Tabs.Screen name="dev/gallery" options={{ href: null }} />
     </Tabs>
+    <DevPanel />
+    </>
   );
 }

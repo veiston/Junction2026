@@ -2,13 +2,12 @@ import { StyleSheet, Text, View } from "react-native";
 
 import type { ChallengeProgress as ChallengeProgressData } from "@/contracts";
 import type { WidgetProps } from "@/chat/registry";
-import { DEV_TOOLS } from "@/config";
 import { coachColors, colors, fonts, spacing } from "@/theme";
 
 import { useStartChallenge } from "../hooks/useStartChallenge";
 import { CompareBars } from "./CompareBars";
 import { plural } from "./format";
-import { Body, Card, DevButton, ErrorText, PrimaryButton, ProgressBar, SecondaryButton, Title } from "./ui";
+import { Body, Card, ErrorText, PrimaryButton, ProgressBar, SecondaryButton, Title } from "./ui";
 
 export const ANOTHER_HABIT_MESSAGE = "Show me another challenge to try";
 
@@ -57,18 +56,6 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
         )}
         {c.status === "active" ? (
           <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
-        ) : null}
-        {c.status === "active" && DEV_TOOLS ? (
-          <DevButton
-            label="DEV: finish challenge"
-            onPress={() => {
-              // Moves the demo clock to the end of the challenge, then asks for the result.
-              void api
-                .request("PUT", "/demo/clock", { today: c.end_date })
-                .then(() => api.sendChat({ message: PROGRESS_MESSAGE }))
-                .catch(() => undefined);
-            }}
-          />
         ) : null}
       </Card>
     );

@@ -116,7 +116,7 @@ export function useChat(): UseChat {
   const askAbout = useCallback(
     (question: string, facts: string) => {
       setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: question }]);
-      void post({ message: `${question}\n\nCard facts: ${facts}`.slice(0, 1000) }); // the API accepts at most 1000 characters
+      void post({ message: (facts ? `${question}\n\nCard facts: ${facts}` : question).slice(0, 1000) }); // the API accepts at most 1000 characters
     },
     [post],
   );
