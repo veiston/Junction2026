@@ -1,0 +1,7 @@
+# Keep database structure and seed data in Git.
+*
+!.gitignore
+!migrations/
+!migrations/**
+!seed/
+!seed/**

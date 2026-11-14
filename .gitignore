@@ -24,6 +24,13 @@ expo-env.d.ts
 .cache/
 tmp/
 
+# Local database files. Keep SQL migrations and seed files in Git.
+db/*.sqlite
+db/*.sqlite3
+db/*.duckdb
+db/*.duckdb.wal
+db/*.duckdb.tmp
+
 .idea/
 .vscode/*
 !.vscode/extensions.json
