@@ -179,3 +179,27 @@ def test_too_many_rounds(world):
     assert r.message.text == prompts.TOO_MANY_ROUNDS
     assert len(llm.calls) == MAX_TOOL_ROUNDS + 1
     assert len(r.message.widgets) <= 3
+
+
+def test_explain_question_leads_to_concept_note(world):
+    orch, llm, _ = world
+    llm.push(call("explain_concept", {"concept_id": "compare_equal_periods"}))
+    llm.push(say("Compare equal weeks to be fair."))
+    r = ask(orch, "what does comparing equal periods mean?")
+    assert [w.type.value for w in r.message.widgets] == ["concept_note"]
+    tool_msg = [m for m in llm.calls[1]["messages"] if m.role == "tool"][0]
+    assert "Compare equal periods" in tool_msg.text and "CUST" not in tool_msg.text
+
+
+def test_bad_concept_id_is_reported_to_the_model(world):
+    orch, llm, _ = world
+    llm.push(call("explain_concept", {"concept_id": "nonsense"}))
+    llm.push(say("Sorry, I can't explain that one."))
+    r = ask(orch, "explain nonsense")
+    assert r.message.widgets == [] and r.message.text == "Sorry, I can't explain that one."
+    tool_msg = [m for m in llm.calls[1]["messages"] if m.role == "tool"][0]
+    assert "Unknown concept" in tool_msg.text
+
+
+def test_prompt_has_explain_rule():
+    assert "explain_concept" in prompts.SYSTEM_PROMPT and "no blame" in prompts.SYSTEM_PROMPT
