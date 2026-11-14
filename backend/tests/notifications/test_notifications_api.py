@@ -23,14 +23,14 @@ WEEK_ID = "spending-{}-w{:02d}".format(*TODAY.isocalendar()[:2])
 # customer, date, category, amount, balance, type, mcc
 ROWS = [
     ("CUST00001", "2026-08-01", "Salary", "2500.00", "2500.00", "salary", ""),
-    ("CUST00001", "2026-08-12", "Restaurants", "-22.00", "2478.00", "purchase", "5812"),
-    ("CUST00001", "2026-08-20", "Restaurants", "-18.00", "2460.00", "purchase", "5812"),
-    # the week before (02-08 Sep): 30 EUR of everyday spending
-    ("CUST00001", "2026-09-03", "Restaurants", "-15.00", "2445.00", "purchase", "5812"),
-    ("CUST00001", "2026-09-05", "Restaurants", "-15.00", "2430.00", "purchase", "5812"),
-    # the last 7 days (09-15 Sep): 75 EUR, +150 %
-    ("CUST00001", "2026-09-10", "Restaurants", "-40.00", "2390.00", "purchase", "5812"),
-    ("CUST00001", "2026-09-12", "Restaurants", "-35.00", "2355.00", "purchase", "5812"),
+    # a typical week (12 Aug - 8 Sep, 4 weeks): 15 EUR of everyday spending each
+    ("CUST00001", "2026-08-14", "Restaurants", "-15.00", "2485.00", "purchase", "5812"),
+    ("CUST00001", "2026-08-21", "Restaurants", "-15.00", "2470.00", "purchase", "5812"),
+    ("CUST00001", "2026-08-28", "Restaurants", "-15.00", "2455.00", "purchase", "5812"),
+    ("CUST00001", "2026-09-04", "Restaurants", "-15.00", "2440.00", "purchase", "5812"),
+    # the last 7 days (9-15 Sep): 75 EUR, +400 %
+    ("CUST00001", "2026-09-10", "Restaurants", "-40.00", "2400.00", "purchase", "5812"),
+    ("CUST00001", "2026-09-12", "Restaurants", "-35.00", "2365.00", "purchase", "5812"),
 ]
 
 
@@ -66,7 +66,8 @@ def test_a_big_rise_in_everyday_spending_is_a_notice(client, token):
     body = unread(client, token)
     [notice] = by_kind(body, "spending_change")
     assert notice["id"] == WEEK_ID and notice["tone"] == "warning"
-    assert "75 €" in notice["text"] and "150 %" in notice["text"] and "restaurants (+45 €)" in notice["text"]
+    assert "75 €" in notice["text"] and "400 % more than in a typical week (15 €)" in notice["text"]
+    assert "restaurants (+60 €)" in notice["text"]
     assert notice["ask"].startswith("My everyday spending went up this week")
     assert body["unread_count"] == len(body["items"]) >= 1
 

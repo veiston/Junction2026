@@ -24,9 +24,14 @@ def spend(i, day, cents, group="restaurants"):
     )
 
 
-def week(before_cents, now_cents, group_now="restaurants"):
-    """One purchase in the week before (6 Sep) and one in the last 7 days (12 Sep)."""
-    return [spend(1, "2026-09-06", before_cents), spend(2, "2026-09-12", now_cents, group_now)]
+BASELINE_DAYS = ("2026-08-14", "2026-08-21", "2026-08-28", "2026-09-04")  # one in each of the 4 weeks before
+
+
+def week(typical_cents, now_cents, group_now="restaurants"):
+    """`typical_cents` in each of the 4 baseline weeks, `now_cents` in the last 7 days (12 Sep)."""
+    rows = [spend(i, d, typical_cents) for i, d in enumerate(BASELINE_DAYS, start=1)]
+    rows.append(spend(9, "2026-09-12", now_cents, group_now))
+    return [r for r in rows if r.amount_cents != 0]
 
 
 class MemoryRepo:
@@ -84,17 +89,24 @@ def kinds(svc):
     return {n.kind.value: n for n in svc.unread(CID).items}
 
 
-@pytest.mark.parametrize("before,now,expect", [
-    (3000, 7500, "warning"),   # +150 %, +45 EUR
-    (8000, 5000, "good"),      # -37.5 %, -30 EUR
-    (3000, 3500, None),        # +17 %: below 25 %
-    (1000, 1800, None),        # +80 % but only +8 EUR: below 20 EUR
-    (0, 9000, None),           # nothing the week before: no fair comparison
+@pytest.mark.parametrize("typical,now,expect", [
+    (3000, 7500, "warning"),   # +150 %, +45 EUR vs a typical week
+    (10000, 5000, "good"),     # -50 %, -50 EUR
+    (3000, 4000, None),        # +33 %: below 50 %
+    (1000, 3000, None),        # +200 % but only +20 EUR: below 40 EUR
+    (0, 9000, None),           # no history: no fair comparison
+    (5000, 0, None),           # nothing recorded this week: more likely missing data than a change
 ])
-def test_spending_change_thresholds_and_tone(before, now, expect):
-    rows = [r for r in week(before, now) if r.amount_cents != 0]
-    notice = kinds(service(rows)[0]).get("spending_change")
+def test_spending_change_thresholds_and_tone(typical, now, expect):
+    notice = kinds(service(week(typical, now))[0]).get("spending_change")
     assert (notice.tone.value if notice else None) == expect
+
+
+def test_texts_compare_with_a_typical_week():
+    up = kinds(service(week(3000, 7500))[0])["spending_change"].text
+    assert "75 €" in up and "150 % more than in a typical week (30 €)" in up and "restaurants (+45 €)" in up
+    down = kinds(service(week(10000, 5000))[0])["spending_change"].text
+    assert "50 % less than in a typical week (100 €)" in down and "biggest drop was in restaurants (−50 €)" in down
 
 
 def test_a_running_challenge_is_named_and_suggestions_pause():

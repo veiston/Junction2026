@@ -14,8 +14,11 @@ from contracts.interfaces.controllers.errors import NotFound
 from contracts.interfaces.repositories.shared import Clock, TransactionRepository
 
 WEEK_DAYS = 7
-CHANGE_MIN_PCT = 25          # everyday spending must move at least this much week on week...
-CHANGE_MIN_CENTS = 2000      # ...and at least 20 EUR, so small amounts never trigger a notice
+BASELINE_WEEKS = 4           # "a typical week" = the average of the 4 weeks before the last 7 days
+# Tuned on the dataset: weeks are spiky (one flight is "everyday" spending), so smaller moves fired for most
+# customers every week. At 50 % and 40 EUR about 4 in 10 customer-weeks get a notice.
+CHANGE_MIN_PCT = 50
+CHANGE_MIN_CENTS = 4000
 SUGGEST_EVERY_DAYS = 14      # an invitation to try a challenge, at most once every two weeks
 MAX_ITEMS = 10
 
@@ -73,15 +76,18 @@ class NotificationServiceImpl:
         return out
 
     def _spending_change(self, customer_id: str, today: date, running) -> Notification | None:
-        """Everyday spending of the last 7 days vs the 7 days before."""
+        """Everyday spending of the last 7 days vs a typical week (average of the 4 weeks before)."""
         this_start = today - timedelta(days=WEEK_DAYS - 1)
-        prev_end = this_start - timedelta(days=1)
-        prev_start = prev_end - timedelta(days=WEEK_DAYS - 1)
+        base_end = this_start - timedelta(days=1)
+        base_start = base_end - timedelta(days=WEEK_DAYS * BASELINE_WEEKS - 1)
         now = self._everyday_by_group(customer_id, this_start, today)
-        before = self._everyday_by_group(customer_id, prev_start, prev_end)
+        before = {g: round(c / BASELINE_WEEKS) for g, c in
+                  self._everyday_by_group(customer_id, base_start, base_end).items()}
         now_total, before_total = sum(now.values()), sum(before.values())
         diff = now_total - before_total
-        if before_total <= 0 or abs(diff) < CHANGE_MIN_CENTS or abs(diff) * 100 < CHANGE_MIN_PCT * before_total:
+        if before_total <= 0 or now_total <= 0:
+            return None  # no fair comparison: no history, or no spending recorded this week
+        if abs(diff) < CHANGE_MIN_CENTS or abs(diff) * 100 < CHANGE_MIN_PCT * before_total:
             return None
 
         pct = round(abs(diff) / before_total * 100)
@@ -94,14 +100,16 @@ class NotificationServiceImpl:
 
         if up:
             title = "Everyday spending is up this week"
-            text = (f"You spent {_eur(now_total)} on everyday things in the last 7 days, {pct} % more than the "
-                    f"week before. Most of the rise came from {_group(mover)} (+{_eur(mover_diff)}).{challenge}")
+            text = (f"You spent {_eur(now_total)} on everyday things in the last 7 days, {pct} % more than in a "
+                    f"typical week ({_eur(before_total)}). Most of the rise came from {_group(mover)} "
+                    f"(+{_eur(mover_diff)}).{challenge}")
             ask = ("My everyday spending went up this week. What changed, and what can I do to stay on track"
                    + (" with my challenge?" if running else "?"))
         else:
             title = "Nice: everyday spending is down this week"
-            text = (f"You spent {_eur(now_total)} on everyday things in the last 7 days, {pct} % less than the "
-                    f"week before, mostly on {_group(mover)} ({_eur(mover_diff)}).{challenge}")
+            text = (f"You spent {_eur(now_total)} on everyday things in the last 7 days, {pct} % less than in a "
+                    f"typical week ({_eur(before_total)}). The biggest drop was in {_group(mover)} "
+                    f"(−{_eur(-mover_diff)}).{challenge}")
             ask = "My everyday spending went down this week. What changed, and how do I keep it up?"
         return Notification(
             id=f"spending-{year}-w{week:02d}", kind="spending_change", tone="warning" if up else "good",

@@ -7,7 +7,7 @@
   - `GET /notifications`: unread notices, newest first. `POST /notifications/{notification_id}/read`: 204, also when already read.
   - `NotificationService` in `interfaces/controllers/services.py`.
 - **Rules (deterministic, never the LLM):**
-  - `spending_change`: everyday spending of the last 7 days vs the 7 days before, when it moves at least 25 % and at least 20 EUR. Names the group that moved most, and the running challenge if there is one.
+  - `spending_change`: everyday spending of the last 7 days vs a typical week (average of the 4 weeks before), when it moves at least 50 % and at least 40 EUR, and only when both weeks have spending. Names the group that moved most, and the running challenge if there is one. One per calendar week. Tuned on the dataset: weekly spending is spiky, and smaller thresholds fired for most customers every week; at 50 % / 40 EUR about 4 in 10 customer-weeks get a notice.
   - `challenge_ended`: a challenge finished (won or lost) and its result was not opened yet. Replaces the app-side check.
   - `challenge_suggestion`: no challenge running, at most one every 14 days.
 - **Behaviour:** opening a notice marks it read and sends its `ask` question to the coach, which answers with the usual cards.
