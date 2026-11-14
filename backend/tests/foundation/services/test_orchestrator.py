@@ -144,6 +144,24 @@ def test_llm_down_is_friendly_not_exception(world):
     assert [m.role for m in convs.recent(r.conversation_id)] == ["user", "assistant"]
 
 
+def test_llm_down_after_a_tool_ran_keeps_the_card_and_says_so(world):
+    orch, llm, _ = world
+    llm.push(call())  # the tool runs and produces a card
+
+    real = llm.generate
+    state = {"n": 0}
+
+    def flaky(*a, **k):
+        state["n"] += 1
+        if state["n"] == 1:
+            return real(*a, **k)
+        raise LlmUnavailable("quota")
+
+    llm.generate = flaky
+    r = ask(orch, "show my latest transactions")
+    assert r.message.text == prompts.LLM_DOWN_WITH_CARD and len(r.message.widgets) == 1
+
+
 def test_unknown_tool_friendly_error(world):
     orch, llm, _ = world
     llm.push(call("drop_database"))

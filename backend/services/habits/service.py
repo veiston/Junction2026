@@ -71,6 +71,9 @@ class HabitsServiceImpl:
         items = self._challenge_calc.templates(customer_id, self._clock.today())[:MAX_SUGGESTIONS]
         return ChallengeSuggestions(items=items)
 
+    def basket_split(self, customer_id: str):
+        return self._challenge_calc.basket_split(customer_id, self._clock.today())
+
     def start_challenge(self, customer_id: str, request: StartChallengeRequest) -> ChallengeProgress:
         today = self._clock.today()
         self.list_challenges(customer_id)  # settles finished challenges before the duplicate check

@@ -98,7 +98,7 @@ class ChatOrchestrator:
             except LlmUnavailable as e:
                 # The user sees a friendly message; the real reason goes to the backend log.
                 log.warning("LLM unavailable in round %d: %s", round_no, e)
-                return prompts.LLM_DOWN, widgets, sources
+                return (prompts.LLM_DOWN_WITH_CARD if widgets else prompts.LLM_DOWN), widgets, sources
 
             if turn.finish_reason == "safety":
                 return prompts.OFF_TOPIC, widgets, sources

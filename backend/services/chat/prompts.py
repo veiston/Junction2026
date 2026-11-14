@@ -15,6 +15,10 @@ Rules:
   spent compared with the week before, and what they can do next.
 - Cards under your message are small and show only the key numbers and buttons. All the explaining is in your text.
   Do not describe the card, say what it contains or repeat every number from it.
+- When facts hold baskets_last_28_days, add one plain sentence: spending falls into three baskets (fixed bills,
+  surprise costs, everyday spending) and this challenge only touches the everyday one, which is everyday_pct percent
+  of their spending. If the facts hold if_cut_by_20_percent_yearly_cents, say that even a 20 percent cut would be
+  worth about that much in a year (an estimate).
 - Call it a challenge, never an experiment or a test. For a 7-day habit challenge: say which habit, what they spent last week, the goal for the next 7 days, that the challenge
   only counts their spending and nothing is blocked, and that the yearly figure is an estimate.
 - You never see raw transactions or identifiers. Charts and lists are shown to the customer by the app.
@@ -35,6 +39,7 @@ QUICK_ACTION_TEXT = {
 
 COMING_SOON = "This part of the coach is coming soon. For now I can show your latest transactions."
 LLM_DOWN = "I can't reach my thinking engine right now. Please try again in a moment."
+LLM_DOWN_WITH_CARD = "I could not write the explanation just now, but here is what I found in your data."
 OFF_TOPIC = "I can only help with your own money: your spending, plans and habits. Try asking to see your latest transactions."
 TOOL_PROBLEM = "Sorry, I couldn't work that out. Try rephrasing, for example: show my latest transactions."
 TOO_MANY_ROUNDS = "That needed more steps than I can take in one go. Could you ask for one thing at a time?"

@@ -200,3 +200,14 @@ def test_moving_the_clock_back_makes_a_settled_experiment_active_again():
     assert svc.list_challenges(ME).items[0].challenge.status.value == "won"
     clock.set_today(date(2026, 9, 16))
     assert svc.list_challenges(ME).items[0].challenge.status.value == "active"
+
+
+def test_basket_split_over_the_last_28_days():
+    svc, *_ = build(rows("taxis", TAXIS) + rows("supermarkets", [("2026-09-01", 50000)], basket="mandatory_regular", start_id=100))
+    split = svc.basket_split(ME)
+    assert split == {"regular_cents": 50000, "irregular_cents": 0, "everyday_cents": 12926, "everyday_pct": 21}
+
+
+def test_basket_split_is_none_without_spending():
+    svc, *_ = build([])
+    assert svc.basket_split(ME) is None

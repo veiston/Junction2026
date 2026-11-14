@@ -67,6 +67,24 @@ class ChallengeCalculator:
         g = next((x for x in group_totals(self._recent_rows(customer_id, today)) if x.spend_group.value == group), None)
         return self._make(customer_id, g, today, skip_if_over_today=False) if g else None
 
+    def basket_split(self, customer_id: str, today: date) -> dict[str, int] | None:
+        """Spending in the last 28 full days by the three baskets (cents) and the everyday share (percent)."""
+        first = max(DATA_FROM, today - timedelta(days=LOOKBACK_DAYS))
+        last = today - timedelta(days=1)
+        if first > last:
+            return None
+        totals = {"mandatory_regular": 0, "mandatory_irregular": 0, "everyday": 0}
+        for t in self._tx.all_between(customer_id, first, last):
+            if t.flow.value == "spending" and t.basket is not None and t.basket.value in totals:
+                totals[t.basket.value] += -t.amount_cents
+        whole = sum(totals.values())
+        if whole <= 0:
+            return None
+        return {
+            "regular_cents": totals["mandatory_regular"], "irregular_cents": totals["mandatory_irregular"],
+            "everyday_cents": totals["everyday"], "everyday_pct": round(totals["everyday"] * 100 / whole),
+        }
+
     def _recent_rows(self, customer_id: str, today: date):
         first = max(DATA_FROM, today - timedelta(days=LOOKBACK_DAYS))
         last = today - timedelta(days=1)

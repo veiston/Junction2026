@@ -152,12 +152,16 @@ class SuggestChallengesTool(_HabitsTool):
         fresh = fresh or ([] if busy else s.items)
         # One habit at a time: the card and the reply must describe the same one.
         s = s.model_copy(update={"items": fresh[:1]})
+        baskets = self._svc().basket_split(ctx.customer_id)
         facts = {
             "count": len(s.items),
+            "baskets_last_28_days": baskets,
             "items": [{"title": t.title, "duration_days": int(t.duration_days),
                        "baseline_cents": t.baseline_cents, "baseline_count": t.baseline_count,
                        "target_cents": t.rule.amount_cents, "estimated_saving_cents": t.estimated_saving_cents,
-                       "yearly_saving_cents": t.yearly_saving_cents, "reason": t.reason} for t in s.items],
+                       "yearly_saving_cents": t.yearly_saving_cents, "reason": t.reason,
+                       "if_cut_by_20_percent_yearly_cents": (t.baseline_cents or 0) * 20 // 100 * 52}
+                      for t in s.items],
             "note": ("Describe only this habit. The customer starts the challenge with the button on the card. The yearly figure is an "
                      "estimate, say so." if s.items
                      else "No other regular everyday habit to test right now. Say so kindly and point to the "

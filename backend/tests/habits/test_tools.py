@@ -103,3 +103,10 @@ def test_customer_id_argument_is_dropped_by_registry(service):
     r = reg.run(CTX, "suggest_monthly_limit", {"customer_id": "CUST00002"})
     assert r.widgets
 
+
+
+def test_suggestion_facts_carry_the_baskets_and_the_twenty_percent_figure(service):
+    facts = tool("suggest_challenges").run(CTX, {}).facts
+    assert facts["baskets_last_28_days"] is not None
+    assert facts["items"][0]["if_cut_by_20_percent_yearly_cents"] == 2500 * 20 // 100 * 52
+    assert len(json.dumps(facts)) < 1500 and "CUST" not in json.dumps(facts)
