@@ -53,6 +53,7 @@ class AiTool(Protocol):
 TOOL_CATALOG: dict[str, list[str]] = {
     "foundation": [
         "list_transactions",      # -> transaction_list widget
+        "explain_concept",        # "explain this" / "what is ..." -> concept_note widget (from the fixed glossary)
     ],
     "understand": [
         "get_basket_breakdown",   # quick action understand_my_money -> basket_breakdown

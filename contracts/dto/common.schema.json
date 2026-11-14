@@ -131,6 +131,18 @@
         "date": { "$ref": "#/$defs/IsoDate" },
         "balance_cents": { "$ref": "#/$defs/Cents", "description": "Account balance; may be negative." }
       }
+    },
+    "ConceptNote": {
+      "title": "ConceptNote",
+      "type": "object",
+      "description": "A short plain-language explanation of one financial concept. The text comes from the backend glossary (written by the team) and is filled with the customer's own numbers; the model does not invent it.",
+      "required": ["id", "title", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "enum": ["small_purchases_add_up", "compare_equal_periods", "fixed_vs_everyday", "spending_pace", "one_week_is_not_proof"] },
+        "title": { "type": "string", "example": "Small purchases add up" },
+        "text": { "type": "string", "description": "At most 3 short sentences." }
+      }
     }
   }
 }

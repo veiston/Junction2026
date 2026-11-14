@@ -65,7 +65,8 @@ def test_slice_routes_are_501(client, method, path):
 
 def test_health_is_public(client):
     resp = client.get("/health")
-    assert resp.status == 200 and resp.json == {"status": "ok", "contracts_version": "1.0.0"}
+    version = (Path(__file__).resolve().parents[4] / "contracts" / "VERSION").read_text().strip()
+    assert resp.status == 200 and resp.json == {"status": "ok", "contracts_version": version}
     assert resp.headers["x-content-type-options"] == "nosniff"
     assert "content-security-policy" in resp.headers
 
