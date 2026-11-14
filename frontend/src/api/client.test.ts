@@ -1,5 +1,5 @@
 import { setToken } from "@/auth/token";
-import { api, ApiError, request } from "./client";
+import { api, ApiError, CHAT_TIMEOUT_MS, request } from "./client";
 
 const fetchMock = jest.fn();
 
@@ -57,5 +57,32 @@ describe("api helpers", () => {
     expect(url).toBe("http://localhost:8000/api/v1/demo/session");
     expect(init.method).toBe("POST");
     expect(init.body).toBe('{"customer_id":"CUST00001"}');
+  });
+});
+
+describe("timeouts", () => {
+  afterEach(() => jest.useRealTimers());
+
+  const abortable = (_url: string, init: { signal: AbortSignal }) =>
+    new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(new Error("aborted"))));
+
+  it("gives up after the default 10 s with a 'took too long' message", async () => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementation(abortable);
+    const result = request("GET", "/me").catch((e) => e);
+    await jest.advanceTimersByTimeAsync(10_000);
+    const err = await result;
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).message).toBe("The server took too long to answer.");
+  });
+
+  it("a longer limit keeps waiting past 10 s (chat waits for Gemini)", async () => {
+    jest.useFakeTimers();
+    let resolveFetch: (v: unknown) => void = () => {};
+    fetchMock.mockImplementation(() => new Promise((r) => (resolveFetch = r)));
+    const result = request("POST", "/chat", {}, CHAT_TIMEOUT_MS);
+    await jest.advanceTimersByTimeAsync(15_000);
+    resolveFetch(json(200, { ok: true }));
+    await expect(result).resolves.toEqual({ ok: true });
   });
 });
