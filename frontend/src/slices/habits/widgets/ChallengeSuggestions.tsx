@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { ChallengeSuggestions as ChallengeSuggestionsData, ChallengeTemplate } from "@/contracts";
@@ -7,6 +7,7 @@ import type { WidgetHostApi, WidgetProps } from "@/chat/registry";
 import { colors, fonts, spacing } from "@/theme";
 
 import { useStartChallenge } from "../hooks/useStartChallenge";
+import { StopChallenge } from "./StopChallenge";
 import { Body, Card, ErrorText, PrimaryButton, SecondaryButton, Title } from "./ui";
 
 const has = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n);
@@ -34,6 +35,7 @@ export function startedFacts(t: ChallengeTemplate, fmt: (c: number) => string, e
 
 function TemplateRow({ t, api }: { t: ChallengeTemplate; api: WidgetHostApi }) {
   const { start, loading, result, alreadyActive, notFound, errorMessage, errorStatus } = useStartChallenge(api);
+  const [stopped, setStopped] = useState(false);
   const fmt = api.formatCents;
   const target = targetCents(t);
   const baseline = has(t.baseline_cents) ? t.baseline_cents : null;
@@ -54,12 +56,21 @@ function TemplateRow({ t, api }: { t: ChallengeTemplate; api: WidgetHostApi }) {
             {`${fmt(baseline)} → ${fmt(target)}`}
           </Text>
         ) : null}
-        {result ? (
+        {result && stopped ? (
+          <Text style={styles.small} accessibilityLiveRegion="polite">
+            Challenge stopped. You can start another one.
+          </Text>
+        ) : result ? (
           <>
             <Text style={styles.small} accessibilityLiveRegion="polite">
               Started
             </Text>
-            <SecondaryButton label="Check progress" onPress={() => api.sendChat({ message: "How is my challenge going?" })} />
+            <View style={styles.actions}>
+              <SecondaryButton label="Check progress" onPress={() => api.sendChat({ message: "How is my challenge going?" })} />
+              {result.challenge ? (
+                <StopChallenge api={api} challengeId={result.challenge.id} title={t.title} spentCents={result.current_amount_cents ?? 0} daysLeft={result.days_left ?? null} onStopped={() => setStopped(true)} />
+              ) : null}
+            </View>
           </>
         ) : (
           <>

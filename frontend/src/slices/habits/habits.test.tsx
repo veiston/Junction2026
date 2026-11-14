@@ -355,3 +355,26 @@ describe("stop challenge", () => {
     expect(screen.queryByLabelText("Stop challenge")).toBeNull();
   });
 });
+
+describe("stop right after Start", () => {
+  it("the started suggestion has a Stop challenge button that stops the new challenge", async () => {
+    const { registerChatAsk } = require("@/chat/chatAsk");
+    const asked: string[][] = [];
+    const off = registerChatAsk((q: string, f: string) => asked.push([q, f]));
+    const request = jest.fn().mockResolvedValue(habitsMocks.challenge_progress);
+    show("challenge_suggestions", habitsMocks.challenge_suggestions, makeApi(request));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText(/Start the 7-day challenge: /));
+    });
+    expect(screen.getByText("Started")).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Stop challenge"));
+    });
+    off();
+    const id = (habitsMocks.challenge_progress as { challenge: { id: number } }).challenge.id;
+    expect(request).toHaveBeenLastCalledWith("POST", `/habits/challenges/${id}/stop`);
+    expect(screen.getByText("Challenge stopped. You can start another one.")).toBeTruthy();
+    expect(screen.queryByLabelText("Check progress")).toBeNull();
+    expect(asked.map((a) => a[0])).toContain("I stopped the challenge. What now?");
+  });
+});
