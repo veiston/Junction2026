@@ -92,7 +92,7 @@ def test_request_needs_exactly_one_input(world):
 
 def test_chip_without_tools_is_coming_soon_and_skips_llm(world):
     orch, llm, _ = world
-    for qa in ("understand_my_money", "plan_my_finances", "improve_my_habits"):
+    for qa in ("understand_my_money", "plan_my_finances"):  # improve_my_habits has tools now
         r = orch.handle(CID, ChatRequest(quick_action=qa))
         assert r.message.text == prompts.COMING_SOON and r.message.widgets == []
     assert llm.calls == []
