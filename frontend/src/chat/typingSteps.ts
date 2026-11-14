@@ -23,9 +23,9 @@ export function typingSteps(req: ChatRequest | null, today?: string | null): str
         "Sorting it into your three baskets…",
       ];
     case "plan_my_finances":
-      return ["Looking at your balance…", "Checking what is coming up…"];
+      return ["Working out your plan…", "This takes a few seconds…"];
     case "improve_my_habits":
-      return ["Looking at your everyday spending…", "Finding a good goal for you…"];
+      return ["Looking through your last 4 weeks…", "Finding one habit to test…"];
     default:
       return ["Reading your question…", "Looking at your transactions…", "Doing the math…"];
   }

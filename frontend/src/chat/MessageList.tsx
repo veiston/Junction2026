@@ -15,19 +15,26 @@ interface Props {
   /** Tapping a follow-up suggestion sends it as a message. */
   onSend: (text: string) => void;
   onSeeAll: (data: TransactionListData) => void;
+  /** Reports where each message starts, so the screen can scroll to it. */
+  onMessageLayout?: (id: string, y: number) => void;
 }
 
 /** Messaging-app look: the customer's bubbles on the right, the coach's on the left with its cards below. */
-export function MessageList({ messages, api, onSend, onSeeAll }: Props) {
+export function MessageList({ messages, api, onSend, onSeeAll, onMessageLayout }: Props) {
   return (
     <View style={styles.list} accessibilityLabel="Conversation">
       {messages.map((m) =>
         m.role === "user" ? (
-          <View key={m.id} style={styles.user} testID="bubble-user">
+          <View
+            key={m.id}
+            style={styles.user}
+            testID="bubble-user"
+            onLayout={(e) => onMessageLayout?.(m.id, e.nativeEvent.layout.y)}
+          >
             <Text style={styles.userText}>{m.text}</Text>
           </View>
         ) : (
-          <View key={m.id} style={styles.assistant}>
+          <View key={m.id} style={styles.assistant} onLayout={(e) => onMessageLayout?.(m.id, e.nativeEvent.layout.y)}>
             {m.text ? (
               <View style={styles.row}>
                 <CoachAvatar />

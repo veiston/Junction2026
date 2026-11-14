@@ -23,7 +23,7 @@ BODIES = {
 
 
 def concrete(path: str) -> str:
-    return path.replace("{limit_id}", "1")
+    return path.replace("{limit_id}", "1").replace("{challenge_id}", "1")
 
 
 def assert_envelope(resp, status, code):
@@ -40,8 +40,8 @@ def protected():
 
 
 def slice_ops():
-    # built slices (understand) answer for real; the others are still 501 stubs
-    return [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand")]
+    # built slices (understand, habits) answer for real; the others are still 501 stubs
+    return [(m, p) for m, p, op in OPS if op["x-owner"] not in ("foundation", "understand", "habits")]
 
 
 def test_every_openapi_operation_is_mounted(app):
@@ -66,7 +66,8 @@ def test_slice_routes_are_501(client, method, path):
 
 def test_health_is_public(client):
     resp = client.get("/health")
-    assert resp.status == 200 and resp.json == {"status": "ok", "contracts_version": "1.0.0"}
+    version = (Path(__file__).resolve().parents[4] / "contracts" / "VERSION").read_text().strip()
+    assert resp.status == 200 and resp.json == {"status": "ok", "contracts_version": version}
     assert resp.headers["x-content-type-options"] == "nosniff"
     assert "content-security-policy" in resp.headers
 

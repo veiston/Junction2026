@@ -64,6 +64,7 @@ them; if this page and the schema disagree, **the schema wins** and this page is
 | limit_review | LimitReview | review_limit | — | W3 |
 | challenge_suggestions | ChallengeSuggestions | suggest_challenges | POST /habits/challenges (Start) | W3 |
 | challenge_progress | ChallengeProgress | get_challenge_progress | GET /habits/challenges | W3 |
+| concept_note | ConceptNote | explain_concept | "Explain" button on every widget (sends a chat turn) | F |
 
 ## Example: one chat turn
 

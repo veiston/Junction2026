@@ -1,4 +1,4 @@
-"""Foundation AI tools: list_transactions."""
+"""Foundation AI tools: list_transactions, explain_concept."""
 from __future__ import annotations
 
 import uuid
@@ -12,9 +12,11 @@ from contracts.dto.transactions import TransactionFilter, TransactionListData
 from contracts.dto.widgets import Widget
 from contracts.interfaces.controllers.errors import ValidationFailed
 from contracts.interfaces.llm.ai_tool import ToolContext, ToolResult
+from services.chat.glossary import CONCEPT_IDS, render_concept
 
 DEFAULT_DAYS = 30
 MAX_LIMIT = 20
+EXPLAIN_DAYS = 28
 
 
 def _parse_date(args: dict[str, Any], key: str) -> date | None:
@@ -88,5 +90,56 @@ class ListTransactionsTool:
         return ToolResult(facts=facts, widgets=[widget], sources=[source])
 
 
+class ExplainConceptTool:
+    name = "explain_concept"
+    description = (
+        "Explain one money concept in plain language from the fixed glossary, optionally with the customer's own "
+        "numbers for a spending group. Use for 'explain this', 'what is ...', 'why does it matter'."
+    )
+    parameters = {
+        "type": "object",
+        "properties": {
+            "concept_id": {"type": "string", "enum": list(CONCEPT_IDS)},
+            "spend_group": {"type": "string",
+                            "description": "Optional spend group (for example taxis) to fill in the customer's numbers."},
+        },
+        "required": ["concept_id"],
+        "additionalProperties": False,
+    }
+
+    def __init__(self, transactions) -> None:
+        self._svc = transactions
+
+    def _weekly_cents(self, ctx: ToolContext, spend_group: str) -> int:
+        to_date = ctx.today - timedelta(days=1)
+        try:
+            flt = TransactionFilter(from_date=to_date - timedelta(days=EXPLAIN_DAYS - 1), to_date=to_date,
+                                    basket="everyday", flow="spending", spend_group=spend_group)
+        except ValidationError:
+            raise ValidationFailed("Unknown spend_group.", [{"field": "spend_group", "issue": "unknown"}]) from None
+        page = self._svc.list(ctx.customer_id, flt, 1, 1)
+        return -page.total_amount_cents * 7 // EXPLAIN_DAYS
+
+    def run(self, ctx: ToolContext, arguments: dict[str, Any]) -> ToolResult:
+        unknown = set(arguments) - set(self.parameters["properties"])
+        if unknown:
+            raise ValidationFailed(f"Unknown arguments: {sorted(unknown)}.")
+        concept_id = arguments.get("concept_id")
+        if not isinstance(concept_id, str):
+            raise ValidationFailed("concept_id is required.", [{"field": "concept_id", "issue": "required"}])
+        numbers: dict[str, int] = {}
+        group = arguments.get("spend_group")
+        if group is not None:
+            if not isinstance(group, str):
+                raise ValidationFailed("spend_group must be a string.", [{"field": "spend_group", "issue": "bad type"}])
+            weekly = self._weekly_cents(ctx, group)
+            if weekly > 0:
+                numbers = {"weekly": weekly, "yearly": weekly * 52}
+        note = render_concept(concept_id, **numbers)
+        widget = Widget(id=f"w_{uuid.uuid4().hex[:6]}", type="concept_note", version=1,
+                        data=note.model_dump(mode="json"))
+        return ToolResult(facts={"title": note.title, "text": note.text}, widgets=[widget])
+
+
 def build_foundation_tools(transactions) -> list:
-    return [ListTransactionsTool(transactions)]
+    return [ListTransactionsTool(transactions), ExplainConceptTool(transactions)]

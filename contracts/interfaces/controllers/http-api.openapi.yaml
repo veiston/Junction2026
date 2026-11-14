@@ -388,3 +388,17 @@ paths:
         '401': { $ref: '#/components/responses/Error401' }
         '404': { $ref: '#/components/responses/Error404' }
         '409': { $ref: '#/components/responses/Error409' }
+
+  /habits/challenges/{challenge_id}/stop:
+    post:
+      x-owner: habits
+      operationId: stopChallenge
+      parameters:
+        - { name: challenge_id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: The challenge was stopped (status cancelled, no verdict)
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/ChallengeProgress' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+        '404': { $ref: '#/components/responses/Error404' }
+        '409': { $ref: '#/components/responses/Error409' }

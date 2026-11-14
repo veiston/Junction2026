@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -25,6 +26,14 @@ log = logging.getLogger(__name__)
 
 MAX_TOOL_ROUNDS = 4
 MAX_WIDGETS = 3
+
+
+_HELP = re.compile(r"\b(what can you do|what do you do|how can you help|what are you able|what can i ask)\b", re.I)
+
+
+def asks_for_help(text: str) -> bool:
+    """True when the customer asks what the coach can do, so the three sections are offered as pills."""
+    return bool(_HELP.search(text))
 
 
 class ChatOrchestrator:
@@ -73,12 +82,14 @@ class ChatOrchestrator:
 
         self._conversations.append(conv_id, "user", user_text)
         ctx = ToolContext(customer_id=customer_id, today=self._clock.today(), conversation_id=conv_id)
-        text, widgets, sources = self._loop(ctx, history, user_text, force_tool)
-        return self._finish(conv_id, text, widgets, sources)
+        pills: list[str] = []
+        text, widgets, sources = self._loop(ctx, history, user_text, force_tool, pills)
+        return self._finish(conv_id, text, widgets, sources, asks_for_help(user_text), pills)
 
     # ------------------------------------------------------------------ loop
     def _loop(
-        self, ctx: ToolContext, history: list[LlmMessage], user_text: str, force_tool: str | None
+        self, ctx: ToolContext, history: list[LlmMessage], user_text: str, force_tool: str | None,
+        pills: list[str] | None = None,
     ) -> tuple[str, list[Widget], list[Source]]:
         messages = [
             LlmMessage(role="system", text=prompts.SYSTEM_PROMPT.format(today=ctx.today.isoformat())),
@@ -98,13 +109,15 @@ class ChatOrchestrator:
             except LlmUnavailable as e:
                 # The user sees a friendly message; the real reason goes to the backend log.
                 log.warning("LLM unavailable in round %d: %s", round_no, e)
-                return prompts.LLM_DOWN, widgets, sources
+                return (prompts.LLM_DOWN_WITH_CARD if widgets else prompts.LLM_DOWN), widgets, sources
 
             if turn.finish_reason == "safety":
                 return prompts.OFF_TOPIC, widgets, sources
             if turn.finish_reason == "error":
                 return prompts.LLM_DOWN, widgets, sources
             if not turn.tool_calls:
+                if any(w.type.value == "concept_note" for w in widgets):
+                    return prompts.CONCEPT_INTRO, widgets, sources  # the card is the explanation, say it once
                 return (turn.text.strip() or prompts.EMPTY_REPLY), widgets, sources
             if round_no == MAX_TOOL_ROUNDS:
                 return prompts.TOO_MANY_ROUNDS, widgets, sources
@@ -124,6 +137,8 @@ class ChatOrchestrator:
                     payload = {"error": e.message}
                 else:
                     payload = result.facts
+                    if call.name == "stop_challenge" and payload.get("stopped") and pills is not None:
+                        pills.extend(prompts.AFTER_SKIP_SUGGESTIONS)
                     widgets.extend(result.widgets)
                     sources.extend(result.sources)
                 messages.append(
@@ -132,7 +147,10 @@ class ChatOrchestrator:
         return prompts.TOO_MANY_ROUNDS, widgets, sources  # pragma: no cover
 
     # ------------------------------------------------------------------ output
-    def _finish(self, conv_id: str, text: str, widgets: list[Widget], sources: list[Source]) -> ChatResponse:
+    def _finish(
+        self, conv_id: str, text: str, widgets: list[Widget], sources: list[Source], show_sections: bool = False,
+        pills: list[str] | None = None,
+    ) -> ChatResponse:
         widgets = widgets[:MAX_WIDGETS]
         self._conversations.append(
             conv_id, "assistant", text, json.dumps([w.model_dump(mode="json") for w in widgets])
@@ -143,7 +161,7 @@ class ChatOrchestrator:
             created_at=datetime.now(timezone.utc),
             text=text,
             widgets=widgets,
-            suggestions=list(prompts.DEFAULT_SUGGESTIONS),
+            suggestions=list(pills or (prompts.SECTION_SUGGESTIONS if show_sections else prompts.DEFAULT_SUGGESTIONS)),
             sources=sources,
             disclaimer=None,
         )

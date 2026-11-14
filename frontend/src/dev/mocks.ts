@@ -1,3 +1,5 @@
+import { challengeProgressLostMock, challengeProgressWonMock, habitsMocks } from "@/slices/habits/mocks";
+import { conceptMocks } from "@/widgets/common/conceptMocks";
 import type { Transaction, TransactionListData, WidgetType } from "@/contracts";
 import { mocks as understandMocks } from "@/slices/understand/mocks";
 
@@ -37,5 +39,14 @@ export const transactionListMock: TransactionListData = {
 /** One mock per widget type that has a component. Slices add theirs here. */
 export const mocks: Partial<Record<WidgetType, unknown>> = {
   transaction_list: transactionListMock,
+  concept_note: conceptMocks.small_purchases_add_up,
   ...understandMocks,
+  ...habitsMocks,
 };
+
+/** Extra gallery entries: further states of a widget type, shown after the main list. */
+export const mockVariants: { name: string; type: WidgetType; data: unknown }[] = [
+  { name: "challenge_progress (won)", type: "challenge_progress", data: challengeProgressWonMock },
+  { name: "challenge_progress (lost, spent more)", type: "challenge_progress", data: challengeProgressLostMock },
+  ...Object.values(conceptMocks).map((n) => ({ name: `concept_note (${n.id})`, type: "concept_note" as WidgetType, data: n })),
+];

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api as apiClient } from "@/api/client";
@@ -6,6 +6,7 @@ import type { QuickAction, TransactionListData } from "@/contracts";
 import { colors, fonts, spacing } from "@/theme";
 import { formatCents } from "@/widgets/common/Money";
 
+import { registerChatAsk } from "./chatAsk";
 import { Composer } from "./Composer";
 import { FUNCTIONS, FunctionCards } from "./FunctionCards";
 import { MessageList } from "./MessageList";
@@ -14,13 +15,17 @@ import { SuggestionChips } from "./SuggestionChips";
 import { TypingBubble } from "./TypingBubble";
 import type { WidgetHostApi } from "./registry";
 import { typingSteps } from "./typingSteps";
-import type { UseChat } from "./useChat";
+import { QUICK_ACTION_TEXT, type UseChat } from "./useChat";
 
 /** Chat UI: all data comes from the `chat` hook result passed in. `today` (demo clock) names the month. */
 export function ChatScreen({ chat, today }: { chat: UseChat; today?: string }) {
-  const { messages, busy, error, send, sendChip, pending, retry, started } = chat;
+  const { messages, busy, error, send, sendChip, askAbout, pending, retry, started } = chat;
+  useEffect(() => registerChatAsk(askAbout), [askAbout]);
   const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
   const scroll = useRef<ScrollView>(null);
+  const ys = useRef<Record<string, number>>({});
+  const listY = useRef(0);
+  const scrolledTo = useRef<string | null>(null);
 
   /** A function card or a widget's quick action: show the customer's prompt first, then ask. */
   const pick = useCallback(
@@ -46,9 +51,14 @@ export function ChatScreen({ chat, today }: { chat: UseChat; today?: string }) {
         style={styles.flex}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        // Like a messaging app: keep the newest bubble in view.
         onContentSizeChange={() => {
-          if (started && !seeAll) scroll.current?.scrollToEnd({ animated: true });
+          // Scroll to the start of the newest message so it is read from its first line.
+          const last = messages[messages.length - 1];
+          if (!started || seeAll || !last || scrolledTo.current === last.id) return;
+          const y = ys.current[last.id];
+          if (y === undefined) return;
+          scrolledTo.current = last.id;
+          scroll.current?.scrollTo({ y: Math.max(0, listY.current + y - 8), animated: true });
         }}
       >
         {seeAll ? (
@@ -66,7 +76,20 @@ export function ChatScreen({ chat, today }: { chat: UseChat; today?: string }) {
                 <FunctionCards onPick={pick} disabled={busy} />
               </>
             ) : null}
-            <MessageList messages={messages} api={host} onSend={send} onSeeAll={setSeeAll} />
+            <View onLayout={(e) => (listY.current = e.nativeEvent.layout.y)}>
+              <MessageList
+                messages={messages}
+                api={host}
+                onSend={(text) => {
+                  // A pill that repeats a section's request starts that section like its card does.
+                  const action = (Object.keys(QUICK_ACTION_TEXT) as QuickAction[]).find((a) => QUICK_ACTION_TEXT[a] === text);
+                  if (action) sendChip(action);
+                  else send(text);
+                }}
+                onSeeAll={setSeeAll}
+                onMessageLayout={(id, y) => (ys.current[id] = y)}
+              />
+            </View>
             {busy ? <TypingBubble steps={steps} /> : null}
             {error ? (
               <View accessibilityRole="alert" style={styles.error}>
