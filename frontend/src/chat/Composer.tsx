@@ -25,7 +25,8 @@ export function Composer({
   interimTranscript = "",
 }: ComposerProps) {
   const [text, setText] = useState("");
-  const displayText = interimTranscript || text;
+  // Live speech only shows while voice mode is on, so it can never take over what the customer types.
+  const displayText = (isConversationMode && interimTranscript) || text;
   const canSend = !disabled && displayText.trim().length > 0;
 
   const submit = () => {
@@ -46,9 +47,11 @@ export function Composer({
 
   return (
     <View style={[styles.pill, isConversationMode && styles.pillActive]}>
-      <Icon name="message-outline" size={20} color={isConversationMode ? colors.primary : colors.textMuted} />
       <TextInput
         style={styles.input}
+        // A plain blinking text cursor in the brand colour, no extra focus border.
+        cursorColor={colors.primary}
+        selectionColor={colors.primary}
         accessibilityLabel="Message"
         placeholder={getPlaceholder()}
         placeholderTextColor={isConversationMode ? colors.primary : colors.textSubtle}
@@ -103,7 +106,15 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: "#F2F9F4",
   },
-  input: { flex: 1, fontSize: 14, fontFamily: fonts.regular, color: colors.text, minHeight: 40 },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.text,
+    minHeight: 40,
+    // Web browsers draw a blue focus ring around inputs; the pill already shows where you type.
+    outlineWidth: 0,
+  },
   micButton: {
     width: 36,
     height: 36,

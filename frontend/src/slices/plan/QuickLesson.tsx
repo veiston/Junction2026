@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "@/components/Icon";
 import { colors, fontSize, radius, spacing } from "@/theme";
 
 const XP_PER_LESSON = 10;
@@ -11,19 +12,47 @@ export interface Lesson {
   options: string[];
   /** Index of the right option. */
   answer: number;
-  /** Plain-language explanation shown after any pick. */
+  /** Plain-language explanation: shown first as a tip, and is what the quiz checks. */
   explanation: string;
 }
 
-/** One-tap quiz that teaches a money concept with the customer's own numbers. */
+/**
+ * Teaches a money concept with the customer's own numbers. The tip comes first; the one-tap quiz
+ * only appears when the customer asks for it.
+ */
 export function QuickLesson({ lesson }: { lesson: Lesson }) {
+  const [quizOpen, setQuizOpen] = useState(false);
+  return (
+    <View style={styles.lesson} accessibilityLabel="Quick lesson">
+      <View style={styles.tipRow}>
+        <Icon name="lightbulb-on-outline" size={18} color={colors.primary} />
+        <View style={styles.tipBody}>
+          <Text style={styles.kicker}>Did you know?</Text>
+          <Text style={styles.tip}>{lesson.explanation}</Text>
+        </View>
+      </View>
+      {quizOpen ? (
+        <Quiz lesson={lesson} />
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Quiz me"
+          onPress={() => setQuizOpen(true)}
+          style={styles.quizButton}
+        >
+          <Text style={styles.quizButtonText}>Quiz me (+{XP_PER_LESSON} XP)</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function Quiz({ lesson }: { lesson: Lesson }) {
   const [picked, setPicked] = useState<number | null>(null);
   const isAnswered = picked !== null;
   const isRight = picked === lesson.answer;
-
   return (
-    <View style={styles.lesson} accessibilityLabel="Quick lesson">
-      <Text style={styles.kicker}>Quick lesson · +{XP_PER_LESSON} XP</Text>
+    <View style={styles.quiz}>
       <Text style={styles.question}>{lesson.question}</Text>
       {lesson.options.map((option, index) => (
         <Pressable
@@ -36,20 +65,11 @@ export function QuickLesson({ lesson }: { lesson: Lesson }) {
           <Text style={styles.optionText}>{option}</Text>
         </Pressable>
       ))}
-      {isAnswered && <LessonResult isRight={isRight} lesson={lesson} />}
-    </View>
-  );
-}
-
-function LessonResult({ isRight, lesson }: { isRight: boolean; lesson: Lesson }) {
-  let verdict = `Not quite: it's "${lesson.options[lesson.answer]}".`;
-  if (isRight) {
-    verdict = `Correct! +${XP_PER_LESSON} XP`;
-  }
-  return (
-    <View accessibilityLiveRegion="polite">
-      <Text style={[styles.verdict, isRight && styles.verdictRight]}>{verdict}</Text>
-      <Text style={styles.explanation}>{lesson.explanation}</Text>
+      {isAnswered && (
+        <Text accessibilityLiveRegion="polite" style={[styles.verdict, isRight && styles.verdictRight]}>
+          {isRight ? `Correct! +${XP_PER_LESSON} XP` : `Not quite: it's "${lesson.options[lesson.answer]}".`}
+        </Text>
+      )}
     </View>
   );
 }
@@ -57,11 +77,17 @@ function LessonResult({ isRight, lesson }: { isRight: boolean; lesson: Lesson })
 const styles = StyleSheet.create({
   lesson: {
     gap: spacing.sm,
-    padding: spacing.md,
+    padding: spacing.sm,
     borderRadius: radius.card,
     backgroundColor: colors.background,
   },
-  kicker: { fontSize: fontSize.small - 3, fontWeight: "700", color: colors.primary, textTransform: "uppercase" },
+  tipRow: { flexDirection: "row", gap: spacing.sm },
+  tipBody: { flex: 1, gap: 2 },
+  kicker: { fontSize: fontSize.small - 2, fontWeight: "700", color: colors.primary },
+  tip: { fontSize: fontSize.small - 1, lineHeight: 20, color: colors.text },
+  quizButton: { alignSelf: "flex-start", minHeight: MIN_TOUCH_SIZE, justifyContent: "center", paddingHorizontal: spacing.xs },
+  quizButtonText: { fontSize: fontSize.small - 1, fontWeight: "600", color: colors.primary },
+  quiz: { gap: spacing.sm },
   question: { fontSize: fontSize.small, fontWeight: "600", color: colors.text },
   option: {
     minHeight: MIN_TOUCH_SIZE,
@@ -76,5 +102,4 @@ const styles = StyleSheet.create({
   optionText: { fontSize: fontSize.small, color: colors.text },
   verdict: { fontSize: fontSize.small, fontWeight: "700", color: colors.warning },
   verdictRight: { color: colors.primary },
-  explanation: { fontSize: fontSize.small - 2, color: colors.textMuted },
 });
