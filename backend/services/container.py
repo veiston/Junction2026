@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -37,6 +38,19 @@ def _with_local_model(cloud, config: Config):
     return PrivacyRoutingLlm(cloud, local)
 
 
+def llm_for_chat(cloud, config: Config, env: dict[str, str] | None = None):
+    """The model every chat uses unless the customer picks "Local" in the app (then the request carries its own model).
+
+    Gemini by default, so "Gemini" in the switcher really is Gemini. Set LOCAL_BY_DEFAULT=1 to route answers that
+    contain money figures to the local model for every chat, as in the first version.
+    """
+    env = dict(os.environ) if env is None else env
+    local_by_default = env.get("LOCAL_BY_DEFAULT", "").strip().lower() in ("1", "true", "yes")
+    if config.ollama_base_url and local_by_default:
+        return _with_local_model(cloud, config)
+    return cloud
+
+
 def build_services(config: Config, llm=None) -> SimpleNamespace:
     path = Path(config.db_path)
     db = Database(path if path.is_absolute() else PROJECT_ROOT / path)
@@ -55,8 +69,7 @@ def build_services(config: Config, llm=None) -> SimpleNamespace:
             llm = GeminiClient(genai.Client(api_key=config.gemini_api_key), config.gemini_model)
         else:
             llm = _NoKeyLlm()
-        if config.ollama_base_url:
-            llm = _with_local_model(llm, config)
+        llm = llm_for_chat(llm, config)
     chat = ChatOrchestrator(llm, default_registry(tx_service, plan), SqliteConversationRepository(db), clock)
     session = SessionServiceImpl(SqliteCustomerRepository(db), clock, config.jwt_secret)
     return SimpleNamespace(
