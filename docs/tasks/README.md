@@ -54,7 +54,7 @@ flowchart LR
 | Wave | Branch | Worktree dir | Needs merged first | Done |
 |---|---|---|---|---|
 | A | `foundation-models-and-ports` | `../Junction2026-models-and-ports` | — | [x] |
-| A | `foundation-adapter-llm` | `../Junction2026-adapter-llm` | — | [ ] |
+| A | `foundation-adapter-llm` | `../Junction2026-adapter-llm` | — | [x] |
 | A | `foundation-frontend-foundation` | `../Junction2026-frontend-foundation` | — | [ ] |
 | A | `foundation-embedded-demo` | `../Junction2026-embedded-demo` | — | [ ] |
 | B | `foundation-adapter-db` | `../Junction2026-adapter-db` | models-and-ports | [ ] |
