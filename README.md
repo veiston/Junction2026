@@ -39,20 +39,19 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - To start with no challenges: `sqlite3 db/money_coach.sqlite3 "delete from challenges;"` and restart.
 - Optional keys in `.env`: `ELEVENLABS_API_KEY` (read answers aloud), `OLLAMA_BASE_URL` and `OLLAMA_API_KEY` (local model, see `.env.example`).
 
-## 2. What the challenge asked, and what we built
+## 2. The challenge, and where to find each answer
 
-| The challenge asks for | What the coach does |
+| The challenge asks for | Where it is |
 |---|---|
-| Chat with your own money | You type or speak any question about your spending. Off-topic questions get a polite answer. |
-| Simple questions, like "How much did I spend on taxis last month?" | Exact answer from your transactions, with up to 5 example purchases. |
-| Deeper questions, like "What kind of spender am I?" | One spender type, up to 5 traits with evidence, up to 3 tips. No blame words. |
-| "What is safe for me to spend this week?" | Safe amount per day, this week and until payday, with the formula shown. |
-| "How much could I save if I cut dining out by 20%?" | What-if slider from -100% to +100%. Shows monthly and yearly saving. |
-| The three baskets (regular, irregular, everyday) | Spending split into the three baskets, with euros, percent and top groups. |
-| Benchmarks with open data | Compare with similar customers, plus a Statistics Finland reference. |
-| Explain financial concepts in plain language | Five short explanations written by the team. A fixed text, filled with your numbers. |
-| Guide users to healthier money habits | A 7-day challenge on one everyday habit, with a result and a lesson. |
-| Mobile app, or a web app that fits in one | One Expo (React Native) app with phone-sized screens. We run and test it in the browser. |
+| Chat with your own money, in your own words | The **AI** tab, in every part |
+| Simple and deeper questions ("taxis last month", "What kind of spender am I?") | Understand My Money |
+| The three baskets | Understand My Money |
+| Benchmarks with open data | Understand My Money |
+| "What is safe to spend this week?" | Plan My Finances |
+| "What if I cut dining out by 20%?" | Plan My Finances |
+| Explain financial concepts in plain language | Every part (five short explanations) |
+| Guide users to healthier money habits | Improve My Habits |
+| A mobile app, or a web app that fits in one | One Expo (React Native) app with phone-sized screens, tested in the browser |
 
 ## 3. Features, by part
 
