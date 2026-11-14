@@ -230,3 +230,7 @@ def test_a_concept_card_is_the_whole_answer_so_the_text_is_one_short_sentence(wo
     r = ask(orch, "Explain in simple words: Spending pace")
     assert [w.type.value for w in r.message.widgets] == ["concept_note"]
     assert r.message.text == prompts.CONCEPT_INTRO
+
+
+def test_prompt_tells_the_assistant_to_say_how_the_customer_will_hear_the_result():
+    assert "red dot appears on the bell" in prompts.SYSTEM_PROMPT and "Card facts:" in prompts.SYSTEM_PROMPT
