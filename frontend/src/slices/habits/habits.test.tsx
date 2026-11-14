@@ -285,12 +285,19 @@ describe("experiment flow through the chat", () => {
   });
 });
 
-describe("new challenge button", () => {
-  it("is on a running challenge and asks for another challenge", () => {
+describe("another challenge", () => {
+  it("is on the suggestion before it is accepted and asks for another challenge", () => {
     const api = makeApi();
-    show("challenge_progress", habitsMocks.challenge_progress, api);
-    fireEvent.press(screen.getByLabelText("Try a new challenge"));
+    show("challenge_suggestions", habitsMocks.challenge_suggestions, api);
+    fireEvent.press(screen.getByLabelText("Another challenge"));
     expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
+  });
+
+  it("is not on a running challenge: that one can only be stopped", () => {
+    show("challenge_progress", habitsMocks.challenge_progress);
+    expect(screen.queryByLabelText("Another challenge")).toBeNull();
+    expect(screen.queryByLabelText("Try a new challenge")).toBeNull();
+    expect(screen.getByLabelText("Stop challenge")).toBeTruthy();
   });
 });
 
@@ -321,7 +328,6 @@ describe("stop challenge", () => {
     const request = jest.fn().mockResolvedValue({});
     const api = makeApi(request);
     show("challenge_progress", habitsMocks.challenge_progress, api);
-    expect(screen.getByLabelText("Try a new challenge")).toBeTruthy();
     await act(async () => {
       fireEvent.press(screen.getByLabelText("Stop challenge"));
     });

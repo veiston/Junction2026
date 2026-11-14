@@ -68,12 +68,15 @@ function TemplateRow({ t, api }: { t: ChallengeTemplate; api: WidgetHostApi }) {
             {errorStatus !== null && !alreadyActive && !notFound ? (
               <ErrorText>{errorMessage ?? "Could not start the experiment."}</ErrorText>
             ) : null}
-            <PrimaryButton
-              label={loading ? "Starting..." : "Start the 7-day challenge"}
-              accessibilityLabel={`Start the 7-day challenge: ${t.title}`}
-              disabled={loading || alreadyActive || notFound}
-              onPress={() => start(t.id)}
-            />
+            <View style={styles.actions}>
+              <PrimaryButton
+                label={loading ? "Starting..." : "Start the 7-day challenge"}
+                accessibilityLabel={`Start the 7-day challenge: ${t.title}`}
+                disabled={loading || alreadyActive || notFound}
+                onPress={() => start(t.id)}
+              />
+              <SecondaryButton label="Another challenge" onPress={() => api.sendChat({ message: "Show me another challenge to try" })} />
+            </View>
           </>
         )}
       </View>
@@ -99,5 +102,6 @@ const styles = StyleSheet.create({
   item: { gap: spacing.sm },
   itemTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text, lineHeight: 22 },
   numbers: { fontFamily: fonts.semibold, fontSize: 16, color: colors.primary, lineHeight: 22 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   small: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted, lineHeight: 19 },
 });

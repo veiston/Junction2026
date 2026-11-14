@@ -252,3 +252,12 @@ def test_stopping_a_missing_or_foreign_challenge_is_not_found_and_a_finished_one
     clock.set_today(date(2026, 9, 22))
     with pytest.raises(Conflict):
         svc.stop_challenge(ME, started.challenge.id)
+
+
+def test_a_challenge_that_has_not_started_yet_is_ignored_when_the_clock_goes_back():
+    svc, clock, _ = build(rows("taxis", TAXIS + [("2026-09-17", 3881)]))
+    clock.set_today(date(2026, 9, 22))
+    svc.start_challenge(ME, StartChallengeRequest(template_id=TAXI_ID))  # starts on the 22nd
+    clock.set_today(date(2026, 9, 15))
+    assert svc.list_challenges(ME).items == []  # not started yet: not running, no "21 days left"
+    assert svc.start_challenge(ME, StartChallengeRequest(template_id=TAXI_ID)).challenge.status.value == "active"

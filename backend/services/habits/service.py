@@ -86,8 +86,6 @@ class HabitsServiceImpl:
         running = [i for i in self.list_challenges(customer_id).items if i.challenge.status.value == "active"]
         if running:  # settles finished challenges first; one challenge at a time keeps the goal clear
             raise Conflict("You already have a challenge running.")
-        if self._challenges.active_with_template(customer_id, template.id) is not None:
-            raise Conflict("You have already started this challenge.")
         record = self._challenges.create(ChallengeRecord(
             id=0, customer_id=customer_id, template_id=template.id, title=template.title,
             spend_group=template.spend_group.value, rule_kind=template.rule.kind.value,
@@ -111,6 +109,8 @@ class HabitsServiceImpl:
         today = self._clock.today()
         items = []
         for record in self._challenges.list(customer_id):
+            if record.start_date > today:
+                continue  # the demo clock was moved back: this challenge has not started yet
             progress, status = self._challenge_calc.progress(record, today)
             if status != record.status:
                 self._challenges.set_status(customer_id, record.id, status)

@@ -59,8 +59,6 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
         )}
         {c.status === "active" && stopState !== "stopped" ? (
           <View style={styles.row}>
-            <SecondaryButton label="Try a new challenge" onPress={() => api.sendChat({ message: ANOTHER_HABIT_MESSAGE })} />
-            <View style={styles.spacer} />
             <StopButton
               label={stopState === "busy" ? "Stopping..." : "Stop challenge"}
               disabled={stopState === "busy"}
