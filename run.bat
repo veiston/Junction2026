@@ -8,6 +8,5 @@ if not exist db\money_coach.sqlite3 (
 )
 
 start "backend" /b uv run --directory backend main.py
-start "coach" /b pnpm --dir frontend dev
 set CI=1
-pnpm --dir embedded-demo exec expo start --web --port 8081
+pnpm --dir frontend exec expo start --web --port 8081
