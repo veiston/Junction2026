@@ -70,10 +70,10 @@ TOOL_CATALOG: dict[str, list[str]] = {
         "simulate_what_if",       # "save if I cut dining 20 %" -> what_if
     ],
     "habits": [
-        "suggest_monthly_limit",  # quick action improve_my_habits -> limit_suggestion
+        "suggest_monthly_limit",  # -> limit_suggestion (optional next step after an experiment)
         "get_limit_progress",     # -> limit_progress
         "review_limit",           # -> limit_review
-        "suggest_challenges",     # -> challenge_suggestions
+        "suggest_challenges",     # quick action improve_my_habits -> challenge_suggestions (finds the habit, offers a 7-day experiment)
         "get_challenge_progress", # -> challenge_progress
     ],
 }
@@ -81,5 +81,5 @@ TOOL_CATALOG: dict[str, list[str]] = {
 QUICK_ACTION_TOOL: dict[str, str] = {
     "understand_my_money": "get_basket_breakdown",
     "plan_my_finances": "get_balance_forecast",
-    "improve_my_habits": "suggest_monthly_limit",
+    "improve_my_habits": "suggest_challenges",
 }

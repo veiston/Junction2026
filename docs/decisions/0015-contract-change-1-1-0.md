@@ -7,6 +7,7 @@
   - `habits.schema.json`: `ChallengeTemplate` gets optional `baseline_cents`, `baseline_count`, `yearly_saving_cents`, `concept`. `ChallengeProgress` gets optional `baseline_cents`, `baseline_count`, `difference_cents`, `change_pct`, `concept`, `next_step`.
   - `widgets.schema.json`: new widget type `concept_note` (data = `ConceptNote`).
   - `ai_tool.py`: new foundation tool `explain_concept` in `TOOL_CATALOG`.
+  - `ai_tool.py`: the quick action `improve_my_habits` now forces `suggest_challenges` (find one habit and offer a 7-day experiment) instead of `suggest_monthly_limit`. The monthly limit stays available as an optional next step.
 - **The five concepts:** `small_purchases_add_up`, `compare_equal_periods`, `fixed_vs_everyday`, `spending_pace`, `one_week_is_not_proof`.
 - **Who is affected:** the habits backend (service, tools), the foundation chat (glossary, `explain_concept`, prompt rule), and the frontend (an "Explain" button on every widget, the `concept_note` widget, the updated challenge widgets). Slices 1 and 2 need no change: they get the "Explain" button for free through the shared widget host, and may add their own concepts to the glossary.
 - **Rules for the experiment** (computed by the backend, never by the model):

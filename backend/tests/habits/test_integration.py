@@ -48,17 +48,24 @@ def token(client):
     return login(client)
 
 
-def test_chip_forces_limit_suggestion_widget(client, llm, token):
-    llm.push(LlmTurn("", [ToolCall("t1", "suggest_monthly_limit", {})], "tool_calls"))
-    llm.push(LlmTurn("Here is a limit you could try.", [], "stop"))
+def test_chip_forces_challenge_suggestions_widget(client, llm, token):
+    llm.push(LlmTurn("", [ToolCall("t1", "suggest_challenges", {})], "tool_calls"))
+    llm.push(LlmTurn("Here is one habit you could test.", [], "stop"))
     resp = client.post("/chat", token=token, json_body={"quick_action": "improve_my_habits"})
     assert resp.status == 200, resp.json
     msg = resp.json["message"]
-    assert "coming soon" not in msg["text"] and msg["text"] == "Here is a limit you could try."
-    assert [w["type"] for w in msg["widgets"]] == ["limit_suggestion"]
-    assert msg["widgets"][0]["data"]["basket"] == "everyday"
-    assert llm.calls[0]["force_tool"] == "suggest_monthly_limit"
+    assert "coming soon" not in msg["text"] and msg["text"] == "Here is one habit you could test."
+    assert [w["type"] for w in msg["widgets"]] == ["challenge_suggestions"]
+    assert llm.calls[0]["force_tool"] == "suggest_challenges"
     assert "CUST00001" not in str(llm.calls[1]["messages"][-1])  # the model never sees the customer id
+
+
+def test_limit_suggestion_is_still_available_as_a_normal_tool(client, llm, token):
+    llm.push(LlmTurn("", [ToolCall("t1", "suggest_monthly_limit", {})], "tool_calls"))
+    llm.push(LlmTurn("Here is a limit you could try.", [], "stop"))
+    resp = client.post("/chat", token=token, json_body={"message": "suggest a monthly limit"})
+    assert resp.status == 200, resp.json
+    assert [w["type"] for w in resp.json["message"]["widgets"]] == ["limit_suggestion"]
 
 
 def test_chat_progress_tool_without_limit_and_with_limit(client, llm, token):
