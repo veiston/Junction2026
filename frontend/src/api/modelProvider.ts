@@ -1,7 +1,10 @@
 import { useSyncExternalStore } from "react";
 
-/** Which model answers the chat: Gemini in the cloud, or Ollama on the host machine. */
-export type ModelProvider = "cloud" | "local";
+/**
+ * Which model answers the chat: Gemini in the cloud (default), Ollama on the host machine ("local"),
+ * or LiteRT-LM running inside the backend ("litert"). Only one can be on at a time.
+ */
+export type ModelProvider = "cloud" | "local" | "litert";
 
 // In memory only, like the session token: a reload goes back to the cloud model.
 let provider: ModelProvider = "cloud";

@@ -18,7 +18,12 @@ const SERVICE_ROWS: { icon: IconName; title: string }[] = [
 
 // TODO: Everything should be in English so accessible to international judges / hacker-voters
 export default function ProfileScreen() {
-  const useLocalModel = useModelProvider() === "local";
+  // One provider at a time: turning a switch on turns the other off; both off = Gemini (default).
+  const provider = useModelProvider();
+  const choose = (which: "local" | "litert") => (on: boolean) => {
+    if (on) setModelProvider(which);
+    else if (provider === which) setModelProvider("cloud");
+  };
   return (
     <Screen topColor={colors.background}>
       <SectionHeader title="AI coach" />
@@ -26,12 +31,25 @@ export default function ProfileScreen() {
         <ListRow
           icon="robot-outline"
           title="Use local model"
-          subtitle="A private model running on S-Bank servers "
+          subtitle="A private model running on S-Bank servers (Ollama)"
           trailing={
             <Switch
               accessibilityLabel="Use local model"
-              value={useLocalModel}
-              onValueChange={(on) => setModelProvider(on ? "local" : "cloud")}
+              value={provider === "local"}
+              onValueChange={choose("local")}
+              trackColor={{ true: colors.primary }}
+            />
+          }
+        />
+        <ListRow
+          icon="chip"
+          title="Use LiteRT model"
+          subtitle="Google's on-device AI (Gemma 4) running inside the coach, no model server"
+          trailing={
+            <Switch
+              accessibilityLabel="Use LiteRT model"
+              value={provider === "litert"}
+              onValueChange={choose("litert")}
               trackColor={{ true: colors.primary }}
             />
           }
