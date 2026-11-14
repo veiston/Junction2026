@@ -75,6 +75,7 @@ TOOL_CATALOG: dict[str, list[str]] = {
         "review_limit",           # -> limit_review
         "suggest_challenges",     # quick action improve_my_habits -> challenge_suggestions (finds the habit, offers a 7-day experiment)
         "get_challenge_progress", # -> challenge_progress
+        "stop_challenge",         # "I want to skip the challenge" -> ends the running challenge, facts only
     ],
 }
 

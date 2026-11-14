@@ -32,7 +32,7 @@ def test_tools_match_the_catalog():
 
 
 def test_the_assistant_only_offers_the_challenge_tools():
-    assert sorted(t.name for t in TOOLS) == ["get_challenge_progress", "suggest_challenges"]
+    assert sorted(t.name for t in TOOLS) == ["get_challenge_progress", "stop_challenge", "suggest_challenges"]
 
 
 def check(result, widget_type):
@@ -77,7 +77,7 @@ def test_suggest_challenges_shows_the_running_experiment_instead_of_a_new_one(se
     service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
     r = tool("suggest_challenges").run(CTX, {})
     check(r, "challenge_progress")
-    assert r.facts["already_running"] is True and "new challenge" in r.facts["note"]
+    assert r.facts["already_running"] is True and "skip it any time" in r.facts["note"]
 
 
 def test_suggest_challenges_without_a_habit_returns_facts_only():
@@ -155,3 +155,17 @@ def test_a_savings_goal_is_worked_out_from_the_running_challenge(service):
     check(r, "challenge_progress")
     assert r.facts["weekly_saving_cents"] == 1300 and r.facts["weeks_to_goal"] == -(-60000 // 1300)
     assert "estimate" in r.facts["note"]
+
+
+def test_saying_skip_ends_the_running_challenge(service):
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    r = tool("stop_challenge").run(CTX, {})
+    assert r.facts["stopped"] is True and "skipped" in r.facts["note"] and r.widgets == []
+    assert service.list_challenges(ME).items[0].challenge.status.value == "cancelled"
+    again = tool("suggest_challenges").run(CTX, {})
+    assert again.facts.get("already_running") is None  # the slot is free again
+
+
+def test_skip_with_nothing_running_says_so(service):
+    r = tool("stop_challenge").run(CTX, {})
+    assert r.facts["stopped"] is False and "nothing to skip" in r.facts["note"]
