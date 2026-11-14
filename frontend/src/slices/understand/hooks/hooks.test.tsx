@@ -47,23 +47,34 @@ describe("basket_breakdown month switch", () => {
 });
 
 describe("basket_trend range selector", () => {
+  it("offers 2, 4 and 6 months", () => {
+    const { api } = apiWith(() => null);
+    render(<WidgetHost widget={w("basket_trend", basketTrendMock)} api={api} />);
+    expect(screen.getAllByRole("tab").map((t) => t.props.accessibilityLabel)).toEqual([
+      "2 months",
+      "4 months",
+      "6 months",
+    ]);
+  });
+
   it("re-calls GET /understand/trend with the chosen number of months", async () => {
-    const three = { ...basketTrendMock, months: basketTrendMock.months.slice(-3) };
-    const { api, request } = apiWith(() => three);
+    const four = { ...basketTrendMock, months: basketTrendMock.months.slice(-4) };
+    const { api, request } = apiWith(() => four);
     render(<WidgetHost widget={w("basket_trend", basketTrendMock)} api={api} />);
     expect(screen.getByLabelText("6 months")).toBeSelected();
 
-    fireEvent.press(screen.getByLabelText("3 months"));
-    expect(request).toHaveBeenCalledWith("GET", "/understand/trend?months=3");
+    fireEvent.press(screen.getByLabelText("4 months"));
+    expect(request).toHaveBeenCalledWith("GET", "/understand/trend?months=4");
     await act(async () => {
       await Promise.resolve(); // let the mocked request resolve
     });
     expect(screen.queryAllByTestId(/^trend-/).map((n) => n.props.testID)).toEqual([
+      "trend-2026-06",
       "trend-2026-07",
       "trend-2026-08",
       "trend-2026-09",
     ]);
-    expect(screen.getByLabelText("3 months")).toBeSelected();
+    expect(screen.getByLabelText("4 months")).toBeSelected();
   });
 });
 

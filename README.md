@@ -44,7 +44,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 ### Understand My Money
 - Spending in the **three baskets**: euros, percent, number of purchases, top 5 groups, change since last month.
 - **Spending question**: "How much did I spend on taxis last month?" gives the exact sum.
-- **6-month trend** of the baskets (1 to 12 months). The current month is marked as partial.
+- **6-month trend** of the baskets. Switch between 2, 4 and 6 months on the card. The current month is marked as partial.
 - **Spender type**: one type, traits with evidence, tips.
 - **Compare with similar people**: your monthly average, the middle value of the group, your place in the group, and the size of the group.
 - **Statistics Finland** reference with year and link.

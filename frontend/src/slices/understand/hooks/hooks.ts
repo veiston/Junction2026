@@ -8,7 +8,7 @@ import { useRemote } from "./useRemote";
 
 /** First month with data in the dataset (docs/er.md). */
 export const FIRST_MONTH = "2024-10";
-export const TREND_RANGES = [3, 6, 12] as const;
+export const TREND_RANGES = [2, 4, 6] as const;
 export const SEE_ALL_PAGE_SIZE = 20;
 
 /** Month switch for basket_breakdown: GET /understand/baskets?month=YYYY-MM. */
