@@ -4,7 +4,7 @@ import { postChatAsk } from "@/chat/chatAsk";
 import type { WidgetHostApi } from "@/chat/registry";
 
 import { plural } from "./format";
-import { Body, ErrorText, SecondaryButton, StopButton } from "./ui";
+import { Body, ErrorText, StopButton } from "./ui";
 
 interface Props {
   api: WidgetHostApi;
@@ -16,21 +16,16 @@ interface Props {
   onStopped?: () => void;
 }
 
-/** What the customer sees once the challenge is skipped: a short note and a way forward. */
-export function Skipped({ api }: { api: WidgetHostApi }) {
-  return (
-    <>
-      <Body muted>Challenge skipped. There is no result and nothing is lost.</Body>
-      <SecondaryButton label="Another challenge" onPress={() => api.sendChat({ message: "Show me another challenge to try" })} />
-    </>
-  );
+/** What the customer sees once the challenge is skipped: a short note, no buttons. */
+export function Skipped() {
+  return <Body muted>Challenge skipped. There is no result and nothing is lost.</Body>;
 }
 
 /** "Skip challenge": ends the running challenge, tells the assistant, then shows what to do next. */
 export function StopChallenge({ api, challengeId, title, spentCents, daysLeft, onStopped }: Props) {
   const [state, setState] = useState<"idle" | "busy" | "stopped" | "failed">("idle");
 
-  if (state === "stopped") return <Skipped api={api} />;
+  if (state === "stopped") return <Skipped />;
   return (
     <>
       <StopButton

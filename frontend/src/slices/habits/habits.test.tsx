@@ -380,15 +380,15 @@ describe("stop right after Start", () => {
 });
 
 describe("after a skip", () => {
-  it("offers another challenge and nothing else to start", async () => {
+  it("shows a short note and no buttons", async () => {
     const request = jest.fn().mockResolvedValue({});
-    const api = makeApi(request);
-    show("challenge_progress", habitsMocks.challenge_progress, api);
+    show("challenge_progress", habitsMocks.challenge_progress, makeApi(request));
     await act(async () => {
       fireEvent.press(screen.getByLabelText("Skip challenge"));
     });
+    expect(screen.getByText("Challenge skipped. There is no result and nothing is lost.")).toBeTruthy();
     expect(screen.queryByLabelText("Skip challenge")).toBeNull();
-    fireEvent.press(screen.getByLabelText("Another challenge"));
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
+    expect(screen.queryByLabelText("Another challenge")).toBeNull();
+    expect(screen.queryByLabelText("Check progress")).toBeNull();
   });
 });

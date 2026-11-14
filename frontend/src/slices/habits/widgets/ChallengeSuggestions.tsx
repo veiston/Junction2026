@@ -57,7 +57,7 @@ function TemplateRow({ t, api }: { t: ChallengeTemplate; api: WidgetHostApi }) {
           </Text>
         ) : null}
         {result && stopped ? (
-          <Skipped api={api} />
+          <Skipped />
         ) : result ? (
           <>
             <Text style={styles.small} accessibilityLiveRegion="polite">
