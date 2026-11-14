@@ -94,7 +94,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 ## 4. How it works: server, AI model and data
 
 - The **server calculates every number**. The AI model never writes database queries and never sees your raw transactions or your customer id. It only explains numbers that are already checked.
-- **Gemini** decides what to look up and writes the answer. You can also set up a local model (Gemma with Ollama). Then answers that contain your numbers are written on your own computer.
+- **Gemini** (cloud) decides what to look up and writes the answer by default. A switch in the app (tab **Mina**) can use a private Gemma model on our own side instead: through Ollama on a host machine, or LiteRT-LM inside the server. Then the answers that contain your numbers are written by Gemma, and Gemini never sees them.
 - The app and the server follow fixed data formats. They are in `contracts/`.
 - **Data**: the test data from S-Pankki in `Challenge data/`. It has about 5,100 customers and 3.6 million transactions. It is not real customer data.
 
