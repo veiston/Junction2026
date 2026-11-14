@@ -293,11 +293,11 @@ describe("another challenge", () => {
     expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
   });
 
-  it("is not on a running challenge: that one can only be stopped", () => {
+  it("is not on a running challenge: that one can only be skipped", () => {
     show("challenge_progress", habitsMocks.challenge_progress);
     expect(screen.queryByLabelText("Another challenge")).toBeNull();
     expect(screen.queryByLabelText("Try a new challenge")).toBeNull();
-    expect(screen.getByLabelText("Stop challenge")).toBeTruthy();
+    expect(screen.getByLabelText("Skip challenge")).toBeTruthy();
   });
 });
 
@@ -329,35 +329,35 @@ describe("stop challenge", () => {
     const api = makeApi(request);
     show("challenge_progress", habitsMocks.challenge_progress, api);
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Stop challenge"));
+      fireEvent.press(screen.getByLabelText("Skip challenge"));
     });
     off();
     const id = (habitsMocks.challenge_progress as { challenge: { id: number } }).challenge.id;
     expect(request).toHaveBeenCalledWith("POST", `/habits/challenges/${id}/stop`);
-    expect(asked[0][0]).toBe("I stopped the challenge. What now?");
-    expect(asked[0][1]).toMatch(/stopped their 7-day challenge/);
-    expect(screen.getByText("Challenge stopped.")).toBeTruthy();
-    expect(screen.queryByLabelText("Stop challenge")).toBeNull();
+    expect(asked[0][0]).toBe("I skipped the challenge. What now?");
+    expect(asked[0][1]).toMatch(/skipped their 7-day challenge/);
+    expect(screen.getByText("Challenge skipped. There is no result and nothing is lost.")).toBeTruthy();
+    expect(screen.queryByLabelText("Skip challenge")).toBeNull();
   });
 
   it("shows an error and keeps the button when stopping fails", async () => {
     const request = jest.fn().mockRejectedValue({ status: 409, message: "x" });
     show("challenge_progress", habitsMocks.challenge_progress, makeApi(request));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Stop challenge"));
+      fireEvent.press(screen.getByLabelText("Skip challenge"));
     });
-    expect(screen.getByText("Could not stop the challenge. Try again.")).toBeTruthy();
-    expect(screen.getByLabelText("Stop challenge")).toBeTruthy();
+    expect(screen.getByText("Could not skip the challenge. Try again.")).toBeTruthy();
+    expect(screen.getByLabelText("Skip challenge")).toBeTruthy();
   });
 
   it("a finished challenge has no stop button", () => {
     show("challenge_progress", challengeProgressWonMock);
-    expect(screen.queryByLabelText("Stop challenge")).toBeNull();
+    expect(screen.queryByLabelText("Skip challenge")).toBeNull();
   });
 });
 
 describe("stop right after Start", () => {
-  it("the started suggestion has a Stop challenge button that stops the new challenge", async () => {
+  it("the started suggestion has a Skip challenge button that ends the new challenge", async () => {
     const { registerChatAsk } = require("@/chat/chatAsk");
     const asked: string[][] = [];
     const off = registerChatAsk((q: string, f: string) => asked.push([q, f]));
@@ -368,13 +368,27 @@ describe("stop right after Start", () => {
     });
     expect(screen.getByText("Started")).toBeTruthy();
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("Stop challenge"));
+      fireEvent.press(screen.getByLabelText("Skip challenge"));
     });
     off();
     const id = (habitsMocks.challenge_progress as { challenge: { id: number } }).challenge.id;
     expect(request).toHaveBeenLastCalledWith("POST", `/habits/challenges/${id}/stop`);
-    expect(screen.getByText("Challenge stopped. You can start another one.")).toBeTruthy();
+    expect(screen.getByText("Challenge skipped. There is no result and nothing is lost.")).toBeTruthy();
     expect(screen.queryByLabelText("Check progress")).toBeNull();
-    expect(asked.map((a) => a[0])).toContain("I stopped the challenge. What now?");
+    expect(asked.map((a) => a[0])).toContain("I skipped the challenge. What now?");
+  });
+});
+
+describe("after a skip", () => {
+  it("offers another challenge and nothing else to start", async () => {
+    const request = jest.fn().mockResolvedValue({});
+    const api = makeApi(request);
+    show("challenge_progress", habitsMocks.challenge_progress, api);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Skip challenge"));
+    });
+    expect(screen.queryByLabelText("Skip challenge")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Another challenge"));
+    expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
   });
 });

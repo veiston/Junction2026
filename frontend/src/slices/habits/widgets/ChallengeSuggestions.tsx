@@ -7,7 +7,7 @@ import type { WidgetHostApi, WidgetProps } from "@/chat/registry";
 import { colors, fonts, spacing } from "@/theme";
 
 import { useStartChallenge } from "../hooks/useStartChallenge";
-import { StopChallenge } from "./StopChallenge";
+import { Skipped, StopChallenge } from "./StopChallenge";
 import { Body, Card, ErrorText, PrimaryButton, SecondaryButton, Title } from "./ui";
 
 const has = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n);
@@ -57,9 +57,7 @@ function TemplateRow({ t, api }: { t: ChallengeTemplate; api: WidgetHostApi }) {
           </Text>
         ) : null}
         {result && stopped ? (
-          <Text style={styles.small} accessibilityLiveRegion="polite">
-            Challenge stopped. You can start another one.
-          </Text>
+          <Skipped api={api} />
         ) : result ? (
           <>
             <Text style={styles.small} accessibilityLiveRegion="polite">
