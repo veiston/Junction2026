@@ -4,6 +4,7 @@ This is the only module that imports the Gemini SDK.
 """
 from __future__ import annotations
 
+import base64
 import os
 import uuid
 from typing import Any
@@ -25,6 +26,27 @@ _ERROR_REASONS = {"MALFORMED_FUNCTION_CALL", "MALFORMED_RESPONSE", "OTHER", "UNE
 
 def _enum_name(value: Any) -> str:
     return str(getattr(value, "name", value) or "")
+
+
+# Gemini 3 requires the `thought_signature` of a function call to be sent back with the call.
+# The port's ToolCall has no field for it, so it travels inside ToolCall.id as "<id>|<base64>".
+_SIG_SEP = "|"
+
+
+def _pack_id(call_id: str, signature: bytes | None) -> str:
+    if not signature:
+        return call_id
+    return f"{call_id}{_SIG_SEP}{base64.b64encode(signature).decode('ascii')}"
+
+
+def _unpack_id(packed: str | None) -> tuple[str | None, bytes | None]:
+    if not packed or _SIG_SEP not in packed:
+        return packed, None
+    call_id, _, sig = packed.partition(_SIG_SEP)
+    try:
+        return call_id, base64.b64decode(sig)
+    except ValueError:
+        return call_id, None
 
 
 class GeminiClient:
@@ -66,15 +88,20 @@ class GeminiClient:
                 if m.text:
                     parts.append(types.Part(text=m.text))
                 for c in m.tool_calls:
+                    call_id, signature = _unpack_id(c.id)
                     parts.append(
-                        types.Part(function_call=types.FunctionCall(id=c.id, name=c.name, args=c.arguments))
+                        types.Part(
+                            function_call=types.FunctionCall(id=call_id, name=c.name, args=c.arguments),
+                            thought_signature=signature,
+                        )
                     )
                 if parts:
                     contents.append(types.Content(role="model", parts=parts))
             else:  # tool result
+                response_id, _ = _unpack_id(m.tool_call_id)
                 part = types.Part(
                     function_response=types.FunctionResponse(
-                        id=m.tool_call_id, name=m.tool_name or "", response={"result": m.text}
+                        id=response_id, name=m.tool_name or "", response={"result": m.text}
                     )
                 )
                 contents.append(types.Content(role="user", parts=[part]))
@@ -92,8 +119,14 @@ class GeminiClient:
         for part in getattr(getattr(cand, "content", None), "parts", None) or []:
             if getattr(part, "function_call", None) is not None:
                 fc = part.function_call
+                call_id = fc.id or f"call_{uuid.uuid4().hex[:12]}"
+                signature = getattr(part, "thought_signature", None)
                 calls.append(
-                    ToolCall(id=fc.id or f"call_{uuid.uuid4().hex[:12]}", name=fc.name, arguments=dict(fc.args or {}))
+                    ToolCall(
+                        id=_pack_id(call_id, signature if isinstance(signature, bytes) else None),
+                        name=fc.name,
+                        arguments=dict(fc.args or {}),
+                    )
                 )
             elif getattr(part, "text", None) and not getattr(part, "thought", False):
                 text_parts.append(part.text)
