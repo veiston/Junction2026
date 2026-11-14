@@ -43,6 +43,15 @@ describe("request", () => {
     expect(fetchMock.mock.calls[2][1].headers["X-Model-Provider"]).toBeUndefined();
   });
 
+  it("asks for the LiteRT model on chat requests when that switch is on", async () => {
+    fetchMock.mockResolvedValue(json(200, {}));
+    setModelProvider("litert");
+    await request("POST", "/chat", { message: "hi" });
+    await request("GET", "/me");
+    expect(fetchMock.mock.calls[0][1].headers["X-Model-Provider"]).toBe("litert");
+    expect(fetchMock.mock.calls[1][1].headers["X-Model-Provider"]).toBeUndefined();
+  });
+
   it("throws ApiError with the server error body", async () => {
     const error = { code: "UNAUTHORIZED", message: "nope", details: [], request_id: "r1" };
     fetchMock.mockResolvedValue(json(401, { error }));

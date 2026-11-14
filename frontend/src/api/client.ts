@@ -29,7 +29,8 @@ export async function request<T>(
   const headers: Record<string, string> = { Accept: "application/json" };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
-  if (path === "/chat" && getModelProvider() === "local") headers["X-Model-Provider"] = "local";
+  const provider = getModelProvider();
+  if (path === "/chat" && provider !== "cloud") headers["X-Model-Provider"] = provider; // "local" | "litert"
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
   const controller = new AbortController();

@@ -74,7 +74,8 @@ export function useVoiceConversation({ messages, busy, onSend }: UseVoiceConvers
         const data = await res.json();
         const text = (data?.text || "").trim();
         if (text) {
-          setTranscript(text);
+          // Clear it once sent: a leftover transcript would replace what the customer types next.
+          setTranscript("");
           setVoiceStatus("Thinking…");
           onSend(text);
         } else {

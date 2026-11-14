@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, View, type TextStyle } from "react-native";
 
 import { Icon } from "@/components/Icon";
 import { SvgMicIcon } from "@/components/SvgMicIcon";
 import { coachColors, colors, fonts, spacing } from "@/theme";
+
+/**
+ * Browsers draw a focus ring with `outline-style: auto`, which ignores `outline-width`, so it must be
+ * switched off with `outline-style: none`. React Native's types do not list "none", so it is web-only here.
+ */
+export const WEB_NO_FOCUS_RING = { outlineStyle: "none", outlineWidth: 0 } as const;
+const NO_FOCUS_RING = Platform.select<TextStyle>({
+  web: WEB_NO_FOCUS_RING as unknown as TextStyle,
+  default: {},
+});
 
 interface ComposerProps {
   onSend: (text: string) => void;
@@ -25,7 +35,8 @@ export function Composer({
   interimTranscript = "",
 }: ComposerProps) {
   const [text, setText] = useState("");
-  const displayText = interimTranscript || text;
+  // Live speech only shows while voice mode is on, so it can never take over what the customer types.
+  const displayText = (isConversationMode && interimTranscript) || text;
   const canSend = !disabled && displayText.trim().length > 0;
 
   const submit = () => {
@@ -46,9 +57,11 @@ export function Composer({
 
   return (
     <View style={[styles.pill, isConversationMode && styles.pillActive]}>
-      <Icon name="message-outline" size={20} color={isConversationMode ? colors.primary : colors.textMuted} />
       <TextInput
-        style={styles.input}
+        style={[styles.input, NO_FOCUS_RING]}
+        // A plain blinking text cursor in the brand colour, no extra focus border.
+        cursorColor={colors.primary}
+        selectionColor={colors.primary}
         accessibilityLabel="Message"
         placeholder={getPlaceholder()}
         placeholderTextColor={isConversationMode ? colors.primary : colors.textSubtle}
@@ -103,7 +116,13 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: "#F2F9F4",
   },
-  input: { flex: 1, fontSize: 14, fontFamily: fonts.regular, color: colors.text, minHeight: 40 },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.text,
+    minHeight: 40,
+  },
   micButton: {
     width: 36,
     height: 36,

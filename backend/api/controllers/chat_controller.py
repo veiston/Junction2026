@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header
@@ -9,9 +10,33 @@ from api.dependencies import get_chat_service, get_config
 from api.security import CustomerId
 from config import Config
 from contracts.dto.chat import ChatRequest, ChatResponse
-from contracts.interfaces.controllers.errors import ValidationFailed
+from contracts.interfaces.controllers.errors import LlmUnavailable, ValidationFailed
 
 router = APIRouter()
+
+
+class _UnavailableLlm:
+    """Stands in when the LiteRT model cannot load: the orchestrator turns this into its
+    friendly 'model unavailable' reply and logs the reason, instead of a server error."""
+
+    def __init__(self, error: LlmUnavailable) -> None:
+        self._error = error
+
+    def generate(self, *args: Any, **kwargs: Any) -> Any:
+        raise self._error
+
+
+def _litert_client(config: Config) -> Any:
+    from adapters.llm.litert_client import LiteRtClient
+    from models.database import PROJECT_ROOT
+
+    path = Path(config.litert_model_path)
+    if config.litert_model_path and not path.is_absolute():
+        path = PROJECT_ROOT / path
+    try:
+        return LiteRtClient.from_config(str(path) if config.litert_model_path else "", config.litert_backend)
+    except LlmUnavailable as e:
+        return _UnavailableLlm(e)
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -47,6 +72,8 @@ def post_chat(
         )
         api_key = config.ollama_api_key or os.environ.get("NGROK_BASIC_AUTH", "")
         llm_override = OllamaClient.from_config(base_url, api_key, config.ollama_model)
+    elif x_model_provider == "litert":
+        llm_override = _litert_client(config)
 
     if llm_override is not None:
         return chat.handle(cid, body, llm_override=llm_override)

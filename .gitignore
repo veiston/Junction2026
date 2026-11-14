@@ -24,6 +24,9 @@ expo-env.d.ts
 .cache/
 tmp/
 
+# Local model files (several GB each): downloaded by scripts/get_litert_model.py.
+/models/
+
 # Local database files. Keep SQL migrations and seed files in Git.
 db/*.sqlite
 db/*.sqlite3
