@@ -12,6 +12,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     }
   }
 }
