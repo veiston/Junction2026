@@ -4,11 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import gemini_ai
 import local_ai
-from conversation import Message
+from conversation import ChatMessage
 
 HOST = "0.0.0.0"  # reachable from device on the same network
 PORT = 8000
 ALLOWED_ORIGINS = ["*"]
+GEMINI_ROUTE = "/chat"
+LOCAL_ROUTE = "/chat/local"
 
 app = FastAPI()
 app.add_middleware(
@@ -16,14 +18,14 @@ app.add_middleware(
 )
 
 # Call the gemini api
-@app.post("/chat")
-def chat(messages: list[Message]) -> str:
+@app.post(GEMINI_ROUTE)
+def chat(messages: list[ChatMessage]) -> str:
     return gemini_ai.chat(messages)
 
 
 # Call the local ollama model
-@app.post("/chat/local")
-def chat_local(messages: list[Message]) -> str:
+@app.post(LOCAL_ROUTE)
+def chat_local(messages: list[ChatMessage]) -> str:
     return local_ai.chat(messages)
 
 

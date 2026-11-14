@@ -4,14 +4,16 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 
-from conversation import SYSTEM_PROMPT, Message
+from conversation import ChatMessage
+from system_prompt import SYSTEM_PROMPT
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-MODEL = os.environ["GEMINI_DEFAULT_MODEL"]
+DEFAULT_MODEL = "gemini-2.5-flash"
+MODEL = os.getenv("GEMINI_DEFAULT_MODEL", DEFAULT_MODEL)
 
 
-def chat(messages: list[Message]) -> str:
+def chat(messages: list[ChatMessage]) -> str:
     gemini = genai.Client()  # reads GOOGLE_API_KEY or GEMINI_API_KEY
     contents = [to_gemini(message) for message in messages]
     config = {"system_instruction": SYSTEM_PROMPT}
@@ -20,15 +22,11 @@ def chat(messages: list[Message]) -> str:
 
 
 # Gemini reads images and PDFs natively
-def to_gemini(message: Message) -> dict:
+def to_gemini(message: ChatMessage) -> dict:
     files = [{"inline_data": {"mime_type": file.mime_type, "data": file.data}} for file in message.attachments]
     return {"role": message.role, "parts": [{"text": message.text}, *files]}
 
 
 # Module test (Won't be accessed when imported)
 if __name__ == "__main__":
-    from fastapi.testclient import TestClient
-    from main import app
-
-    question = [{"role": "user", "text": "Would a raw banana be a good fit for my diet?"}]
-    print(TestClient(app).post("/chat", json=question).json())
+    print(chat([ChatMessage(role="user", text="I spend 300€ a month at Alko Oy. Would that be a good fit for my budget?")]))

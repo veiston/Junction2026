@@ -10,7 +10,11 @@ Junction 2026, S-Bank challenge solution
 
 ## Run it
 
-``./download.sh && ./initialize.sh && ./run.sh``
+Linux / MacOS:
+``./download.sh && ./initialize.sh && ./setup_db.sh && ./run.sh``
+
+Windows:
+``download.bat && initialize.bat && setup_db.bat && run.bat``
 
 Delete the `.csv` files and run `download.bat` or `download.sh` to download the full data.
 
