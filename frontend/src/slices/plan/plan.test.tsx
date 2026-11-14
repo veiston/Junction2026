@@ -23,11 +23,18 @@ beforeEach(() => {
 });
 
 describe("balance_forecast", () => {
-  it("shows end and lowest balance and the method sentence", () => {
+  it("shows end and lowest balance", () => {
     renderWidget("balance_forecast", balanceForecastMock);
     expect(screen.getByText(formatCents(balanceForecastMock.end_balance_cents))).toBeTruthy();
     expect(screen.getByText(formatCents(balanceForecastMock.lowest_balance_cents))).toBeTruthy();
-    expect(screen.getByText(balanceForecastMock.method)).toBeTruthy();
+  });
+
+  it("explains the dips and jumps: every bill and payday plus the daily spending", () => {
+    renderWidget("balance_forecast", balanceForecastMock);
+    const [bill] = balanceForecastMock.upcoming_bills;
+    expect(screen.getByText(formatCents(-bill.amount_cents))).toBeTruthy();
+    expect(screen.getByText("5.10. Salary")).toBeTruthy();
+    expect(screen.getByText(/about 60,00 € a day/)).toBeTruthy();
   });
 
   it("re-calls the forecast endpoint when another horizon is picked", async () => {
