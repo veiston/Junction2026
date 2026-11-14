@@ -11,6 +11,8 @@ Junction 2026, S-Bank challenge solution
 
 ``./download.sh && ./initialize.sh && ./run.sh``
 
+Delete the ``.csv`` files and run ``download.bat/sh`` to download the full data.
+
 ## Tech Stack
 
 ### Backend

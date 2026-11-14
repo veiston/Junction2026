@@ -14,6 +14,7 @@ const SERVICE_ROWS: { icon: IconName; title: string }[] = [
   { icon: "file-account-outline", title: "Asiakastiedot" },
 ];
 
+// TODO: Everything should be in English so accessible to international judges / hacker-voters
 export default function ProfileScreen() {
   return (
     <Screen topColor={colors.background}>
