@@ -32,7 +32,7 @@ flowchart LR
 
 | Port | File | Implemented by (service) | Called by | Owner |
 |---|---|---|---|---|
-| HTTP API | `controllers/http-api.openapi.yaml` | controllers in `api/controllers/` | frontend, embedded-demo | per path `x-owner` |
+| HTTP API | `controllers/http-api.openapi.yaml` | controllers in `api/controllers/` | frontend | per path `x-owner` |
 | SessionService | `controllers/services.py` | `services/session_service.py` | session, health controllers; `security.py` | F |
 | ChatService | idem | `services/chat/orchestrator.py` | chat_controller | F |
 | TransactionService | idem | `services/transaction_service.py` | transactions_controller, `list_transactions` tool | F |

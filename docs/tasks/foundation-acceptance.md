@@ -19,8 +19,8 @@ Whoever runs this fills in what was seen.
 
 Prereqs: `./initialize.sh`, `uv run --directory backend python ../scripts/ingest.py` (needs the Challenge data CSVs, see `download.sh`), `GEMINI_API_KEY` in `.env`.
 
-- [ ] `./run.sh` starts backend (8000), coach (5173), embedded-demo (8081); it exits with a clear message if `db/money_coach.sqlite3` is missing. Seen: ____
-- [ ] Embedded-demo opens; tapping the AI tab shows the coach signed in, no login screen. Seen: ____
+- [ ] `./run.sh` starts backend (8000) and the Expo app (8081); it exits with a clear message if `db/money_coach.sqlite3` is missing. Seen: ____
+- [ ] The app opens; tapping the AI tab shows the coach signed in, no login screen. Seen: ____
 - [ ] Empty chat shows 3 chips. Seen: ____
 - [ ] Each chip answers "coming soon". Seen: ____
 - [ ] Ask "show my latest transactions" → text + transaction list widget with "See all". Seen: ____
@@ -31,5 +31,5 @@ Prereqs: `./initialize.sh`, `uv run --directory backend python ../scripts/ingest
 
 - `backend/services/container.py` was missing (`api.dependencies` imports `services.container.build_services`), so the real app could not start. Added as a minimal patch to foundation-services.
 - `backend/pyproject.toml`: registered the `live` pytest marker.
-- `.env.example`: `DEMO_ORIGIN` is now `http://localhost:8081` (Expo web's port) so CORS allows embedded-demo.
+- `.env.example`: `DEMO_ORIGIN` is now `http://localhost:8081` (Expo web's port) so CORS allows the app.
 - Quick-action chips return HTTP 200 with a "coming soon" assistant message (orchestrator behavior), not an HTTP 501; slice HTTP routes return 501.

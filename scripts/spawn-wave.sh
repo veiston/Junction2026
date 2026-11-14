@@ -5,7 +5,7 @@ set -euo pipefail
 
 wave="${1:?usage: spawn-wave.sh A|B|C}"
 case "$wave" in
-  A) tasks=(models-and-ports adapter-llm frontend-foundation embedded-demo) ;;
+  A) tasks=(models-and-ports adapter-llm frontend-foundation) ;;
   B) tasks=(adapter-db services controllers frontend-hooks) ;;
   C) tasks=(tests) ;;
   *) echo "wave must be A, B or C" >&2; exit 1 ;;

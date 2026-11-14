@@ -1,6 +1,6 @@
 # Use cases
 
-Actors: **Customer**, **Presenter** (pitch only), **LLM** (Gemini, external), **embedded-demo** (host app).
+Actors: **Customer**, **Presenter** (pitch only), **LLM** (Gemini, external).
 Every use case runs under a valid token; customer_id always comes from it.
 
 ```mermaid
@@ -19,7 +19,7 @@ flowchart LR
 
 | Id | Name | Actor | Main flow (short) | Errors | Stories | Slice |
 |---|---|---|---|---|---|---|
-| UC-01 | Open coach | Customer, embedded-demo | 1. Customer taps AI tab. 2. embedded-demo calls POST /demo/session for the persona. 3. Loads coach URL with `#token=…`. 4. Coach stores token in memory, calls GET /me, shows greeting + 3 chips. | Token missing/expired → "Please reopen from S-mobiili" screen. | US-F1, US-F5 | F |
+| UC-01 | Open coach | Customer | 1. Customer taps AI tab. 2. The app calls POST /demo/session for the persona. 3. The app keeps the token in memory and calls GET /me, shows greeting + 3 chips. | Token missing/expired → the app creates a new demo session once; if that fails it shows an error with Retry. | US-F1, US-F5 | F |
 | UC-02 | Ask a free question | Customer, LLM | 1. Customer types. 2. POST /chat. 3. Orchestrator sends question + tool list to LLM. 4. LLM calls 0–4 tools. 5. Tools return facts + widgets. 6. LLM writes text. 7. Coach renders text, widgets, suggestions, sources. | LLM down → 502 friendly message; bad tool args → error fed back to LLM once; off-topic → redirect text. | US-F2, US-F5, US-U2 | F |
 | UC-03 | Use a quick action | Customer, LLM | As UC-02, but `quick_action` forces the first tool (`get_basket_breakdown`, `get_balance_forecast`, `suggest_monthly_limit`). | Same as UC-02. | US-F3 | F |
 | UC-04 | See transactions behind a number | Customer | 1. Asks "show me those" or taps "See all". 2. `list_transactions` tool or GET /transactions with the widget's filter. 3. Paged list. | Empty result → "No transactions in this period". | US-F4 | F |
@@ -35,6 +35,6 @@ flowchart LR
 | UC-14 | Track my limit | Customer | `get_limit_progress` → progress card. | No active limit → offer UC-13. | US-H3 | H |
 | UC-15 | Review my month | Customer, LLM | `review_limit` → numbers; LLM writes feedback. | — | US-H4 | H |
 | UC-16 | Do a challenge | Customer | `suggest_challenges` → "Start" → POST /habits/challenges → `get_challenge_progress`. | Same challenge active → 409. | US-H5 | H |
-| UC-17 | Move the demo clock | Presenter | PUT /demo/clock (hidden control in embedded-demo). | Out of range → 400. | US-F6 | F |
+| UC-17 | Move the demo clock | Presenter | PUT /demo/clock (hidden control in the app). | Out of range → 400. | US-F6 | F |
 
 Coverage: every story US-F1…US-H5 appears in the "Stories" column at least once.

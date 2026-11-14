@@ -30,7 +30,6 @@ flowchart LR
     MP[models-and-ports]
     LLM[adapter-llm]
     FF[frontend-foundation]
-    ED[embedded-demo]
   end
   subgraph B[Wave B - after the named merge]
     DB[adapter-db]
@@ -48,7 +47,6 @@ flowchart LR
   CT --> T
   LLM --> T
   FH --> T
-  ED --> T
 ```
 
 | Wave | Branch | Worktree dir | Needs merged first | Done |
@@ -56,7 +54,6 @@ flowchart LR
 | A | `foundation-models-and-ports` | `../Junction2026-models-and-ports` | — | [x] |
 | A | `foundation-adapter-llm` | `../Junction2026-adapter-llm` | — | [x] |
 | A | `foundation-frontend-foundation` | `../Junction2026-frontend-foundation` | — | [x] |
-| A | `foundation-embedded-demo` | `../Junction2026-embedded-demo` | — | [x] |
 | B | `foundation-adapter-db` | `../Junction2026-adapter-db` | models-and-ports | [x] |
 | B | `foundation-services` | `../Junction2026-services` | models-and-ports | [x] |
 | B | `foundation-controllers` | `../Junction2026-controllers` | models-and-ports | [x] |
@@ -76,6 +73,6 @@ Review commit by commit (decision 0012).
 
 ## Shared definitions of done for the slice
 
-`./run.sh` starts backend + coach + embedded-demo; AI tab → coach with 3 chips → "show my latest
+`./run.sh` starts the backend and the Expo app; AI tab → coach with 3 chips → "show my latest
 transactions" → text + transaction_list widget with "See all"; chips answer "coming soon" (501);
 `/dev/gallery` renders; 401 tests; ingest tests.
