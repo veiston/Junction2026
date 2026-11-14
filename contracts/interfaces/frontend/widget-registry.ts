@@ -1,0 +1,37 @@
+/**
+ * PLUG-IN contract between the foundation chat UI and the slices (frontend side).
+ *
+ * The foundation chat renders every widget in an AssistantMessage through WidgetHost,
+ * which looks up `widget.type` in the merged registry of the 3 slices.
+ * Each slice exports its own map from ONE file it owns:
+ *   src/slices/understand/index.ts   (Worker 1)
+ *   src/slices/plan/index.ts         (Worker 2)
+ *   src/slices/habits/index.ts       (Worker 3)
+ * The foundation creates them with `export const widgets: SliceWidgets = {};`
+ * Unknown types render a neutral "This view is coming soon" card, never a crash.
+ *
+ * Types `Widget`, `WidgetType`, `ChatRequest` are generated from contracts/dto into
+ * src/contracts/ (see contracts/README.md).
+ */
+import type { ComponentType } from "react";
+import type { ChatRequest, Widget, WidgetType } from "../contracts";
+
+/** Services the host gives to every widget. Widgets never call fetch() directly. */
+export interface WidgetHostApi {
+  /** Typed REST call through the foundation API client (adds token, maps ErrorResponse). */
+  request<T>(method: "GET" | "POST" | "PUT", path: string, body?: unknown): Promise<T>;
+  /** Send a follow-up turn to the chat, e.g. a suggestion chip or "Explain this". */
+  sendChat(request: ChatRequest): void;
+  /** Format integer cents as "1 234,56 €" (fi-FI). */
+  formatCents(cents: number): string;
+}
+
+export interface WidgetProps<TData = unknown> {
+  widget: Widget & { data: TData };
+  api: WidgetHostApi;
+}
+
+export type WidgetComponent<TData = unknown> = ComponentType<WidgetProps<TData>>;
+
+/** A slice may only register the widget types it owns (docs/contracts/dtos.md, table "Widget ownership"). */
+export type SliceWidgets = Partial<Record<WidgetType, WidgetComponent<any>>>;

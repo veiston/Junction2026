@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "widgets.schema.json",
+  "title": "Widgets",
+  "description": "Generative UI. Widgets are produced by deterministic AI tools (never by the LLM). 'data' is EXACTLY the REST DTO of the same feature, so a widget can refresh itself by calling its endpoint. Frontend owner of each widget type = owner of the slice.",
+  "$defs": {
+    "WidgetType": {
+      "title": "WidgetType",
+      "type": "string",
+      "enum": [
+        "transaction_list",
+        "basket_breakdown", "basket_trend", "spending_summary", "spender_profile", "peer_benchmark",
+        "balance_forecast", "upcoming_bills", "expense_alerts", "safe_to_spend", "what_if",
+        "limit_suggestion", "limit_progress", "limit_review", "challenge_suggestions", "challenge_progress"
+      ]
+    },
+    "Widget": {
+      "title": "Widget",
+      "type": "object",
+      "required": ["id", "type", "version", "data"],
+      "properties": {
+        "id": { "type": "string", "description": "Unique in the conversation, e.g. 'w_7f3a'." },
+        "type": { "$ref": "#/$defs/WidgetType" },
+        "version": { "type": "integer", "const": 1 },
+        "data": { "type": "object" }
+      },
+      "oneOf": [
+        { "properties": { "type": { "const": "transaction_list" }, "data": { "$ref": "transactions.schema.json#/$defs/TransactionListData" } } },
+        { "properties": { "type": { "const": "basket_breakdown" }, "data": { "$ref": "understand.schema.json#/$defs/BasketBreakdown" } } },
+        { "properties": { "type": { "const": "basket_trend" }, "data": { "$ref": "understand.schema.json#/$defs/BasketTrend" } } },
+        { "properties": { "type": { "const": "spending_summary" }, "data": { "$ref": "understand.schema.json#/$defs/SpendingSummary" } } },
+        { "properties": { "type": { "const": "spender_profile" }, "data": { "$ref": "understand.schema.json#/$defs/SpenderProfile" } } },
+        { "properties": { "type": { "const": "peer_benchmark" }, "data": { "$ref": "understand.schema.json#/$defs/PeerBenchmark" } } },
+        { "properties": { "type": { "const": "balance_forecast" }, "data": { "$ref": "plan.schema.json#/$defs/BalanceForecast" } } },
+        { "properties": { "type": { "const": "upcoming_bills" }, "data": { "$ref": "plan.schema.json#/$defs/UpcomingBills" } } },
+        { "properties": { "type": { "const": "expense_alerts" }, "data": { "$ref": "plan.schema.json#/$defs/ExpenseAlerts" } } },
+        { "properties": { "type": { "const": "safe_to_spend" }, "data": { "$ref": "plan.schema.json#/$defs/SafeToSpend" } } },
+        { "properties": { "type": { "const": "what_if" }, "data": { "$ref": "plan.schema.json#/$defs/WhatIfResult" } } },
+        { "properties": { "type": { "const": "limit_suggestion" }, "data": { "$ref": "habits.schema.json#/$defs/LimitSuggestion" } } },
+        { "properties": { "type": { "const": "limit_progress" }, "data": { "$ref": "habits.schema.json#/$defs/LimitProgress" } } },
+        { "properties": { "type": { "const": "limit_review" }, "data": { "$ref": "habits.schema.json#/$defs/LimitReview" } } },
+        { "properties": { "type": { "const": "challenge_suggestions" }, "data": { "$ref": "habits.schema.json#/$defs/ChallengeSuggestions" } } },
+        { "properties": { "type": { "const": "challenge_progress" }, "data": { "$ref": "habits.schema.json#/$defs/ChallengeProgress" } } }
+      ]
+    }
+  }
+}

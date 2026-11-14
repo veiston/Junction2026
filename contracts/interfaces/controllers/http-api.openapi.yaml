@@ -1,0 +1,390 @@
+openapi: 3.1.0
+info:
+  title: S-Money Coach API
+  version: 1.0.0
+  description: |
+    INBOUND contract: what the backend controllers (FastAPI routers) expose and what the
+    s-money-coach frontend calls. Bodies are defined in contracts/dto/*.schema.json.
+    Rules (errors, pagination, naming, versioning): docs/contracts/errors-and-pagination.md
+    Owner per path is given in `x-owner` (foundation | understand | plan | habits).
+servers:
+  - url: http://localhost:8000/api/v1
+security:
+  - bearer: []
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: HS256 JWT issued by POST /demo/session. Claim `sub` = customer_id. Lifetime 60 min.
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: page_size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    HorizonDays:
+      name: horizon_days
+      in: query
+      schema: { $ref: '../../dto/plan.schema.json#/$defs/HorizonDays' }
+    FromDate:
+      name: from_date
+      in: query
+      schema: { $ref: '../../dto/common.schema.json#/$defs/IsoDate' }
+    ToDate:
+      name: to_date
+      in: query
+      schema: { $ref: '../../dto/common.schema.json#/$defs/IsoDate' }
+  responses:
+    Error400:
+      description: VALIDATION_ERROR
+      content: { application/json: { schema: { $ref: '../../dto/errors.schema.json#/$defs/ErrorResponse' } } }
+    Error401:
+      description: UNAUTHORIZED or TOKEN_EXPIRED
+      content: { application/json: { schema: { $ref: '../../dto/errors.schema.json#/$defs/ErrorResponse' } } }
+    Error404:
+      description: NOT_FOUND
+      content: { application/json: { schema: { $ref: '../../dto/errors.schema.json#/$defs/ErrorResponse' } } }
+    Error409:
+      description: CONFLICT
+      content: { application/json: { schema: { $ref: '../../dto/errors.schema.json#/$defs/ErrorResponse' } } }
+    Error429:
+      description: RATE_LIMITED
+      content: { application/json: { schema: { $ref: '../../dto/errors.schema.json#/$defs/ErrorResponse' } } }
+    Error502:
+      description: LLM_UNAVAILABLE
+      content: { application/json: { schema: { $ref: '../../dto/errors.schema.json#/$defs/ErrorResponse' } } }
+
+paths:
+  # ---------------------------------------------------------------- foundation
+  /health:
+    get:
+      x-owner: foundation
+      operationId: health
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, contracts_version]
+                properties:
+                  status: { type: string, const: ok }
+                  contracts_version: { type: string, example: 1.0.0 }
+
+  /demo/session:
+    post:
+      x-owner: foundation
+      operationId: createDemoSession
+      summary: Simulates S-mobiili login. Exists only when DEMO_MODE=true. Called by embedded-demo.
+      security: []
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '../../dto/session.schema.json#/$defs/DemoSessionRequest' } } }
+      responses:
+        '201':
+          description: Token created
+          content: { application/json: { schema: { $ref: '../../dto/session.schema.json#/$defs/SessionToken' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '404': { $ref: '#/components/responses/Error404' }
+
+  /demo/clock:
+    get:
+      x-owner: foundation
+      operationId: getDemoClock
+      responses:
+        '200':
+          description: Current demo date
+          content: { application/json: { schema: { $ref: '../../dto/session.schema.json#/$defs/DemoClock' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+    put:
+      x-owner: foundation
+      operationId: setDemoClock
+      summary: Time-travel for the pitch (e.g. jump to month end to show a limit review). DEMO_MODE only.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '../../dto/session.schema.json#/$defs/DemoClockRequest' } } }
+      responses:
+        '200':
+          description: Updated
+          content: { application/json: { schema: { $ref: '../../dto/session.schema.json#/$defs/DemoClock' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /me:
+    get:
+      x-owner: foundation
+      operationId: getMe
+      responses:
+        '200':
+          description: Signed-in customer
+          content: { application/json: { schema: { $ref: '../../dto/session.schema.json#/$defs/Me' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /chat:
+    post:
+      x-owner: foundation
+      operationId: postChat
+      summary: One user turn. The orchestrator lets the LLM pick tools; tools return facts + widgets.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '../../dto/chat.schema.json#/$defs/ChatRequest' } } }
+      responses:
+        '200':
+          description: Assistant answer
+          content: { application/json: { schema: { $ref: '../../dto/chat.schema.json#/$defs/ChatResponse' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+        '404': { $ref: '#/components/responses/Error404' }
+        '429': { $ref: '#/components/responses/Error429' }
+        '502': { $ref: '#/components/responses/Error502' }
+
+  /transactions:
+    get:
+      x-owner: foundation
+      operationId: listTransactions
+      summary: Newest first. Never returns rows after demo 'today'.
+      parameters:
+        - { $ref: '#/components/parameters/FromDate' }
+        - { $ref: '#/components/parameters/ToDate' }
+        - { name: basket, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/Basket' } }
+        - { name: category, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/Category' } }
+        - { name: spend_group, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/SpendGroup' } }
+        - { name: flow, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/Flow' } }
+        - { name: min_abs_amount_cents, in: query, schema: { type: integer, minimum: 0 } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+      responses:
+        '200':
+          description: Page of transactions
+          content: { application/json: { schema: { $ref: '../../dto/transactions.schema.json#/$defs/TransactionPage' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  # ---------------------------------------------------------------- slice 1: understand
+  /understand/baskets:
+    get:
+      x-owner: understand
+      operationId: getBasketBreakdown
+      parameters:
+        - name: month
+          in: query
+          description: Defaults to the month of demo 'today'.
+          schema: { $ref: '../../dto/common.schema.json#/$defs/YearMonth' }
+      responses:
+        '200':
+          description: Three-basket breakdown
+          content: { application/json: { schema: { $ref: '../../dto/understand.schema.json#/$defs/BasketBreakdown' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /understand/trend:
+    get:
+      x-owner: understand
+      operationId: getBasketTrend
+      parameters:
+        - { name: months, in: query, schema: { type: integer, minimum: 1, maximum: 12, default: 6 } }
+      responses:
+        '200':
+          description: Monthly basket totals
+          content: { application/json: { schema: { $ref: '../../dto/understand.schema.json#/$defs/BasketTrend' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /understand/spending:
+    get:
+      x-owner: understand
+      operationId: getSpending
+      summary: Answers "How much did I spend on X in period Y?". Exactly one of basket/category/spend_group.
+      parameters:
+        - { name: basket, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/Basket' } }
+        - { name: category, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/Category' } }
+        - { name: spend_group, in: query, schema: { $ref: '../../dto/common.schema.json#/$defs/SpendGroup' } }
+        - { $ref: '#/components/parameters/FromDate' }
+        - { $ref: '#/components/parameters/ToDate' }
+      responses:
+        '200':
+          description: Spending summary
+          content: { application/json: { schema: { $ref: '../../dto/understand.schema.json#/$defs/SpendingSummary' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /understand/profile:
+    get:
+      x-owner: understand
+      operationId: getSpenderProfile
+      responses:
+        '200':
+          description: Spender persona
+          content: { application/json: { schema: { $ref: '../../dto/understand.schema.json#/$defs/SpenderProfile' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /understand/benchmark:
+    get:
+      x-owner: understand
+      operationId: getPeerBenchmark
+      parameters:
+        - { name: scope, in: query, required: true, schema: { type: string, enum: [basket, category] } }
+        - { name: key, in: query, required: true, schema: { type: string }, description: 'A Basket or Category value.' }
+      responses:
+        '200':
+          description: Comparison with similar customers (+ optional open data)
+          content: { application/json: { schema: { $ref: '../../dto/understand.schema.json#/$defs/PeerBenchmark' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  # ---------------------------------------------------------------- slice 2: plan
+  /plan/forecast:
+    get:
+      x-owner: plan
+      operationId: getBalanceForecast
+      parameters:
+        - { $ref: '#/components/parameters/HorizonDays' }
+      responses:
+        '200':
+          description: Daily balance forecast (default 30 days)
+          content: { application/json: { schema: { $ref: '../../dto/plan.schema.json#/$defs/BalanceForecast' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /plan/bills:
+    get:
+      x-owner: plan
+      operationId: getUpcomingBills
+      parameters:
+        - { $ref: '#/components/parameters/HorizonDays' }
+      responses:
+        '200':
+          description: Predicted mandatory bills
+          content: { application/json: { schema: { $ref: '../../dto/plan.schema.json#/$defs/UpcomingBills' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /plan/alerts:
+    get:
+      x-owner: plan
+      operationId: getExpenseAlerts
+      parameters:
+        - { name: days, in: query, schema: { type: integer, minimum: 7, maximum: 365, default: 90 } }
+      responses:
+        '200':
+          description: Unusually high expenses
+          content: { application/json: { schema: { $ref: '../../dto/plan.schema.json#/$defs/ExpenseAlerts' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /plan/safe-to-spend:
+    get:
+      x-owner: plan
+      operationId: getSafeToSpend
+      responses:
+        '200':
+          description: Safe-to-spend until next payday
+          content: { application/json: { schema: { $ref: '../../dto/plan.schema.json#/$defs/SafeToSpend' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /plan/what-if:
+    post:
+      x-owner: plan
+      operationId: simulateWhatIf
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '../../dto/plan.schema.json#/$defs/WhatIfRequest' } } }
+      responses:
+        '200':
+          description: Simulation result
+          content: { application/json: { schema: { $ref: '../../dto/plan.schema.json#/$defs/WhatIfResult' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  # ---------------------------------------------------------------- slice 3: habits
+  /habits/limit-suggestion:
+    get:
+      x-owner: habits
+      operationId: getLimitSuggestion
+      responses:
+        '200':
+          description: Suggested everyday limit for the current month
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/LimitSuggestion' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /habits/limits:
+    post:
+      x-owner: habits
+      operationId: createLimit
+      summary: User accepts a limit (action button). 409 if an active limit already exists for that month.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/CreateLimitRequest' } } }
+      responses:
+        '201':
+          description: Created
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/SpendingLimit' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+        '409': { $ref: '#/components/responses/Error409' }
+
+  /habits/limits/current:
+    get:
+      x-owner: habits
+      operationId: getCurrentLimitProgress
+      responses:
+        '200':
+          description: Progress of the active limit
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/LimitProgress' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+        '404': { $ref: '#/components/responses/Error404' }
+
+  /habits/limits/{limit_id}/review:
+    get:
+      x-owner: habits
+      operationId: getLimitReview
+      parameters:
+        - { name: limit_id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: End-of-month result (works mid-month too, as "so far")
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/LimitReview' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+        '404': { $ref: '#/components/responses/Error404' }
+
+  /habits/challenges/suggestions:
+    get:
+      x-owner: habits
+      operationId: getChallengeSuggestions
+      responses:
+        '200':
+          description: Up to 3 personalised challenges
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/ChallengeSuggestions' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /habits/challenges:
+    get:
+      x-owner: habits
+      operationId: listChallenges
+      responses:
+        '200':
+          description: Challenges with progress, newest first
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/ChallengeList' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+    post:
+      x-owner: habits
+      operationId: startChallenge
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/StartChallengeRequest' } } }
+      responses:
+        '201':
+          description: Started
+          content: { application/json: { schema: { $ref: '../../dto/habits.schema.json#/$defs/ChallengeProgress' } } }
+        '400': { $ref: '#/components/responses/Error400' }
+        '401': { $ref: '#/components/responses/Error401' }
+        '404': { $ref: '#/components/responses/Error404' }
+        '409': { $ref: '#/components/responses/Error409' }

@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Common",
+  "description": "Shared value types. Money is ALWAYS integer euro cents. JSON keys are snake_case.",
+  "$defs": {
+    "Cents": {
+      "title": "Cents",
+      "type": "integer",
+      "description": "Amount in euro cents. 1234 = 12.34 EUR. Sign rules are stated on each field."
+    },
+    "IsoDate": {
+      "title": "IsoDate",
+      "type": "string",
+      "format": "date",
+      "description": "YYYY-MM-DD"
+    },
+    "IsoDateTime": {
+      "title": "IsoDateTime",
+      "type": "string",
+      "format": "date-time"
+    },
+    "YearMonth": {
+      "title": "YearMonth",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+      "description": "YYYY-MM"
+    },
+    "Percent": {
+      "title": "Percent",
+      "type": "number",
+      "description": "Percentage rounded to 1 decimal. 12.5 = 12.5 %."
+    },
+    "CustomerId": {
+      "title": "CustomerId",
+      "type": "string",
+      "pattern": "^CUST[0-9]{5}$"
+    },
+    "Basket": {
+      "title": "Basket",
+      "type": "string",
+      "enum": ["mandatory_regular", "mandatory_irregular", "everyday"],
+      "description": "S-Bank three-basket framework. mandatory_regular = rent, bills; mandatory_irregular = health, repairs; everyday = coffees, taxis, fun."
+    },
+    "Flow": {
+      "title": "Flow",
+      "type": "string",
+      "enum": ["income", "spending", "saving", "transfer"],
+      "description": "Direction of money. Only 'spending' rows have a basket."
+    },
+    "Category": {
+      "title": "Category",
+      "type": "string",
+      "enum": [
+        "Entertainment", "Groceries", "Health", "Home & Tech", "Housing",
+        "Invest Deposit", "Invest Withdraw", "Lifestyle", "Other Income",
+        "Restaurants", "Salary", "Salary Sweep", "Transportation", "Travel", "Utilities"
+      ],
+      "description": "The 15 categories found in tx_junction_transactions.csv (checked 2026-11-14)."
+    },
+    "SpendGroup": {
+      "title": "SpendGroup",
+      "type": "string",
+      "enum": [
+        "supermarkets", "butchers", "dairy", "kiosks",
+        "restaurants", "bars", "fast_food_cafes",
+        "public_transport", "taxis", "fuel", "parking",
+        "pharmacy", "doctors", "dentists", "health_services",
+        "cinemas", "events_tickets", "attractions", "amusement_parks", "recreation_sports",
+        "home_supplies", "hardware", "furniture_appliances", "electronics", "software_apps",
+        "sporting_goods", "clothing", "books", "toys_hobbies", "other_retail",
+        "travel_agencies", "flights", "hotels", "car_rental",
+        "housing", "utilities", "salary", "other_income",
+        "investment_deposit", "investment_withdrawal", "salary_sweep"
+      ],
+      "description": "Human-level grouping derived from MCC code (purchases) or transaction_type (others). Mapping table: docs/er.md section 'MCC reference'."
+    },
+    "GroupAmount": {
+      "title": "GroupAmount",
+      "type": "object",
+      "required": ["spend_group", "label", "amount_cents", "tx_count"],
+      "additionalProperties": false,
+      "properties": {
+        "spend_group": { "$ref": "#/$defs/SpendGroup" },
+        "label": { "type": "string", "description": "Display label, e.g. 'Taxis'." },
+        "amount_cents": { "$ref": "#/$defs/Cents", "description": "Positive = money spent." },
+        "tx_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "BasketAmount": {
+      "title": "BasketAmount",
+      "type": "object",
+      "required": ["basket", "amount_cents", "share_pct", "tx_count"],
+      "additionalProperties": false,
+      "properties": {
+        "basket": { "$ref": "#/$defs/Basket" },
+        "amount_cents": { "$ref": "#/$defs/Cents", "description": "Positive = money spent." },
+        "share_pct": { "$ref": "#/$defs/Percent", "description": "Share of total spending in the same period." },
+        "tx_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Period": {
+      "title": "Period",
+      "type": "object",
+      "required": ["from_date", "to_date"],
+      "additionalProperties": false,
+      "properties": {
+        "from_date": { "$ref": "#/$defs/IsoDate" },
+        "to_date": { "$ref": "#/$defs/IsoDate", "description": "Inclusive." }
+      }
+    },
+    "Source": {
+      "title": "Source",
+      "type": "object",
+      "description": "Provenance shown to the user so every number is traceable (trust).",
+      "required": ["description", "period", "tx_count"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "example": "Calculated from your transactions" },
+        "period": { "$ref": "#/$defs/Period" },
+        "tx_count": { "type": "integer", "minimum": 0 },
+        "external_url": { "type": ["string", "null"], "description": "Only for open data, e.g. Statistics Finland table URL." }
+      }
+    },
+    "TrendPoint": {
+      "title": "TrendPoint",
+      "type": "object",
+      "required": ["date", "balance_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "date": { "$ref": "#/$defs/IsoDate" },
+        "balance_cents": { "$ref": "#/$defs/Cents", "description": "Account balance; may be negative." }
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session.schema.json",
+  "title": "Session",
+  "description": "Identity and demo controls. The token is the ONLY source of customer_id on the server.",
+  "$defs": {
+    "DemoSessionRequest": {
+      "title": "DemoSessionRequest",
+      "type": "object",
+      "required": ["customer_id"],
+      "additionalProperties": false,
+      "properties": {
+        "customer_id": { "$ref": "common.schema.json#/$defs/CustomerId" }
+      }
+    },
+    "SessionToken": {
+      "title": "SessionToken",
+      "type": "object",
+      "required": ["token", "expires_at"],
+      "additionalProperties": false,
+      "properties": {
+        "token": { "type": "string", "description": "HS256 JWT. Claims: sub=customer_id, iat, exp." },
+        "expires_at": { "$ref": "common.schema.json#/$defs/IsoDateTime" }
+      }
+    },
+    "AgeBand": {
+      "title": "AgeBand",
+      "type": "string",
+      "enum": ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
+    },
+    "Me": {
+      "title": "Me",
+      "type": "object",
+      "required": ["customer_id", "age", "age_band", "postal_code", "region", "today", "data_from", "currency"],
+      "additionalProperties": false,
+      "properties": {
+        "customer_id": { "$ref": "common.schema.json#/$defs/CustomerId" },
+        "age": { "type": "integer" },
+        "age_band": { "$ref": "#/$defs/AgeBand" },
+        "postal_code": { "type": "string", "pattern": "^[0-9]{5}$" },
+        "region": { "type": "string", "description": "Derived from postal code, e.g. 'Helsinki region'." },
+        "today": { "$ref": "common.schema.json#/$defs/IsoDate", "description": "Demo clock date. No data after this date is ever returned." },
+        "data_from": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "currency": { "type": "string", "const": "EUR" }
+      }
+    },
+    "DemoClockRequest": {
+      "title": "DemoClockRequest",
+      "type": "object",
+      "required": ["today"],
+      "additionalProperties": false,
+      "properties": {
+        "today": { "$ref": "common.schema.json#/$defs/IsoDate", "description": "Must be within the dataset range 2024-10-01..2026-09-30." }
+      }
+    },
+    "DemoClock": {
+      "title": "DemoClock",
+      "type": "object",
+      "required": ["today"],
+      "additionalProperties": false,
+      "properties": {
+        "today": { "$ref": "common.schema.json#/$defs/IsoDate" }
+      }
+    }
+  }
+}

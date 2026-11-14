@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "plan.schema.json",
+  "title": "Plan",
+  "description": "Slice 2 - Plan my finances. Owner: Worker 2.",
+  "$defs": {
+    "HorizonDays": {
+      "title": "HorizonDays",
+      "type": "integer",
+      "enum": [30, 60, 90]
+    },
+    "Confidence": {
+      "title": "Confidence",
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "Bill": {
+      "title": "Bill",
+      "type": "object",
+      "required": ["label", "category", "spend_group", "basket", "due_date", "amount_cents", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "example": "Rent / housing" },
+        "category": { "$ref": "common.schema.json#/$defs/Category" },
+        "spend_group": { "$ref": "common.schema.json#/$defs/SpendGroup" },
+        "basket": { "$ref": "common.schema.json#/$defs/Basket" },
+        "due_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Positive = expected to pay." },
+        "confidence": { "$ref": "#/$defs/Confidence" }
+      }
+    },
+    "IncomeEvent": {
+      "title": "IncomeEvent",
+      "type": "object",
+      "required": ["label", "date", "amount_cents", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "example": "Salary" },
+        "date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "confidence": { "$ref": "#/$defs/Confidence" }
+      }
+    },
+    "BalanceForecast": {
+      "title": "BalanceForecast",
+      "type": "object",
+      "required": ["horizon_days", "start_date", "start_balance_cents", "end_balance_cents", "lowest_balance_cents", "lowest_balance_date", "points", "upcoming_bills", "expected_income", "essentials_daily_cents", "everyday_daily_cents", "irregular_daily_cents", "method", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "horizon_days": { "$ref": "#/$defs/HorizonDays" },
+        "start_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "start_balance_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "end_balance_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "lowest_balance_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "lowest_balance_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "points": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/TrendPoint" }, "description": "One point per day, horizon_days + 1 points." },
+        "upcoming_bills": { "type": "array", "items": { "$ref": "#/$defs/Bill" } },
+        "expected_income": { "type": "array", "items": { "$ref": "#/$defs/IncomeEvent" } },
+        "essentials_daily_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Projected non-bill basket-1 spend per day (groceries, fuel, commute)." },
+        "everyday_daily_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Projected everyday (basket 3) spend per day." },
+        "irregular_daily_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Prorated basket 2 per day." },
+        "method": { "type": "string", "description": "One plain sentence explaining the forecast method." },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "UpcomingBills": {
+      "title": "UpcomingBills",
+      "type": "object",
+      "required": ["horizon_days", "bills", "total_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "horizon_days": { "$ref": "#/$defs/HorizonDays" },
+        "bills": { "type": "array", "items": { "$ref": "#/$defs/Bill" }, "description": "Sorted by due_date." },
+        "total_cents": { "$ref": "common.schema.json#/$defs/Cents" }
+      }
+    },
+    "ExpenseAlert": {
+      "title": "ExpenseAlert",
+      "type": "object",
+      "required": ["transaction", "reason", "typical_amount_cents", "ratio", "severity"],
+      "additionalProperties": false,
+      "properties": {
+        "transaction": { "$ref": "transactions.schema.json#/$defs/Transaction" },
+        "reason": { "type": "string", "example": "About 6x your usual Electronics purchase" },
+        "typical_amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Median of this customer's spend_group over the last 12 months." },
+        "ratio": { "type": "number" },
+        "severity": { "type": "string", "enum": ["info", "warning"] }
+      }
+    },
+    "ExpenseAlerts": {
+      "title": "ExpenseAlerts",
+      "type": "object",
+      "required": ["period", "alerts"],
+      "additionalProperties": false,
+      "properties": {
+        "period": { "$ref": "common.schema.json#/$defs/Period" },
+        "alerts": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/ExpenseAlert" } }
+      }
+    },
+    "CalculationStep": {
+      "title": "CalculationStep",
+      "type": "object",
+      "required": ["label", "amount_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "example": "- Upcoming bills before payday" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Signed contribution to the result." }
+      }
+    },
+    "SafeToSpend": {
+      "title": "SafeToSpend",
+      "type": "object",
+      "required": ["today", "next_payday", "days_until_payday", "balance_cents", "upcoming_bills_cents", "essentials_cents", "irregular_buffer_cents", "safe_total_cents", "safe_per_day_cents", "safe_this_week_cents", "status", "steps", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "today": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "next_payday": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "days_until_payday": { "type": "integer", "minimum": 1 },
+        "balance_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "upcoming_bills_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "essentials_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Expected non-bill basket-1 spend until payday (groceries, fuel, commute)." },
+        "irregular_buffer_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Prorated basket-2 reserve until payday." },
+        "safe_total_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "max(0, balance - bills - essentials - buffer)." },
+        "safe_per_day_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "safe_this_week_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "safe_per_day * min(7, days_until_payday)." },
+        "status": { "type": "string", "enum": ["comfortable", "tight", "over"] },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/CalculationStep" }, "description": "Shows the formula line by line (pedagogy)." },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "WhatIfTargetType": {
+      "title": "WhatIfTargetType",
+      "type": "string",
+      "enum": ["basket", "category", "spend_group"]
+    },
+    "WhatIfAdjustment": {
+      "title": "WhatIfAdjustment",
+      "type": "object",
+      "required": ["target_type", "target", "change_pct"],
+      "additionalProperties": false,
+      "properties": {
+        "target_type": { "$ref": "#/$defs/WhatIfTargetType" },
+        "target": { "type": "string", "description": "A Basket, Category or SpendGroup value matching target_type." },
+        "change_pct": { "type": "integer", "minimum": -100, "maximum": 100, "description": "-20 = spend 20 % less." }
+      }
+    },
+    "WhatIfRequest": {
+      "title": "WhatIfRequest",
+      "type": "object",
+      "required": ["adjustments", "horizon_days"],
+      "additionalProperties": false,
+      "properties": {
+        "adjustments": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "$ref": "#/$defs/WhatIfAdjustment" } },
+        "horizon_days": { "$ref": "#/$defs/HorizonDays" },
+        "goal_cents": { "type": ["integer", "null"], "minimum": 0, "description": "Optional savings goal, e.g. 150000 = 1,500 EUR emergency buffer." }
+      }
+    },
+    "WhatIfLine": {
+      "title": "WhatIfLine",
+      "type": "object",
+      "required": ["target_type", "target", "label", "baseline_monthly_cents", "adjusted_monthly_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "target_type": { "$ref": "#/$defs/WhatIfTargetType" },
+        "target": { "type": "string" },
+        "label": { "type": "string" },
+        "baseline_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "adjusted_monthly_cents": { "$ref": "common.schema.json#/$defs/Cents" }
+      }
+    },
+    "WhatIfResult": {
+      "title": "WhatIfResult",
+      "type": "object",
+      "required": ["request", "lines", "monthly_saving_cents", "yearly_saving_cents", "baseline_end_balance_cents", "adjusted_end_balance_cents", "baseline_points", "adjusted_points", "goal", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "request": { "$ref": "#/$defs/WhatIfRequest" },
+        "lines": { "type": "array", "items": { "$ref": "#/$defs/WhatIfLine" } },
+        "monthly_saving_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Positive = saving; negative when change_pct > 0." },
+        "yearly_saving_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "baseline_end_balance_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "adjusted_end_balance_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "baseline_points": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/TrendPoint" } },
+        "adjusted_points": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/TrendPoint" } },
+        "goal": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["goal_cents", "months_to_goal_baseline", "months_to_goal_adjusted"],
+              "additionalProperties": false,
+              "properties": {
+                "goal_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+                "months_to_goal_baseline": { "type": ["number", "null"], "description": "null = never at current pace." },
+                "months_to_goal_adjusted": { "type": ["number", "null"] }
+              }
+            }
+          ]
+        },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    }
+  }
+}

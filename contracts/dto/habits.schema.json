@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "habits.schema.json",
+  "title": "Habits",
+  "description": "Slice 3 - Improve my habits. Owner: Worker 3. Limits apply to the 'everyday' basket.",
+  "$defs": {
+    "MonthAmount": {
+      "title": "MonthAmount",
+      "type": "object",
+      "required": ["month", "amount_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "month": { "$ref": "common.schema.json#/$defs/YearMonth" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents" }
+      }
+    },
+    "LimitSuggestion": {
+      "title": "LimitSuggestion",
+      "type": "object",
+      "required": ["month", "basket", "suggested_cents", "min_cents", "max_cents", "step_cents", "history", "expected_saving_cents", "rationale", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "month": { "$ref": "common.schema.json#/$defs/YearMonth" },
+        "basket": { "type": "string", "const": "everyday" },
+        "suggested_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "min_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Slider minimum." },
+        "max_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Slider maximum." },
+        "step_cents": { "type": "integer", "minimum": 100 },
+        "history": { "type": "array", "maxItems": 6, "items": { "$ref": "#/$defs/MonthAmount" }, "description": "Last full months, oldest first." },
+        "expected_saving_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "Average history - suggested." },
+        "rationale": { "type": "string" },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "CreateLimitRequest": {
+      "title": "CreateLimitRequest",
+      "type": "object",
+      "required": ["month", "amount_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "month": { "$ref": "common.schema.json#/$defs/YearMonth", "description": "Must be the demo month of 'today'." },
+        "amount_cents": { "type": "integer", "minimum": 1000, "maximum": 1000000 }
+      }
+    },
+    "LimitStatus": {
+      "title": "LimitStatus",
+      "type": "string",
+      "enum": ["active", "completed", "cancelled"]
+    },
+    "SpendingLimit": {
+      "title": "SpendingLimit",
+      "type": "object",
+      "required": ["id", "month", "basket", "amount_cents", "status", "created_at"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer" },
+        "month": { "$ref": "common.schema.json#/$defs/YearMonth" },
+        "basket": { "type": "string", "const": "everyday" },
+        "amount_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "status": { "$ref": "#/$defs/LimitStatus" },
+        "created_at": { "$ref": "common.schema.json#/$defs/IsoDateTime" }
+      }
+    },
+    "CumulativePoint": {
+      "title": "CumulativePoint",
+      "type": "object",
+      "required": ["date", "cumulative_cents"],
+      "additionalProperties": false,
+      "properties": {
+        "date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "cumulative_cents": { "$ref": "common.schema.json#/$defs/Cents" }
+      }
+    },
+    "LimitProgress": {
+      "title": "LimitProgress",
+      "type": "object",
+      "required": ["limit", "spent_cents", "remaining_cents", "days_elapsed", "days_in_month", "on_pace_cents", "status", "daily", "top_groups", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "limit": { "$ref": "#/$defs/SpendingLimit" },
+        "spent_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "remaining_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "May be negative." },
+        "days_elapsed": { "type": "integer", "minimum": 0 },
+        "days_in_month": { "type": "integer", "minimum": 28, "maximum": 31 },
+        "on_pace_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "limit * days_elapsed / days_in_month." },
+        "status": { "type": "string", "enum": ["on_track", "at_risk", "over"] },
+        "daily": { "type": "array", "items": { "$ref": "#/$defs/CumulativePoint" } },
+        "top_groups": { "type": "array", "maxItems": 3, "items": { "$ref": "common.schema.json#/$defs/GroupAmount" } },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "LimitReview": {
+      "title": "LimitReview",
+      "type": "object",
+      "required": ["limit", "final_spent_cents", "difference_cents", "met", "previous_month_cents", "biggest_leak", "best_week_start", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "limit": { "$ref": "#/$defs/SpendingLimit" },
+        "final_spent_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "difference_cents": { "$ref": "common.schema.json#/$defs/Cents", "description": "limit - spent. Positive = under limit." },
+        "met": { "type": "boolean" },
+        "previous_month_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "biggest_leak": { "oneOf": [{ "$ref": "common.schema.json#/$defs/GroupAmount" }, { "type": "null" }] },
+        "best_week_start": { "oneOf": [{ "$ref": "common.schema.json#/$defs/IsoDate" }, { "type": "null" }] },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "ChallengeRule": {
+      "title": "ChallengeRule",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["zero_spend", "max_amount", "max_count"] },
+        "amount_cents": { "type": ["integer", "null"], "minimum": 0, "description": "Required for max_amount." },
+        "count": { "type": ["integer", "null"], "minimum": 0, "description": "Required for max_count." }
+      }
+    },
+    "ChallengeTemplate": {
+      "title": "ChallengeTemplate",
+      "type": "object",
+      "required": ["id", "title", "description", "spend_group", "rule", "duration_days", "estimated_saving_cents", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$", "example": "no_taxis_14d" },
+        "title": { "type": "string", "example": "Two weeks without taxis" },
+        "description": { "type": "string" },
+        "spend_group": { "$ref": "common.schema.json#/$defs/SpendGroup" },
+        "rule": { "$ref": "#/$defs/ChallengeRule" },
+        "duration_days": { "type": "integer", "enum": [7, 14, 30] },
+        "estimated_saving_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "reason": { "type": "string", "description": "Why it is personalised, e.g. 'You took 9 taxis last month'." }
+      }
+    },
+    "ChallengeSuggestions": {
+      "title": "ChallengeSuggestions",
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/ChallengeTemplate" } }
+      }
+    },
+    "StartChallengeRequest": {
+      "title": "StartChallengeRequest",
+      "type": "object",
+      "required": ["template_id"],
+      "additionalProperties": false,
+      "properties": {
+        "template_id": { "type": "string", "pattern": "^[a-z0-9_]+$" }
+      }
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "type": "object",
+      "required": ["id", "template_id", "title", "spend_group", "rule", "start_date", "end_date", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer" },
+        "template_id": { "type": "string" },
+        "title": { "type": "string" },
+        "spend_group": { "$ref": "common.schema.json#/$defs/SpendGroup" },
+        "rule": { "$ref": "#/$defs/ChallengeRule" },
+        "start_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "end_date": { "$ref": "common.schema.json#/$defs/IsoDate" },
+        "status": { "type": "string", "enum": ["active", "won", "lost", "cancelled"] }
+      }
+    },
+    "ChallengeProgress": {
+      "title": "ChallengeProgress",
+      "type": "object",
+      "required": ["challenge", "progress_pct", "current_amount_cents", "current_count", "days_left", "on_track", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "challenge": { "$ref": "#/$defs/Challenge" },
+        "progress_pct": { "$ref": "common.schema.json#/$defs/Percent", "description": "Share of the duration completed." },
+        "current_amount_cents": { "$ref": "common.schema.json#/$defs/Cents" },
+        "current_count": { "type": "integer", "minimum": 0 },
+        "days_left": { "type": "integer", "minimum": 0 },
+        "on_track": { "type": "boolean" },
+        "source": { "$ref": "common.schema.json#/$defs/Source" }
+      }
+    },
+    "ChallengeList": {
+      "title": "ChallengeList",
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/ChallengeProgress" } }
+      }
+    }
+  }
+}
