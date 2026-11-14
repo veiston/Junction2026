@@ -87,6 +87,9 @@ DEFAULT_SUGGESTIONS: list[str] = []
 
 # Shown as pills after an answer to "what can you do?", one per section. The app turns these exact texts into the
 # three quick actions.
+# Shown as a pill after the customer skipped a challenge: the way to start another.
+AFTER_SKIP_SUGGESTIONS = ["Show me another challenge to try"]
+
 SECTION_SUGGESTIONS = [
     QUICK_ACTION_TEXT["understand_my_money"],
     QUICK_ACTION_TEXT["plan_my_finances"],

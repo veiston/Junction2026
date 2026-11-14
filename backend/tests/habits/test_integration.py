@@ -107,3 +107,20 @@ def test_challenge_http_flow(client, token):
     assert client.post("/habits/challenges", token=token, json_body={"template_id": "max_amount_nope_7d"}).status == 404
     listed = client.get("/habits/challenges", token=token).json["items"]
     assert [i["challenge"]["template_id"] for i in listed] == [template]
+
+
+def test_skipping_in_words_ends_the_challenge_and_offers_a_pill_to_start_another(client, llm, token):
+    assert client.post("/habits/challenges", token=token, json_body={"template_id": "max_amount_taxis_7d"}).status == 201
+    llm.push(LlmTurn("", [ToolCall("t1", "stop_challenge", {})], "tool_calls"))
+    llm.push(LlmTurn("Done, nothing is lost.", [], "stop"))
+    resp = client.post("/chat", token=token, json_body={"message": "I want to skip the challenge"})
+    assert resp.status == 200, resp.json
+    assert [s for s in resp.json["message"]["suggestions"]] == ["Show me another challenge to try"]
+    items = client.get("/habits/challenges", token=token).json["items"]
+    assert items[0]["challenge"]["status"] == "cancelled"
+
+
+def test_other_answers_get_no_pill(client, llm, token):
+    llm.push(LlmTurn("Hello.", [], "stop"))
+    resp = client.post("/chat", token=token, json_body={"message": "hello"})
+    assert resp.json["message"]["suggestions"] == []

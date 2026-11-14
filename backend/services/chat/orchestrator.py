@@ -82,12 +82,14 @@ class ChatOrchestrator:
 
         self._conversations.append(conv_id, "user", user_text)
         ctx = ToolContext(customer_id=customer_id, today=self._clock.today(), conversation_id=conv_id)
-        text, widgets, sources = self._loop(ctx, history, user_text, force_tool)
-        return self._finish(conv_id, text, widgets, sources, asks_for_help(user_text))
+        pills: list[str] = []
+        text, widgets, sources = self._loop(ctx, history, user_text, force_tool, pills)
+        return self._finish(conv_id, text, widgets, sources, asks_for_help(user_text), pills)
 
     # ------------------------------------------------------------------ loop
     def _loop(
-        self, ctx: ToolContext, history: list[LlmMessage], user_text: str, force_tool: str | None
+        self, ctx: ToolContext, history: list[LlmMessage], user_text: str, force_tool: str | None,
+        pills: list[str] | None = None,
     ) -> tuple[str, list[Widget], list[Source]]:
         messages = [
             LlmMessage(role="system", text=prompts.SYSTEM_PROMPT.format(today=ctx.today.isoformat())),
@@ -135,6 +137,8 @@ class ChatOrchestrator:
                     payload = {"error": e.message}
                 else:
                     payload = result.facts
+                    if call.name == "stop_challenge" and payload.get("stopped") and pills is not None:
+                        pills.extend(prompts.AFTER_SKIP_SUGGESTIONS)
                     widgets.extend(result.widgets)
                     sources.extend(result.sources)
                 messages.append(
@@ -144,7 +148,8 @@ class ChatOrchestrator:
 
     # ------------------------------------------------------------------ output
     def _finish(
-        self, conv_id: str, text: str, widgets: list[Widget], sources: list[Source], show_sections: bool = False
+        self, conv_id: str, text: str, widgets: list[Widget], sources: list[Source], show_sections: bool = False,
+        pills: list[str] | None = None,
     ) -> ChatResponse:
         widgets = widgets[:MAX_WIDGETS]
         self._conversations.append(
@@ -156,7 +161,7 @@ class ChatOrchestrator:
             created_at=datetime.now(timezone.utc),
             text=text,
             widgets=widgets,
-            suggestions=list(prompts.SECTION_SUGGESTIONS if show_sections else prompts.DEFAULT_SUGGESTIONS),
+            suggestions=list(pills or (prompts.SECTION_SUGGESTIONS if show_sections else prompts.DEFAULT_SUGGESTIONS)),
             sources=sources,
             disclaimer=None,
         )

@@ -245,4 +245,15 @@ describe("first view and the three functions", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(bodyOf(fetchMock.mock.calls[1])).toEqual({ quick_action: "improve_my_habits", conversation_id: "c1" });
   });
+
+  it("a card question can bring its own pill when the assistant adds none", async () => {
+    fetchMock.mockResolvedValueOnce(reply("Nothing is lost."));
+    render(<Harness />);
+    await act(async () => {
+      const { postChatAsk } = require("./chatAsk");
+      postChatAsk("I skipped the challenge. What now?", "skipped", ["Show me another challenge to try"]);
+    });
+    await waitFor(() => expect(screen.getByText("Nothing is lost.")).toBeTruthy());
+    expect(screen.getByText("Show me another challenge to try")).toBeTruthy();
+  });
 });

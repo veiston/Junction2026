@@ -19,7 +19,7 @@ export interface UseChat {
   /** Asks the assistant without adding a customer bubble. */
   ask: (text: string) => void;
   /** Asks the assistant a question about a card; only the question is shown as the customer's message. */
-  askAbout: (question: string, facts: string) => void;
+  askAbout: (question: string, facts: string, pills?: string[]) => void;
   /** Re-sends the last failed turn. */
   retry: () => void;
   /** False on the first view (three function buttons shown); true once a message or function was sent. */
@@ -43,6 +43,8 @@ export function useChat(): UseChat {
   const failed = useRef<ChatRequest | null>(null);
   const inFlight = useRef(false);
   const seq = useRef(0);
+  /** Pills to show under the next answer when the assistant adds none (set by a card question). */
+  const nextPills = useRef<string[] | null>(null);
   /** Bumped by reset(); an answer that arrives for an older generation is dropped. */
   const generation = useRef(0);
 
@@ -65,7 +67,9 @@ export function useChat(): UseChat {
       );
       if (mine !== generation.current) return;
       conversationId.current = res.conversation_id;
-      setMessages((m) => [...m, res.message]);
+      const pills = nextPills.current;
+      nextPills.current = null;
+      setMessages((m) => [...m, pills && res.message.suggestions.length === 0 ? { ...res.message, suggestions: pills } : res.message]);
     } catch (err) {
       if (mine !== generation.current) return;
       if (err instanceof ApiError && err.body.code === "NOT_IMPLEMENTED") {
@@ -114,7 +118,8 @@ export function useChat(): UseChat {
   );
 
   const askAbout = useCallback(
-    (question: string, facts: string) => {
+    (question: string, facts: string, pills?: string[]) => {
+      nextPills.current = pills ?? null;
       setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: question }]);
       void post({ message: (facts ? `${question}\n\nCard facts: ${facts}` : question).slice(0, 1000) }); // the API accepts at most 1000 characters
     },

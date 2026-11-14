@@ -119,6 +119,10 @@ LEARNED = ("You compared two equal weeks, which is called comparing equal period
 
 
 class SuggestChallengesTool(_HabitsTool):
+    def __init__(self) -> None:
+        super().__init__()
+        self._seen: dict[str, set] = {}  # habits already shown to each customer while they ask for another
+
     name = "suggest_challenges"
     description = (
         "Find one regular everyday habit in the customer's own transactions and offer a 7-day challenge, "
@@ -168,14 +172,17 @@ class SuggestChallengesTool(_HabitsTool):
             }
             return ToolResult(facts=facts, widgets=[_widget("challenge_progress", current)], sources=[current.source])
         s = self._svc().challenge_suggestions(ctx.customer_id)
-        # A habit the customer just finished is repeated with its own button; here they get a different one.
-        finished = [i for i in all_items if i.challenge.status.value in ("won", "lost")]
-        last_group = max(finished, key=lambda i: i.challenge.id).challenge.spend_group if finished else None
-        busy = {i.challenge.spend_group for i in running}
-        fresh = [t for t in s.items if t.spend_group != last_group and t.spend_group not in busy]
-        fresh = fresh or ([] if busy else s.items)
+        # Habits to leave out: the last one they ended (won, lost or skipped has its own button) and, when they ask
+        # for another, the ones already shown. If nothing else is left, show the only one again and say so.
+        ended = [i for i in all_items if i.challenge.status.value in ("won", "lost", "cancelled")]
+        last_group = max(ended, key=lambda i: i.challenge.id).challenge.spend_group if ended else None
+        seen = self._seen.setdefault(ctx.customer_id, set()) if another else set()
+        preferred = [t for t in s.items if t.spend_group != last_group and t.spend_group not in seen]
+        no_other = not preferred and bool(s.items)
+        chosen = (preferred or s.items)[:1]
+        self._seen[ctx.customer_id] = (seen | {t.spend_group for t in chosen}) if another else {t.spend_group for t in chosen}
         # One habit at a time: the card and the reply must describe the same one.
-        s = s.model_copy(update={"items": fresh[:1]})
+        s = s.model_copy(update={"items": chosen})
         baskets = self._svc().basket_split(ctx.customer_id)
         facts = {
             "count": len(s.items),
@@ -188,8 +195,11 @@ class SuggestChallengesTool(_HabitsTool):
                        "yearly_saving_cents": t.yearly_saving_cents, "reason": t.reason,
                        "if_cut_by_20_percent_yearly_cents": (t.baseline_cents or 0) * 20 // 100 * 52}
                       for t in s.items],
-            "note": ("Describe only this habit. The customer starts the challenge with the button on the card. The yearly figure is an "
-                     "estimate, say so." if s.items
+            "no_other_habit": no_other,
+            "note": (("There is no other regular habit to test right now. Say so kindly in one sentence, then present "
+                      "this one again. " if no_other else "")
+                     + "Describe only this habit. The customer starts the challenge with the button on the card. "
+                     "The yearly figure is an estimate, say so." if s.items
                      else "No other regular everyday habit to test right now. Say so kindly and point to the "
                           "spending analysis."),
         }
@@ -268,3 +278,4 @@ def bind_service(service) -> None:
     """Connects the tools to the habits service (called once by the container)."""
     for tool in [*TOOLS, *LIMIT_TOOLS]:
         tool.service = service  # type: ignore[attr-defined]
+        getattr(tool, "_seen", {}).clear()

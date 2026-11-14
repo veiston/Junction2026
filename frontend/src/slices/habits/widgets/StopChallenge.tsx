@@ -43,6 +43,7 @@ export function StopChallenge({ api, challengeId, title, spentCents, daysLeft, o
                 `${daysLeft !== null ? `, with ${plural(daysLeft, "day", "days")} left` : ""}. ` +
                 `They had spent ${api.formatCents(spentCents)} so far. It ends without a result and nothing is lost. ` +
                 "They can start another challenge any time.",
+              ["Show me another challenge to try"],
             );
           } catch {
             setState("failed");

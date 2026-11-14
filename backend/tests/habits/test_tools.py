@@ -169,3 +169,45 @@ def test_saying_skip_ends_the_running_challenge(service):
 def test_skip_with_nothing_running_says_so(service):
     r = tool("stop_challenge").run(CTX, {})
     assert r.facts["stopped"] is False and "nothing to skip" in r.facts["note"]
+
+
+def _two_habits():
+    from tests.habits.test_experiment import TAXIS, build, rows
+    svc, clock, _ = build(rows("taxis", TAXIS) + rows(
+        "bars", [("2026-08-25", 2000), ("2026-09-01", 2000), ("2026-09-09", 2500)], start_id=200))
+    bind_service(svc)
+    return svc, clock
+
+
+def _title(r):
+    return r.facts["items"][0]["title"]
+
+
+def test_another_challenge_cycles_through_the_habits_then_says_there_are_no_others():
+    _two_habits()
+    first = tool("suggest_challenges").run(CTX, {})
+    second = tool("suggest_challenges").run(CTX, {"another": True})
+    third = tool("suggest_challenges").run(CTX, {"another": True})
+    assert "taxis" in _title(first).lower() and first.facts["no_other_habit"] is False
+    assert "bars" in _title(second).lower() and second.facts["no_other_habit"] is False
+    assert third.facts["no_other_habit"] is True and "no other regular habit" in third.facts["note"]
+    assert [w.type.value for w in third.widgets] == ["challenge_suggestions"]  # the one that exists, shown again
+
+
+def test_a_skipped_challenge_is_not_suggested_again_while_another_habit_exists():
+    svc, _ = _two_habits()
+    started = svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    tool("stop_challenge").run(CTX, {})
+    assert "bars" in _title(tool("suggest_challenges").run(CTX, {})).lower()
+    assert started.challenge.id
+
+
+def test_the_only_habit_is_shown_again_with_a_kind_note_after_a_skip():
+    svc = None
+    from tests.habits.test_experiment import TAXIS, build, rows
+    svc, _, _ = build(rows("taxis", TAXIS))
+    bind_service(svc)
+    svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    tool("stop_challenge").run(CTX, {})
+    r = tool("suggest_challenges").run(CTX, {})
+    assert r.facts["no_other_habit"] is True and "taxis" in _title(r).lower()
