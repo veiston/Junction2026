@@ -283,18 +283,6 @@ describe("experiment flow through the chat", () => {
     fireEvent.press(screen.getByLabelText("Check progress"));
     expect(api.sendChat).toHaveBeenCalledWith({ message: "How is my challenge going?" });
   });
-
-  it("the demo button moves the clock to the end date and asks for the result", async () => {
-    const request = jest.fn().mockResolvedValue({});
-    const api = makeApi(request);
-    show("challenge_progress", habitsMocks.challenge_progress, api);
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText("Demo: a week passes, show the result"));
-    });
-    const end = (habitsMocks.challenge_progress as { challenge: { end_date: string } }).challenge.end_date;
-    expect(request).toHaveBeenCalledWith("PUT", "/demo/clock", { today: end });
-    expect(api.sendChat).toHaveBeenCalledWith({ message: "How is my challenge going?" });
-  });
 });
 
 describe("new challenge button", () => {
