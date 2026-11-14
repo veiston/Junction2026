@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import { AiTopBar } from "./AiTopBar";
+import type { Notice } from "./useNotifications";
 
 describe("AiTopBar", () => {
   it("the back button leaves the coach", () => {
@@ -16,15 +17,33 @@ describe("AiTopBar", () => {
   });
 });
 
+const spending: Notice = {
+  id: "spending-2026-w38",
+  kind: "spending_change",
+  tone: "warning",
+  title: "Everyday spending is up this week",
+  text: "You spent 75 € on everyday things in the last 7 days, 150 % more than the week before.",
+  ask: "My everyday spending went up this week. What changed, and what can I do to stay on track?",
+  created_date: "2026-09-15",
+};
+
 describe("bell notices", () => {
-  it("shows a dot and the notice, and tapping the notice reports it", () => {
+  it("shows a red dot, the title and text, and tapping the notice reports it", () => {
     const onNotice = jest.fn();
-    const notice = { id: "challenge-1", text: 'Your challenge "Taxis" has ended. See the result.' };
-    render(<AiTopBar onBack={jest.fn()} notices={[notice]} onNotice={onNotice} />);
+    render(<AiTopBar onBack={jest.fn()} notices={[spending]} onNotice={onNotice} />);
     expect(screen.getByTestId("bell-dot")).toBeTruthy();
     fireEvent.press(screen.getByLabelText("Notifications, 1 new"));
-    fireEvent.press(screen.getByText(notice.text));
-    expect(onNotice).toHaveBeenCalledWith(notice);
+    expect(screen.getByText(spending.title)).toBeTruthy();
+    fireEvent.press(screen.getByText(spending.text));
+    expect(onNotice).toHaveBeenCalledWith(spending);
+    expect(screen.queryByTestId("bell-list")).toBeNull(); // the list closes
+  });
+
+  it("says how many are new", () => {
+    const suggestion: Notice = { ...spending, id: "suggest-2026-09-15", kind: "challenge_suggestion", tone: "info",
+      title: "Ready for a small challenge?", text: "Try a week without taxis.", ask: "Suggest a challenge for me" };
+    render(<AiTopBar onBack={jest.fn()} notices={[spending, suggestion]} />);
+    expect(screen.getByLabelText("Notifications, 2 new")).toBeTruthy();
   });
 
   it("has no dot without notices", () => {
