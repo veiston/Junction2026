@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { TransactionListData } from "@/contracts";
-import { colors, fontSize, radius, spacing } from "@/theme";
-import { SourceLine } from "@/widgets/common/SourceLine";
+import { coachColors, colors, fonts, radius, spacing } from "@/theme";
 
+import { AVATAR_SIZE, CoachAvatar } from "./CoachAvatar";
+import { RichText } from "./RichText";
 import type { ChatMessage } from "./useChat";
 import { WidgetHost } from "./WidgetHost";
 import type { WidgetHostApi } from "./registry";
@@ -16,26 +17,33 @@ interface Props {
   onSeeAll: (data: TransactionListData) => void;
 }
 
+/** Messaging-app look: the customer's bubbles on the right, the coach's on the left with its cards below. */
 export function MessageList({ messages, api, onSend, onSeeAll }: Props) {
   return (
     <View style={styles.list} accessibilityLabel="Conversation">
       {messages.map((m) =>
         m.role === "user" ? (
-          <View key={m.id} style={styles.user}>
+          <View key={m.id} style={styles.user} testID="bubble-user">
             <Text style={styles.userText}>{m.text}</Text>
           </View>
         ) : (
           <View key={m.id} style={styles.assistant}>
-            <Text style={styles.text}>{m.text}</Text>
+            {m.text ? (
+              <View style={styles.row}>
+                <CoachAvatar />
+                <View style={styles.bubble} testID="bubble-coach">
+                  <RichText text={m.text} style={styles.text} />
+                </View>
+              </View>
+            ) : null}
             {m.widgets.map((w) => (
-              <WidgetHost key={w.id} widget={w} api={api} onSeeAll={onSeeAll as never} />
+              <View key={w.id} style={styles.card}>
+                <WidgetHost widget={w} api={api} onSeeAll={onSeeAll as never} />
+              </View>
             ))}
-            {m.sources.map((s, i) => (
-              <SourceLine key={i} source={s} />
-            ))}
-            {m.disclaimer ? <Text style={styles.disclaimer}>{m.disclaimer}</Text> : null}
+            {m.disclaimer ? <Text style={[styles.disclaimer, styles.inset]}>{m.disclaimer}</Text> : null}
             {m.suggestions.length > 0 && (
-              <View style={styles.suggestions}>
+              <View style={[styles.suggestions, styles.inset]}>
                 {m.suggestions.map((s) => (
                   <Pressable key={s} accessibilityRole="button" onPress={() => onSend(s)} style={styles.chip}>
                     <Text style={styles.chipText}>{s}</Text>
@@ -50,23 +58,38 @@ export function MessageList({ messages, api, onSend, onSeeAll }: Props) {
   );
 }
 
+const INSET = AVATAR_SIZE + spacing.sm;
+
 const styles = StyleSheet.create({
   list: { gap: spacing.md },
   user: {
     alignSelf: "flex-end",
-    maxWidth: "85%",
-    backgroundColor: colors.brand,
-    borderRadius: radius.card,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    maxWidth: "80%",
+    backgroundColor: colors.primary,
+    borderRadius: 18,
+    borderBottomRightRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  userText: { fontSize: fontSize.small, color: colors.onPrimary },
+  userText: { fontSize: 15, lineHeight: 21, fontFamily: fonts.regular, color: colors.onPrimary },
   assistant: { alignSelf: "stretch", gap: spacing.sm },
-  text: { fontSize: fontSize.small, color: colors.text },
-  disclaimer: { fontSize: fontSize.small - 3, color: colors.textSubtle },
+  row: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
+  bubble: {
+    flexShrink: 1,
+    maxWidth: "85%",
+    backgroundColor: coachColors.surfaceMuted,
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  text: { fontSize: 15, lineHeight: 21, fontFamily: fonts.regular, color: colors.text },
+  card: { marginLeft: INSET },
+  inset: { marginLeft: INSET },
+  disclaimer: { fontSize: 12, color: colors.textSubtle },
   suggestions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
-    minHeight: 44,
+    minHeight: 36,
     justifyContent: "center",
     paddingHorizontal: spacing.md,
     borderRadius: radius.round,
@@ -74,5 +97,5 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.surface,
   },
-  chipText: { fontSize: fontSize.small, color: colors.primary },
+  chipText: { fontSize: 14, color: colors.primary },
 });
