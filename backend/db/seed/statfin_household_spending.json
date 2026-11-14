@@ -1,0 +1,17 @@
+{
+  "description": "Share of each consumption category in household consumption expenditure, Helsinki-Uusimaa, at current prices (%). Statistics Finland, Households' consumption 2022, table 14q8 (variable kulu_pro_kt_hk_1_1, region SA1). Retrieved 2026-11-14 from the PxWeb API. Only categories with a clear COICOP match are listed; others have no reference.",
+  "year": 2022,
+  "region": "Helsinki-Uusimaa",
+  "source_url": "https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__ktutk/statfin_ktutk_pxt_14q8.px",
+  "rows": [
+    {"category": "Groceries", "coicop": "01", "label": "Helsinki-Uusimaa households, food and non-alcoholic beverages", "share_of_spending_pct": 12.6},
+    {"category": "Restaurants", "coicop": "11.1", "label": "Helsinki-Uusimaa households, food and beverage serving services", "share_of_spending_pct": 4.1},
+    {"category": "Transportation", "coicop": "07", "label": "Helsinki-Uusimaa households, transport", "share_of_spending_pct": 12.4},
+    {"category": "Health", "coicop": "06", "label": "Helsinki-Uusimaa households, health", "share_of_spending_pct": 3.4},
+    {"category": "Housing", "coicop": "04", "label": "Helsinki-Uusimaa households, housing, water, electricity, gas and other fuels", "share_of_spending_pct": 33.4},
+    {"category": "Utilities", "coicop": "04.5", "label": "Helsinki-Uusimaa households, electricity, gas and other fuels", "share_of_spending_pct": 2.7},
+    {"category": "Home & Tech", "coicop": "05", "label": "Helsinki-Uusimaa households, furnishings, household equipment and maintenance", "share_of_spending_pct": 3.8},
+    {"category": "Entertainment", "coicop": "09", "label": "Helsinki-Uusimaa households, recreation, sport and culture", "share_of_spending_pct": 6.8},
+    {"category": "Lifestyle", "coicop": "03", "label": "Helsinki-Uusimaa households, clothing and footwear", "share_of_spending_pct": 4.5}
+  ]
+}
