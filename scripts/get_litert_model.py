@@ -44,19 +44,22 @@ def download(url: str, target: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", choices=sorted(MODELS), default="e2b")
+    parser.add_argument("--dir", type=Path, default=TARGET_DIR,
+                        help="Where to save it, e.g. outside a OneDrive/Dropbox folder. Default: models/litert/")
     args = parser.parse_args()
 
     repo, filename = MODELS[args.model]
-    target = TARGET_DIR / filename
+    target_dir = args.dir.expanduser().resolve()
+    target = target_dir / filename
     if target.is_file():
         print(f"OK   {target} is already there.")
     else:
-        TARGET_DIR.mkdir(parents=True, exist_ok=True)
+        target_dir.mkdir(parents=True, exist_ok=True)
         print(f"GET  {filename} from {repo}")
         download(url_for(repo, filename), target)
         print(f"OK   saved to {target}")
-    if args.model != "e2b":
-        print(f"Set LITERT_MODEL_PATH=models/litert/{filename} in .env to use it.")
+    if target != TARGET_DIR / MODELS["e2b"][1]:
+        print(f"Set LITERT_MODEL_PATH={target.as_posix()} in .env to use it.")
     return 0
 
 
