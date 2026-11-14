@@ -293,3 +293,23 @@ describe("new challenge button", () => {
     expect(api.sendChat).toHaveBeenCalledWith({ message: "Show me another challenge to try" });
   });
 });
+
+describe("what the chat says after Start", () => {
+  it("posts a plain explanation: goal, what to do, how it ends", async () => {
+    const { registerChatNote } = require("@/chat/chatNote");
+    const seen: string[] = [];
+    const off = registerChatNote((t: string) => seen.push(t));
+    const request = jest.fn().mockResolvedValue(habitsMocks.challenge_progress);
+    show("challenge_suggestions", habitsMocks.challenge_suggestions, makeApi(request));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText(/Start the 7-day challenge: /));
+    });
+    off();
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toContain("Your 7-day challenge has started.");
+    expect(seen[0]).toMatch(/no more than .*49,00/);
+    expect(seen[0]).toContain("Nothing is blocked and no money moves");
+    expect(seen[0]).toContain("How it ends");
+    expect(seen[0]).toContain("How is my challenge going?");
+  });
+});

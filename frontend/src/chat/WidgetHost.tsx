@@ -43,7 +43,16 @@ const CARD_NAMES: Record<string, string> = {
 };
 
 /** What the customer sees in the chat: plain words, never internal names. */
-export function explainMessage(widget: Widget): string {
+export function explainMessage(widget: Widget, formatCents?: (cents: number) => string): string {
+  if (widget.type === "challenge_suggestions" && formatCents) {
+    const first = (widget.data as { items?: { rule?: { amount_cents?: number | null }; baseline_cents?: number | null }[] })
+      ?.items?.[0];
+    const goal = first?.rule?.amount_cents;
+    const before = first?.baseline_cents;
+    if (typeof goal === "number" && typeof before === "number") {
+      return `Why is my goal ${formatCents(goal)} when I spent ${formatCents(before)} last week?`;
+    }
+  }
   const concept = conceptOf(widget.data);
   if (concept) return `Explain in simple words: ${concept.title}`;
   return `Explain in simple words: ${CARD_NAMES[widget.type] ?? "this card"}`;
@@ -60,7 +69,7 @@ function ExplainButton({ widget, api }: { widget: Widget; api: WidgetHostApi }) 
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Explain this card"
-      onPress={() => api.sendChat({ message: explainMessage(widget) })}
+      onPress={() => api.sendChat({ message: explainMessage(widget, api.formatCents) })}
       style={styles.explain}
       testID="explain-button"
     >
