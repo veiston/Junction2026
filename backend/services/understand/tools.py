@@ -27,6 +27,20 @@ SPENDING_GROUPS = [
 ]
 MONTH = {"type": "string", "description": "YYYY-MM. Default: the month of today."}
 
+# Sent with the facts so the reply stays short and never repeats the card the customer sees.
+REPLY_HINTS: dict[str, str] = {
+    "get_basket_breakdown": "The card shows all baskets and amounts. In 1-2 sentences, name the one basket "
+                            "that stands out (biggest change or everyday share) and why it matters.",
+    "get_basket_trend": "The chart shows every month. In 1-2 sentences, say the single clearest direction "
+                        "(growing, shrinking or steady) of the everyday basket.",
+    "get_spending": "The card shows the amount, count and purchases. In 1 sentence, give the total in euros "
+                    "and whether it is more or less than the previous period.",
+    "get_spender_profile": "The card shows the persona, traits and tips. In 1-2 sentences, explain the persona "
+                           "kindly in everyday words. Never judge.",
+    "compare_with_peers": "The card shows the comparison. In 1-2 sentences, say plainly whether the customer is "
+                          "below, near or above the typical similar customer.",
+}
+
 
 def _default_service_for(today: date) -> Any:
     from services.understand.wiring import tool_service  # lazy: needs config only when used
@@ -102,7 +116,7 @@ class GetBasketBreakdownTool(_Tool):
                 for d in b.baskets
             ],
         }
-        return ToolResult(facts=facts, widgets=[_widget("basket_breakdown", b)], sources=[b.source])
+        return ToolResult(facts={**facts, "reply_hint": REPLY_HINTS[self.name]}, widgets=[_widget("basket_breakdown", b)], sources=[b.source])
 
 
 class GetBasketTrendTool(_Tool):
@@ -130,7 +144,7 @@ class GetBasketTrendTool(_Tool):
             ],
             "last_month_in_progress": t.months[-1].month == ctx.today.strftime("%Y-%m"),
         }
-        return ToolResult(facts=facts, widgets=[_widget("basket_trend", t)], sources=[t.source])
+        return ToolResult(facts={**facts, "reply_hint": REPLY_HINTS[self.name]}, widgets=[_widget("basket_trend", t)], sources=[t.source])
 
 
 class GetSpendingTool(_Tool):
@@ -174,7 +188,7 @@ class GetSpendingTool(_Tool):
         if s.sample_transactions:
             top = s.sample_transactions[0]
             facts["largest"] = {"date": str(top.date), "label": top.label, "amount_cents": -top.amount_cents}
-        return ToolResult(facts=facts, widgets=[_widget("spending_summary", s)], sources=[s.source])
+        return ToolResult(facts={**facts, "reply_hint": REPLY_HINTS[self.name]}, widgets=[_widget("spending_summary", s)], sources=[s.source])
 
 
 class GetSpenderProfileTool(_Tool):
@@ -194,7 +208,7 @@ class GetSpenderProfileTool(_Tool):
             "metrics": p.metrics.model_dump(mode="json"),
             "tips": p.tips,
         }
-        return ToolResult(facts=facts, widgets=[_widget("spender_profile", p)], sources=[p.source])
+        return ToolResult(facts={**facts, "reply_hint": REPLY_HINTS[self.name]}, widgets=[_widget("spender_profile", p)], sources=[p.source])
 
 
 class CompareWithPeersTool(_Tool):
@@ -235,7 +249,7 @@ class CompareWithPeersTool(_Tool):
             facts["statistics_finland"] = {
                 "label": b.open_data.label, "share_pct": b.open_data.share_of_spending_pct, "year": b.open_data.year,
             }
-        return ToolResult(facts=facts, widgets=[_widget("peer_benchmark", b)], sources=[b.source])
+        return ToolResult(facts={**facts, "reply_hint": REPLY_HINTS[self.name]}, widgets=[_widget("peer_benchmark", b)], sources=[b.source])
 
 
 def build_tools(service_for: ServiceFor = _default_service_for) -> list[AiTool]:
