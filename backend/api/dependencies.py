@@ -47,3 +47,7 @@ def get_plan_service(request: Request) -> Any:
 
 def get_habits_service(request: Request) -> Any:
     return _container(request).habits
+
+
+def get_notification_service(request: Request) -> Any:
+    return _container(request).notifications

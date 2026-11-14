@@ -19,6 +19,8 @@ from services.chat.orchestrator import ChatOrchestrator
 from services.chat.tool_registry import default_registry
 from services.habits.service import HabitsServiceImpl
 from services.habits.tools import bind_service as bind_habits_tools
+from services.notifications.service import NotificationServiceImpl
+from models.repositories.sqlite_notification_repo import SqliteNotificationRepository
 from services.plan.plan_service import PlanServiceImpl
 from services.session_service import DATA_TO, SessionServiceImpl
 from services.transaction_service import TransactionServiceImpl
@@ -72,6 +74,8 @@ def build_services(config: Config, llm=None) -> SimpleNamespace:
         llm = llm_for_chat(llm, config)
     chat = ChatOrchestrator(llm, default_registry(tx_service, plan), SqliteConversationRepository(db), clock)
     session = SessionServiceImpl(SqliteCustomerRepository(db), clock, config.jwt_secret)
+    notifications = NotificationServiceImpl(transactions, habits, SqliteNotificationRepository(db), clock)
     return SimpleNamespace(
-        session=session, chat=chat, transactions=tx_service, plan=plan, habits=habits, clock=clock
+        session=session, chat=chat, transactions=tx_service, plan=plan, habits=habits,
+        notifications=notifications, clock=clock,
     )

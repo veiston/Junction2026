@@ -44,7 +44,8 @@ class DatabaseMigrationTests(unittest.TestCase):
             }.issubset(tables)
         )
         self.assertEqual(
-            [("migration:0001_core.sql",), ("migration:0002_chat.sql",), ("migration:0003_habits.sql",)],
+            [("migration:0001_core.sql",), ("migration:0002_chat.sql",), ("migration:0003_habits.sql",),
+             ("migration:0004_notifications.sql",)],
             migrations,
         )
 
