@@ -38,7 +38,7 @@ export function Composer({
   const getPlaceholder = () => {
     if (isConversationMode) {
       if (isListening) return "Listening to your voice… speak now";
-      if (isSpeaking) return "AI is speaking…";
+      if (isSpeaking) return "AI is speaking… tap the banner to interrupt";
       return "Conversation mode active…";
     }
     return "Ask anything about your money...";

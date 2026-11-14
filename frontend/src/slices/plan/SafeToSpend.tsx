@@ -6,6 +6,9 @@ import { colors, fontSize, spacing } from "@/theme";
 import { Money } from "@/widgets/common/Money";
 import { WidgetCard } from "@/widgets/common/WidgetCard";
 
+import { SAFE_TO_SPEND_LESSON } from "./lessons";
+import { QuickLesson } from "./QuickLesson";
+
 const OVER_COLOR = "#C0392B";
 
 const STATUS_LABEL = { comfortable: "Comfortable", tight: "Tight", over: "Over budget" };
@@ -40,6 +43,7 @@ export function SafeToSpend({ widget }: WidgetProps<SafeToSpendData>) {
           </View>
         ))}
       </View>
+      <QuickLesson lesson={SAFE_TO_SPEND_LESSON} />
     </WidgetCard>
   );
 }

@@ -103,7 +103,13 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
       {seeAll ? null : (
         <View style={styles.footer}>
           {voice.isConversationMode && (
-            <View style={styles.voiceBanner}>
+            <Pressable
+              style={styles.voiceBanner}
+              accessibilityRole="button"
+              accessibilityLabel="Interrupt the coach"
+              disabled={!voice.isSpeaking}
+              onPress={voice.interrupt}
+            >
               <View
                 style={[
                   styles.voiceDot,
@@ -123,7 +129,7 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
               >
                 <Text style={styles.voiceBannerClose}>End</Text>
               </Pressable>
-            </View>
+            </Pressable>
           )}
           {!started ? <SuggestionChips onPick={send} disabled={busy} /> : null}
           <Composer

@@ -7,6 +7,9 @@ import { Money } from "@/widgets/common/Money";
 import { WidgetCard } from "@/widgets/common/WidgetCard";
 
 import { ADJUSTED_COLOR, BASELINE_COLOR, BalanceChart } from "./BalanceChart";
+import { whatIfLesson } from "./lessons";
+import { QuickLesson } from "./QuickLesson";
+import { RewardUnlock } from "./RewardUnlock";
 import { useRefetch } from "./useRefetch";
 
 const MIN_CHANGE_PCT = -100;
@@ -122,6 +125,7 @@ export function WhatIf({ widget, api }: WidgetProps<WhatIfResult>) {
         <Text style={styles.label}>Saving per year</Text>
         <Money cents={data.yearly_saving_cents} signed />
       </View>
+      <RewardUnlock yearlySavingCents={data.yearly_saving_cents} />
       <BalanceChart
         series={[
           { points: data.baseline_points, color: BASELINE_COLOR },
@@ -144,6 +148,7 @@ export function WhatIf({ widget, api }: WidgetProps<WhatIfResult>) {
           <Text style={styles.note}>With the change: {formatMonths(data.goal.months_to_goal_adjusted)}</Text>
         </View>
       )}
+      <QuickLesson lesson={whatIfLesson(data)} />
     </WidgetCard>
   );
 }

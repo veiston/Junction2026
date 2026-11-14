@@ -7,6 +7,8 @@ import { formatCents, Money } from "@/widgets/common/Money";
 import { WidgetCard } from "@/widgets/common/WidgetCard";
 
 import { BalanceChart, BILL_COLOR, type ChartEvent, INCOME_COLOR, shortDate } from "./BalanceChart";
+import { forecastLesson } from "./lessons";
+import { QuickLesson } from "./QuickLesson";
 import { useRefetch } from "./useRefetch";
 
 const HORIZON_OPTIONS: HorizonDays[] = [30, 60, 90];
@@ -66,6 +68,7 @@ function BalanceDrivers({ data, drivers }: { data: BalanceForecastData; drivers:
 export function BalanceForecast({ widget, api }: WidgetProps<BalanceForecastData>) {
   const { data, loading, error, refetch } = useRefetch(widget.data);
   const drivers = toDrivers(data);
+  const lesson = forecastLesson(data);
 
   const selectHorizon = (days: HorizonDays) => {
     refetch(() => api.request<BalanceForecastData>("GET", `/plan/forecast?horizon_days=${days}`));
@@ -107,6 +110,7 @@ export function BalanceForecast({ widget, api }: WidgetProps<BalanceForecastData
         <Money cents={data.lowest_balance_cents} />
       </View>
       <BalanceDrivers data={data} drivers={drivers} />
+      {lesson && <QuickLesson lesson={lesson} />}
     </WidgetCard>
   );
 }

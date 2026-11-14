@@ -9,6 +9,13 @@ export type ChatMessage = { id: string; role: "user"; text: string } | Assistant
 
 const FRIENDLY = "Sorry, something went wrong on my side. Please try again.";
 
+/** What the customer "says" when they pick a function card (same wording as the backend). */
+const QUICK_ACTION_TEXT: Record<QuickAction, string> = {
+  understand_my_money: "Help me understand my money",
+  plan_my_finances: "Help me plan my finances",
+  improve_my_habits: "Help me improve my habits",
+};
+
 export interface UseChat {
   messages: ChatMessage[];
   busy: boolean;
@@ -97,6 +104,8 @@ export function useChat(): UseChat {
 
   const sendChip = useCallback(
     (action: QuickAction) => {
+      if (inFlight.current) return;
+      setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: QUICK_ACTION_TEXT[action] }]);
       void post({ quick_action: action });
     },
     [post],

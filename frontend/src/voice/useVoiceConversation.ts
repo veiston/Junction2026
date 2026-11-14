@@ -5,6 +5,17 @@ import type { ChatMessage } from "@/chat/useChat";
 import { API_BASE_URL } from "@/config";
 import { playTtsText, stopCurrentAudio } from "./tts";
 
+// In conversation mode only the start of a reply is read aloud; the full text stays on screen.
+const MAX_SPOKEN_SENTENCES = 2;
+const MAX_SPOKEN_CHARS = 240;
+const SENTENCE_END = /(?<=[.!?])\s+/;
+
+function spokenSummary(text: string): string {
+  const flat = text.replace(/\s*\n+\s*/g, " ").trim();
+  const sentences = flat.split(SENTENCE_END).slice(0, MAX_SPOKEN_SENTENCES).join(" ");
+  return sentences.slice(0, MAX_SPOKEN_CHARS);
+}
+
 function getExpoAudio() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -396,11 +407,28 @@ export function useVoiceConversation({ messages, busy, onSend }: UseVoiceConvers
       setVoiceStatus(null);
       setTranscript("");
     } else {
+      // Replies already on screen are not read out; only new ones are.
+      lastSpokenMsgIdRef.current = messages[messages.length - 1]?.id ?? null;
       setIsConversationMode(true);
       setVoiceStatus("Conversation mode active. Speak now…");
       startListening();
     }
-  }, [isConversationMode, startListening, stopListening]);
+  }, [isConversationMode, messages, startListening, stopListening]);
+
+  /** Cut the coach off mid-sentence and listen to the customer straight away. */
+  const interrupt = useCallback(() => {
+    isSpeakingRef.current = false;
+    const stop = stopAudioRef.current;
+    stopAudioRef.current = null;
+    if (stop) {
+      stop(); // its onEnd starts listening again
+      return;
+    }
+    stopCurrentAudio();
+    setIsSpeaking(false);
+    setVoiceStatus("Listening… speak now");
+    startListening();
+  }, [startListening]);
 
   // When in conversation mode and an assistant response arrives, speak it automatically
   useEffect(() => {
@@ -411,13 +439,13 @@ export function useVoiceConversation({ messages, busy, onSend }: UseVoiceConvers
       lastSpokenMsgIdRef.current = lastMsg.id;
       if (lastMsg.text.trim()) {
         stopListening();
-        setVoiceStatus("AI speaking…");
+        setVoiceStatus("AI speaking… tap to interrupt");
         setIsSpeaking(true);
 
-        playTtsText(lastMsg.text, {
+        playTtsText(spokenSummary(lastMsg.text), {
           onStart: () => {
             setIsSpeaking(true);
-            setVoiceStatus("AI speaking…");
+            setVoiceStatus("AI speaking… tap to interrupt");
           },
           onEnd: () => {
             setIsSpeaking(false);
@@ -458,6 +486,7 @@ export function useVoiceConversation({ messages, busy, onSend }: UseVoiceConvers
     transcript,
     voiceStatus,
     toggleConversationMode,
+    interrupt,
     playMessageTts,
     stopListening,
   };

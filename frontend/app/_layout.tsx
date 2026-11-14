@@ -5,6 +5,7 @@ import {
   PlusJakartaSans_700Bold,
   useFonts,
 } from "@expo-google-fonts/plus-jakarta-sans";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -54,13 +55,19 @@ function renderTab(tab: TabConfig) {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  // The screens render with the system font until Plus Jakarta Sans has loaded.
-  useFonts({
+  // Icons load their own font on mount and crash the web app if it is slow (6 s timeout, uncaught).
+  // Loading it here, where errors are caught, and waiting for it means icons never load it themselves.
+  const [fontsLoaded, fontError] = useFonts({
+    ...MaterialCommunityIcons.font,
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
   });
+  const fontsSettled = fontsLoaded || fontError !== null;
+  if (!fontsSettled) {
+    return null;
+  }
 
   return (
     <Tabs

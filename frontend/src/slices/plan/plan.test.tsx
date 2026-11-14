@@ -25,7 +25,8 @@ beforeEach(() => {
 describe("balance_forecast", () => {
   it("shows end and lowest balance", () => {
     renderWidget("balance_forecast", balanceForecastMock);
-    expect(screen.getByText(formatCents(balanceForecastMock.end_balance_cents))).toBeTruthy();
+    // The mock's end balance equals its salary, so the amount also appears in the drivers list.
+    expect(screen.getAllByText(formatCents(balanceForecastMock.end_balance_cents)).length).toBeGreaterThan(0);
     expect(screen.getByText(formatCents(balanceForecastMock.lowest_balance_cents))).toBeTruthy();
   });
 
@@ -79,6 +80,21 @@ describe("expense_alerts", () => {
 });
 
 describe("safe_to_spend", () => {
+  it("quick lesson: the right answer earns XP and explains the three baskets", () => {
+    renderWidget("safe_to_spend", safeToSpendMock);
+    fireEvent.press(screen.getByText("Rent, bills and a buffer for surprises"));
+    expect(screen.getByText("Correct! +10 XP")).toBeTruthy();
+    expect(screen.getByText(/three baskets/)).toBeTruthy();
+  });
+
+  it("quick lesson: a wrong answer names the right one and locks the quiz", () => {
+    renderWidget("safe_to_spend", safeToSpendMock);
+    fireEvent.press(screen.getByText("Nothing"));
+    expect(screen.getByText(/Not quite/)).toBeTruthy();
+    fireEvent.press(screen.getByText("Rent, bills and a buffer for surprises"));
+    expect(screen.queryByText("Correct! +10 XP")).toBeNull();
+  });
+
   it("shows per day, this week and until payday", () => {
     renderWidget("safe_to_spend", safeToSpendMock);
     expect(screen.getByText(formatCents(safeToSpendMock.safe_per_day_cents))).toBeTruthy();
@@ -100,6 +116,17 @@ describe("safe_to_spend", () => {
 });
 
 describe("what_if", () => {
+  it("turns the yearly saving into unlocked rewards and progress to the next", () => {
+    renderWidget("what_if", { ...whatIfMock, yearly_saving_cents: 40000 });
+    expect(screen.getByText(/You could afford a weekend in Tallinn every year/)).toBeTruthy();
+    expect(screen.getByText(/Next: .* a new phone/)).toBeTruthy();
+  });
+
+  it("shows no rewards when the change costs money", () => {
+    renderWidget("what_if", { ...whatIfMock, yearly_saving_cents: -1000 });
+    expect(screen.queryByLabelText("Rewards you unlock")).toBeNull();
+  });
+
   const requestWith = (changePct: number) => ({
     ...whatIfMock.request,
     adjustments: [{ ...whatIfMock.request.adjustments[0], change_pct: changePct }],
