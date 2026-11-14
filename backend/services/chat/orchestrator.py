@@ -97,7 +97,9 @@ class ChatOrchestrator:
         llm_override: LlmClient | None = None,
     ) -> tuple[str, list[Widget], list[Source]]:
         client = llm_override or self._llm
-        if llm_override and force_tool and hasattr(self._llm, "generate"):
+        # A local model never gets tools, so the cloud model picks them (seeing only the question) and the
+        # local model writes every answer that contains figures. This holds for chips and typed questions alike.
+        if llm_override and hasattr(self._llm, "generate"):
             from adapters.llm.routing_llm import PrivacyRoutingLlm
             client = PrivacyRoutingLlm(self._llm, llm_override)
 
