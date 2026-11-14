@@ -63,10 +63,10 @@ def test_challenge_tools(service):
     s = tool("suggest_challenges").run(CTX, {})
     check(s, "challenge_suggestions")
     assert tool("get_challenge_progress").run(CTX, {}).widgets == []
-    service.start_challenge(ME, StartChallengeRequest(template_id="zero_spend_taxis_14d"))
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
     p = tool("get_challenge_progress").run(CTX, {})
     check(p, "challenge_progress")
-    assert p.facts["items"][0]["days_left"] == 14
+    assert p.facts["items"][0]["days_left"] == 7
 
 
 @pytest.mark.parametrize("name,args", [

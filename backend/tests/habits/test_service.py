@@ -135,41 +135,31 @@ def test_review_mid_month_met(world):
 def test_challenge_suggestions_personal_and_capped(world):
     svc, *_ = world
     items = svc.challenge_suggestions(ME).items
-    assert 1 <= len(items) <= 3
-    by_id = {t.id: t for t in items}
-    taxi = by_id["zero_spend_taxis_14d"]
-    assert taxi.rule.kind.value == "zero_spend" and int(taxi.duration_days) == 14
-    assert "5 purchases" in taxi.reason
-    bars = by_id["max_amount_bars_30d"]
-    assert bars.rule.amount_cents == 12500 and bars.estimated_saving_cents == 12500
-    assert [t.id for t in svc.challenge_suggestions(OTHER).items] == []  # no spending last month
+    assert [t.id for t in items] == ["max_amount_taxis_7d"]  # 3 taxi rides in 28 days, one in the baseline week
+    assert items[0].baseline_cents == 2500 and items[0].rule.amount_cents == 1200
+    assert [t.id for t in svc.challenge_suggestions(OTHER).items] == []
 
 
 def test_start_challenge_errors_and_progress(world):
     svc, clock, _, challenges = world
     with pytest.raises(NotFound):
-        svc.start_challenge(ME, StartChallengeRequest(template_id="zero_spend_nothing_14d"))
-    started = svc.start_challenge(ME, StartChallengeRequest(template_id="zero_spend_taxis_14d"))
-    assert started.challenge.id and started.days_left == 14 and started.on_track is True
+        svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_nothing_7d"))
+    started = svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    assert started.challenge.id and started.days_left == 7 and started.on_track is True
     assert started.challenge.start_date == date(2026, 9, 15)
     with pytest.raises(Conflict):
-        svc.start_challenge(ME, StartChallengeRequest(template_id="zero_spend_taxis_14d"))
+        svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
     assert len(challenges.rows) == 1
 
 
-def test_list_progress_from_transactions_and_settlement(world):
+def test_list_progress_and_settlement(world):
     svc, clock, _, challenges = world
-    svc.start_challenge(ME, StartChallengeRequest(template_id="zero_spend_taxis_14d"))
-    svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_bars_30d"))
-    clock.set_today(date(2026, 9, 25))  # started 09-15: the taxi ride of 09-10 does not count, the 09-20 bars row does
-    items = svc.list_challenges(ME).items
-    assert [i.challenge.template_id for i in items] == ["max_amount_bars_30d", "zero_spend_taxis_14d"]
-    taxi = items[1]
-    assert taxi.current_count == 0 and taxi.on_track and taxi.days_left == 4 and taxi.progress_pct == round(10 / 14 * 100, 1)
-    bars = items[0]
-    assert bars.current_amount_cents == 77700 and bars.on_track is False
-    clock.set_today(date(2026, 9, 29))
-    done = {i.challenge.template_id: i.challenge.status.value for i in svc.list_challenges(ME).items}
-    assert done == {"max_amount_bars_30d": "active", "zero_spend_taxis_14d": "won"}
-    assert challenges.rows[0].status == "won"
+    svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    clock.set_today(date(2026, 9, 18))
+    (item,) = svc.list_challenges(ME).items
+    assert item.current_count == 0 and item.on_track and item.days_left == 4
+    assert item.progress_pct == round(3 / 7 * 100, 1)
+    clock.set_today(date(2026, 9, 22))
+    (done,) = svc.list_challenges(ME).items
+    assert done.challenge.status.value == "won" and challenges.rows[0].status == "won"
     assert svc.list_challenges(OTHER).items == []
