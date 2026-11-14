@@ -18,6 +18,7 @@ You need: Python 3.10 or newer, Node.js, `uv` (`pip install uv`) and `pnpm` (`np
 
 Step 2 creates the `.env` file. Step 4 takes a few minutes. If `db/money_coach.sqlite3` already exists, skip steps 1 and 4.
 Get a free Gemini key at https://aistudio.google.com (key icon, "Generate API key").
+If the `.csv` files in `Challenge data` look broken, delete them and run step 1 again.
 
 **Every time**
 
@@ -51,7 +52,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 | Benchmarks with open data | Compare with similar customers, plus a Statistics Finland reference. |
 | Explain financial concepts in plain language | Five short explanations written by the team. A fixed text, filled with your numbers. |
 | Guide users to healthier money habits | A 7-day challenge on one everyday habit, with a result and a lesson. |
-| Mobile app | Expo (React Native) app. Runs on web and phone. |
+| Mobile app, or a web app that fits in one | One Expo (React Native) app with phone-sized screens. We run and test it in the browser. |
 
 ## 3. Features, by part
 
@@ -60,7 +61,7 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - **Spending question**: "How much did I spend on taxis last month?" gives the exact sum.
 - **6-month trend** of the baskets (1 to 12 months). The current month is marked as partial.
 - **Spender type**: one type, traits with evidence, tips.
-- **Compare with similar people**: your monthly average, the median, your percentile, size of the group.
+- **Compare with similar people**: your monthly average, the middle value of the group, your place in the group, and the size of the group.
 - **Statistics Finland** reference with year and link.
 - **See all**: open the transactions behind any number.
 
@@ -70,7 +71,8 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - **What if**: change a category by -100% to +100%. See the saving per month and per year, and months to a savings goal.
 - **Upcoming bills**: predicted bills with date, amount and confidence.
 - **Expense alerts**: up to 10 purchases at least 3 times bigger than usual for that group.
-- **Quick quiz** after a forecast or a what-if.
+- **Quick quiz**: one question under the balance forecast and under safe to spend.
+- **Reward card** under the what-if with your yearly saving.
 
 ### Improve My Habits
 - **Finds one habit** in your everyday spending: at least 3 purchases in 28 days and 1 in the last 7 days.
@@ -85,17 +87,17 @@ Open http://localhost:8081 and tap the **AI** tab. Stop with `Ctrl+C`.
 - Say "I want to skip the challenge" in the chat and the coach does it.
 
 ### In every part
-- **Ask in your own words.** The coach picks the right tool, then explains the answer.
+- **Ask in your own words.** The coach finds the numbers, then explains them.
 - **Read aloud** and **talk to the coach** with your voice (ElevenLabs, optional key).
 - **Plain-language concepts**: small purchases add up, compare equal periods, fixed vs everyday spending, spending pace, one week is not proof.
-- **Private by design**: you only see your own data (signed token, 401 for everything else).
+- **Private by design**: you can only see your own data.
 
 ## 4. How it works
 
-- The **backend calculates every number**. The model never writes SQL and never sees raw transactions or your customer id. It only explains verified facts.
-- **Gemini** chooses the tool and writes the answer. If you set up a local model (Gemma through Ollama), answers that contain your figures are written on your own machine.
-- **Contracts** in `contracts/` are fixed JSON Schema files. A script makes the Python and TypeScript types from them.
-- **Data**: the synthetic S-Pankki set in `Challenge data/`, about 5,100 customers and 3.6 million transactions. It is loaded into SQLite.
+- The **server calculates every number**. The AI model never writes database queries and never sees your raw transactions or your customer id. It only explains numbers that are already checked.
+- **Gemini** decides what to look up and writes the answer. You can also set up a local model (Gemma with Ollama). Then answers that contain your numbers are written on your own computer.
+- The app and the server follow fixed data formats. They are in `contracts/`.
+- **Data**: the test data from S-Pankki in `Challenge data/`. It has about 5,100 customers and 3.6 million transactions. It is not real customer data.
 
 ```
 frontend/   Expo app (chat, cards, voice)         contracts/  API and tool contracts
@@ -113,7 +115,7 @@ cd frontend && pnpm test && pnpm exec tsc --noEmit
 ## 6. Limits
 
 - The free Gemini key has a small daily limit. Use a fresh key for a demo.
-- The data is synthetic. It ends on 30 September 2026.
+- The data is test data. It ends on 30 September 2026.
 - The chat does not offer the old monthly spending limit. The API still has it.
 - English only. No push notifications: the bell shows a red dot inside the app.
 - The Windows scripts are less tested than the macOS ones.
