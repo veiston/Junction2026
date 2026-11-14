@@ -14,4 +14,22 @@ describe("/dev/gallery", () => {
     }
     expect(screen.queryByText("No mock yet.")).toBeNull();
   });
+
+  it("lists the experiment states and the concept notes", () => {
+    render(<WidgetGallery />);
+    for (const name of [
+      "concept_note",
+      "challenge_progress (won)",
+      "challenge_progress (lost, spent more)",
+      "concept_note (small_purchases_add_up)",
+      "concept_note (compare_equal_periods)",
+      "concept_note (fixed_vs_everyday)",
+      "concept_note (spending_pace)",
+      "concept_note (one_week_is_not_proof)",
+    ]) {
+      expect(screen.getByText(name)).toBeTruthy();
+    }
+    expect(screen.getByText("Target met")).toBeTruthy();
+    expect(screen.getByText("Target not met")).toBeTruthy();
+  });
 });
