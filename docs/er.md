@@ -226,7 +226,7 @@ Entertainment). They stay in their basket and are surfaced by the Plan alert rul
 - **Accept:** only for the month of today; one active limit per month.
 - **Progress:** on_pace = limit × days_elapsed / days_in_month; `over` if spent > limit; `at_risk` if spent > on_pace × 1.1; else `on_track`.
 - **Review:** final numbers for the month (or so far); biggest leak = top everyday spend group; best week = 7-day window with the lowest everyday spend.
-- **Challenges:** top 3 everyday spend groups of the last full month. Group with ≥ 4 rows → `zero_spend` for 14 days; otherwise `max_amount` = 50 % of last month for 30 days. Template id = `{kind}_{spend_group}_{days}d` (deterministic, so POST can rebuild it). Won/lost decided when today ≥ end_date.
+- **Experiments (challenges), decision 0015:** only the `everyday` basket. A group qualifies with ≥ 3 purchases in the last 28 days and ≥ 1 in the baseline week (the 7 full days before today); up to 3 groups, ordered by 28-day spend. Duration 7 days. Baseline = spend in the group in the 7 days before the start; target = floor(baseline × 0.5) in whole euros; no experiment when the baseline is 0. Template id = `max_amount_{spend_group}_7d`. Met when spent ≤ target; difference = baseline − spent; change_pct = (baseline − spent) / baseline × 100. Yearly figure = saving × 52, shown as an estimate. Won/lost decided when today ≥ end_date. Every finished experiment carries a plain-language concept note from the glossary.
 
 ## 6. Which story needs which entity
 
