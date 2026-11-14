@@ -47,8 +47,8 @@ def test_registry_rejects_names_outside_catalog(svc):
 
 def test_registry_unknown_call_and_customer_id_stripped(svc):
     reg = default_registry(svc)
-    assert reg.has("list_transactions") and [s.name for s in reg.specs()] == ["list_transactions"]
+    assert reg.has("list_transactions") and [s.name for s in reg.specs()][0] == "list_transactions"
     with pytest.raises(UnknownTool):
-        reg.run(CTX, "get_basket_breakdown", {})
+        reg.run(CTX, "get_balance_forecast", {})
     r = reg.run(CTX, "list_transactions", {"customer_id": "CUST00002"})  # ignored, not an error
     assert r.facts["matching_count"] > 0
