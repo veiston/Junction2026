@@ -9,14 +9,25 @@ Junction 2026, S-Bank challenge solution
 
 ## Run it
 
-``./download.sh && ./initialize.sh && ./run.sh``
+First time only:
 
-Delete the `.csv` files and run `download.bat` or `download.sh` to download the full data.
+| Step | macOS / Linux | Windows (cmd or PowerShell) |
+|---|---|---|
+| 1. Download the data | `./download.sh` | `download.bat` |
+| 2. Install everything | `./initialize.sh` | `initialize.bat` |
+| 3. Put your Gemini key in `.env` | open `.env`, set `GEMINI_API_KEY=your_key` | same (`.env` is created by step 2) |
+| 4. Build the database | `./setup_db.sh` | `setup_db.bat` |
 
-## Set up the database
+Every time:
 
-Run `./setup_db.sh` on macOS/Linux or `setup_db.bat` on Windows.
-It creates the local SQLite database from the challenge CSV files.
+| macOS / Linux | Windows |
+|---|---|
+| `./run.sh` | `run.bat` |
+
+Then open http://localhost:8081 and tap the AI tab. Stop with `Ctrl+C`.
+
+If the `.csv` files in `Challenge data` are broken, delete them and run the download step again.
+The database step takes a few minutes. If `db/money_coach.sqlite3` already exists you can skip steps 1 and 4.
 
 ## Tech Stack
 
