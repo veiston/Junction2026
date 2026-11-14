@@ -24,6 +24,9 @@ class Config:
     ollama_base_url: str = ""  # empty = no local model, Gemini answers everything
     ollama_api_key: str = ""
     ollama_model: str = "gemma4:e4b"
+    # LiteRT-LM runs the model inside the backend. Relative paths start at the project root.
+    litert_model_path: str = "models/litert/gemma-4-E2B-it.litertlm"
+    litert_backend: str = "cpu"  # cpu | gpu
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
 
@@ -43,6 +46,8 @@ class Config:
             ollama_base_url=e.get("OLLAMA_BASE_URL", d.ollama_base_url),
             ollama_api_key=e.get("OLLAMA_API_KEY", d.ollama_api_key),
             ollama_model=e.get("OLLAMA_MODEL", d.ollama_model),
+            litert_model_path=e.get("LITERT_MODEL_PATH", d.litert_model_path),
+            litert_backend=e.get("LITERT_BACKEND", d.litert_backend).strip().lower(),
             elevenlabs_api_key=e.get("ELEVENLABS_API_KEY", d.elevenlabs_api_key),
             elevenlabs_voice_id=e.get("ELEVENLABS_VOICE_ID", d.elevenlabs_voice_id),
         )
