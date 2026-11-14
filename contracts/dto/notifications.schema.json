@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notifications.schema.json",
+  "title": "Notifications",
+  "description": "In-app notices behind the bell. Built by deterministic rules from the customer's own data; never by the LLM.",
+  "$defs": {
+    "NotificationKind": {
+      "title": "NotificationKind",
+      "type": "string",
+      "enum": ["spending_change", "challenge_ended", "challenge_suggestion"],
+      "description": "spending_change: everyday spending moved a lot week on week. challenge_ended: a challenge result is ready. challenge_suggestion: an invitation to try a challenge (sent rarely)."
+    },
+    "NotificationTone": {
+      "title": "NotificationTone",
+      "type": "string",
+      "enum": ["good", "warning", "info"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "required": ["id", "kind", "tone", "title", "text", "ask", "created_date"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_-]+$", "description": "Stable: the same event always has the same id.", "examples": ["spending-2026-09-15"] },
+        "kind": { "$ref": "#/$defs/NotificationKind" },
+        "tone": { "$ref": "#/$defs/NotificationTone" },
+        "title": { "type": "string", "examples": ["Everyday spending is up this week"] },
+        "text": { "type": "string", "description": "One or two plain sentences with the key numbers." },
+        "ask": { "type": "string", "description": "The question sent to the coach when the customer opens the notice." },
+        "created_date": { "$ref": "common.schema.json#/$defs/IsoDate" }
+      }
+    },
+    "NotificationList": {
+      "title": "NotificationList",
+      "type": "object",
+      "required": ["items", "unread_count"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/Notification" }, "maxItems": 10, "description": "Unread, newest first." },
+        "unread_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

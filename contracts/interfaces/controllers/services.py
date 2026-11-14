@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Protocol
 if TYPE_CHECKING:
     from contracts.dto.chat import ChatRequest, ChatResponse
     from contracts.dto.common import Basket, Category, SpendGroup
+    from contracts.dto.notifications import NotificationList
     from contracts.dto.habits import (
         ChallengeList, ChallengeProgress, ChallengeSuggestions, CreateLimitRequest,
         LimitProgress, LimitReview, LimitSuggestion, SpendingLimit, StartChallengeRequest,
@@ -121,3 +122,13 @@ class HabitsService(Protocol):
         """Ends a running challenge without a verdict (status cancelled).
         Raises NotFound if it is missing or belongs to another customer, Conflict if it already finished."""
 
+
+
+# ------------------------------------------------------------------ notifications (bell)
+class NotificationService(Protocol):
+    def unread(self, customer_id: str) -> NotificationList:
+        """Builds today's notices from the customer's data (rules in docs/decisions/0020), records new ones,
+        and returns the unread ones, newest first."""
+
+    def mark_read(self, customer_id: str, notification_id: str) -> None:
+        """Raises NotFound if the customer never had this notice."""

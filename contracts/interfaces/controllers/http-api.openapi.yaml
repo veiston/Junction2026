@@ -402,3 +402,27 @@ paths:
         '401': { $ref: '#/components/responses/Error401' }
         '404': { $ref: '#/components/responses/Error404' }
         '409': { $ref: '#/components/responses/Error409' }
+
+  # ---------------------------------------------------------------- notifications (bell)
+  /notifications:
+    get:
+      x-owner: foundation
+      operationId: listNotifications
+      summary: Unread notices for the bell, newest first. Built from the customer's data on each call.
+      responses:
+        '200':
+          description: Unread notices
+          content: { application/json: { schema: { $ref: '../../dto/notifications.schema.json#/$defs/NotificationList' } } }
+        '401': { $ref: '#/components/responses/Error401' }
+
+  /notifications/{notification_id}/read:
+    post:
+      x-owner: foundation
+      operationId: markNotificationRead
+      parameters:
+        - { name: notification_id, in: path, required: true, schema: { type: string, pattern: '^[a-z0-9_-]+$' } }
+      responses:
+        '204':
+          description: Marked as read (also when it was already read)
+        '401': { $ref: '#/components/responses/Error401' }
+        '404': { $ref: '#/components/responses/Error404' }
