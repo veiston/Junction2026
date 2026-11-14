@@ -26,7 +26,9 @@ def client(tmp_path, llm):
     db = Database(tmp_path / "habits.sqlite3")
     august = [("CUST00001", f"2026-08-{day:02d}", "Restaurants", "-20.00", "2000.00", "purchase", "5812")
               for day in (3, 10, 17, 24)]
-    ingest_dataset(db, write_csvs(tmp_path / "data", rows=[*ROWS, *august]))
+    taxis = [("CUST00001", day, "Transportation", amount, "2000.00", "purchase", "4121")
+             for day, amount in (("2026-08-25", "-30.00"), ("2026-09-09", "-30.00"), ("2026-09-12", "-35.00"))]
+    ingest_dataset(db, write_csvs(tmp_path / "data", rows=[*ROWS, *august, *taxis]))
     config = Config(db_path=str(db.path), jwt_secret="habits-secret")
     services = build_services(config, llm=llm)
     app = create_app(config)
@@ -56,6 +58,9 @@ def test_chip_forces_challenge_suggestions_widget(client, llm, token):
     msg = resp.json["message"]
     assert "coming soon" not in msg["text"] and msg["text"] == "Here is one habit you could test."
     assert [w["type"] for w in msg["widgets"]] == ["challenge_suggestions"]
+    item = msg["widgets"][0]["data"]["items"][0]
+    assert item["id"] == "max_amount_taxis_7d" and item["baseline_cents"] == 6500 and item["baseline_count"] == 2
+    assert item["rule"]["amount_cents"] == 3200 and item["concept"]["id"] == "compare_equal_periods"
     assert llm.calls[0]["force_tool"] == "suggest_challenges"
     assert "CUST00001" not in str(llm.calls[1]["messages"][-1])  # the model never sees the customer id
 
@@ -93,7 +98,7 @@ def test_limit_conflict_and_not_found(client, token):
     assert first.status == 201 and first.json["month"] == "2026-09"
     second = client.post("/habits/limits", token=token, json_body=body)
     assert second.status == 409 and second.json["error"]["code"] == "CONFLICT"
-    assert client.get("/habits/limits/current", token=token).json["spent_cents"] == 1250  # only the Sep 2 restaurant row is everyday spending up to Sep 15
+    assert client.get("/habits/limits/current", token=token).json["spent_cents"] == 7750  # Sep 2 restaurant 12.50 and two taxi rides 65.00 up to Sep 15
     assert client.get("/habits/limits/9999/review", token=token).status == 404
 
 
@@ -109,9 +114,9 @@ def test_challenge_http_flow(client, token):
     sug = client.get("/habits/challenges/suggestions", token=token)
     assert sug.status == 200 and len(sug.json["items"]) <= 3
     template = sug.json["items"][0]["id"]
-    assert template == "zero_spend_restaurants_14d"  # 4 restaurant payments last month
+    assert template == "max_amount_taxis_7d"  # 3 taxi rides in 28 days, 2 of them in the baseline week
     assert client.post("/habits/challenges", token=token, json_body={"template_id": template}).status == 201
     assert client.post("/habits/challenges", token=token, json_body={"template_id": template}).status == 409
-    assert client.post("/habits/challenges", token=token, json_body={"template_id": "zero_spend_nope_14d"}).status == 404
+    assert client.post("/habits/challenges", token=token, json_body={"template_id": "max_amount_nope_7d"}).status == 404
     listed = client.get("/habits/challenges", token=token).json["items"]
     assert [i["challenge"]["template_id"] for i in listed] == [template]

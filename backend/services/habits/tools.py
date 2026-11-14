@@ -117,8 +117,9 @@ class ReviewLimitTool(_HabitsTool):
 class SuggestChallengesTool(_HabitsTool):
     name = "suggest_challenges"
     description = (
-        "Suggest up to 3 personal savings challenges based on the customer's everyday spending last month. "
-        "Use for 'give me a challenge', 'how can I spend less on X'."
+        "Find one regular everyday habit in the customer's own transactions and offer a 7-day experiment, "
+        "to be compared with the 7 days before. "
+        "Use for 'help me improve my habits', 'give me a challenge', 'how can I spend less on X'."
     )
 
     def run(self, ctx: ToolContext, arguments: dict[str, Any]) -> ToolResult:
@@ -127,9 +128,13 @@ class SuggestChallengesTool(_HabitsTool):
         facts = {
             "count": len(s.items),
             "items": [{"title": t.title, "duration_days": int(t.duration_days),
-                       "estimated_saving_cents": t.estimated_saving_cents, "reason": t.reason} for t in s.items],
-            "note": "The customer starts a challenge with the button on the card." if s.items
-                    else "Not enough spending history for personal challenges yet.",
+                       "baseline_cents": t.baseline_cents, "baseline_count": t.baseline_count,
+                       "target_cents": t.rule.amount_cents, "estimated_saving_cents": t.estimated_saving_cents,
+                       "yearly_saving_cents": t.yearly_saving_cents, "reason": t.reason} for t in s.items],
+            "note": ("The customer starts the experiment with the button on the card. The yearly figure is an "
+                     "estimate, say so." if s.items
+                     else "No regular everyday habit found yet. Say there is nothing suitable for an experiment "
+                          "right now and point to the spending analysis."),
         }
         widgets = [_widget("challenge_suggestions", s)] if s.items else []
         return ToolResult(facts=facts, widgets=widgets)
@@ -152,7 +157,9 @@ class GetChallengeProgressTool(_HabitsTool):
             "has_challenges": True,
             "items": [{"title": i.challenge.title, "status": i.challenge.status.value, "days_left": i.days_left,
                        "on_track": i.on_track, "current_amount_cents": i.current_amount_cents,
-                       "current_count": i.current_count} for i in shown],
+                       "current_count": i.current_count, "baseline_cents": i.baseline_cents,
+                       "difference_cents": i.difference_cents, "change_pct": i.change_pct,
+                       "next_step": i.next_step} for i in shown],
         }
         sources: list[Source] = [i.source for i in shown]
         return ToolResult(facts=facts, widgets=[_widget("challenge_progress", i) for i in shown], sources=sources)

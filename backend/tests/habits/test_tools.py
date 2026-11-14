@@ -63,10 +63,23 @@ def test_challenge_tools(service):
     s = tool("suggest_challenges").run(CTX, {})
     check(s, "challenge_suggestions")
     assert tool("get_challenge_progress").run(CTX, {}).widgets == []
-    service.start_challenge(ME, StartChallengeRequest(template_id="zero_spend_taxis_14d"))
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
     p = tool("get_challenge_progress").run(CTX, {})
     check(p, "challenge_progress")
-    assert p.facts["items"][0]["days_left"] == 14
+    assert p.facts["items"][0]["days_left"] == 7 and p.facts["items"][0]["baseline_cents"] == 2500
+
+
+def test_suggest_challenges_without_a_habit_returns_facts_only():
+    svc, *_ = make_world(date(2024, 10, 5))
+    bind_service(svc)
+    r = tool("suggest_challenges").run(CTX, {})
+    assert r.widgets == [] and r.facts["count"] == 0 and "spending analysis" in r.facts["note"]
+
+
+def test_suggest_challenges_facts_carry_the_numbers(service):
+    item = tool("suggest_challenges").run(CTX, {}).facts["items"][0]
+    assert item["baseline_cents"] == 2500 and item["target_cents"] == 1200
+    assert item["yearly_saving_cents"] == 1300 * 52 and len(json.dumps(item)) < 1024
 
 
 @pytest.mark.parametrize("name,args", [

@@ -39,9 +39,9 @@ def test_challenge_flow(http):
     c = http.client
     sug = c.get("/habits/challenges/suggestions", token=TOKEN)
     assert sug.status == 200 and 1 <= len(sug.json["items"]) <= 3
-    body = {"template_id": "zero_spend_taxis_14d"}
+    body = {"template_id": "max_amount_taxis_7d"}
     assert c.post("/habits/challenges", token=TOKEN, json_body=body).status == 201
     assert c.post("/habits/challenges", token=TOKEN, json_body=body).status == 409
     assert c.post("/habits/challenges", token=TOKEN, json_body={"template_id": "nope_x_7d"}).status == 404
     items = c.get("/habits/challenges", token=TOKEN).json["items"]
-    assert len(items) == 1 and items[0]["challenge"]["template_id"] == "zero_spend_taxis_14d"
+    assert len(items) == 1 and items[0]["challenge"]["template_id"] == "max_amount_taxis_7d"
