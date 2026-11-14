@@ -21,8 +21,9 @@ export default function AiScreen() {
         onBack={() => (chat.started ? chat.reset() : router.navigate("/"))}
         notices={notices.items}
         onNotice={(n) => {
+          // Opening a notice marks it read and asks the coach its question, e.g. "what changed and what can I do?"
           notices.dismiss(n.id);
-          chat.ask("How is my challenge going?");
+          chat.send(n.ask);
         }}
       />
       <View style={styles.body}>

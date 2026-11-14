@@ -65,6 +65,7 @@ export async function request<T>(
     }
     throw new ApiError(res.status, parsed?.error ?? fallbackError(`Request failed (${res.status}).`));
   }
+  if (res.status === 204) return undefined as T; // No Content, e.g. marking a notice read
   return (await res.json()) as T;
 }
 

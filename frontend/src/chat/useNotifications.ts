@@ -1,46 +1,46 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/api/client";
-import type { ChallengeList } from "@/contracts";
+import type { Notification, NotificationList } from "@/contracts";
 
-export interface Notice {
-  id: string;
-  text: string;
-}
+import { withSession } from "./session";
+
+export type Notice = Notification;
+
+/** How often the bell checks for new notices while the coach is open. */
+export const REFRESH_MS = 60_000;
 
 /**
- * In-app notices for the bell. Today there is one kind: a challenge has ended and its result has not been seen.
- * `refreshKey` changes whenever the conversation moves, so the list stays current.
+ * Notices for the bell, from GET /notifications (built on the server from the customer's own data).
+ * `refreshKey` changes whenever the conversation moves, so the list stays current; it also refreshes
+ * every minute. Opening a notice marks it read on the server.
  */
 export function useNotifications(enabled: boolean, refreshKey: number) {
   const [items, setItems] = useState<Notice[]>([]);
-  const seen = useRef(new Set<string>());
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const timer = setInterval(() => setTick((t) => t + 1), REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled) return;
     let alive = true;
-    api
-      .request<ChallengeList>("GET", "/habits/challenges")
+    withSession(() => api.request<NotificationList>("GET", "/notifications"))
       .then((list) => {
-        if (!alive) return;
-        const finished = list.items.filter((i) => i.challenge.status === "won" || i.challenge.status === "lost");
-        const latest = finished.sort((a, b) => b.challenge.id - a.challenge.id)[0];
-        const id = latest ? `challenge-${latest.challenge.id}` : null;
-        setItems(
-          latest && id && !seen.current.has(id)
-            ? [{ id, text: `Your challenge "${latest.challenge.title}" has ended. See the result.` }]
-            : [],
-        );
+        if (alive) setItems(list.items);
       })
-      .catch(() => undefined);
+      .catch(() => undefined); // the bell simply stays as it was
     return () => {
       alive = false;
     };
-  }, [enabled, refreshKey]);
+  }, [enabled, refreshKey, tick]);
 
   const dismiss = useCallback((id: string) => {
-    seen.current.add(id);
     setItems((cur) => cur.filter((n) => n.id !== id));
+    withSession(() => api.request("POST", `/notifications/${encodeURIComponent(id)}/read`)).catch(() => undefined);
   }, []);
 
   return { items, dismiss };

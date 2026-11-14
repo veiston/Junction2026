@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Icon } from "@/components/Icon";
+import { Icon, type IconName } from "@/components/Icon";
 import { coachColors, colors, fonts, radius, spacing } from "@/theme";
 
 import type { Notice } from "./useNotifications";
+
+/** Icon and colours per tone; the title always says it in words too, so colour is never the only cue. */
+const TONE: Record<Notice["tone"], { icon: IconName; color: string; background: string }> = {
+  warning: { icon: "trending-up", color: "#B54708", background: "#FEF0C7" },
+  good: { icon: "thumb-up-outline", color: colors.primary, background: "#DDF0E2" },
+  info: { icon: "lightbulb-on-outline", color: colors.primary, background: "#EAF4EC" },
+};
 
 interface Props {
   /** Back button: from a conversation to the three functions; from the three functions to the main page. */
@@ -53,13 +60,20 @@ export function AiTopBar({ onBack, notices = [], onNotice }: Props) {
               <Pressable
                 key={n.id}
                 accessibilityRole="button"
+                accessibilityLabel={`${n.title}. ${n.text}`}
                 onPress={() => {
                   setBell(false);
                   onNotice?.(n);
                 }}
-                style={styles.item}
+                style={[styles.item, styles.notice]}
               >
-                <Text style={styles.itemText}>{n.text}</Text>
+                <View style={[styles.toneIcon, { backgroundColor: TONE[n.tone].background }]}>
+                  <Icon name={TONE[n.tone].icon} size={18} color={TONE[n.tone].color} />
+                </View>
+                <View style={styles.noticeBody}>
+                  <Text style={styles.itemTitle}>{n.title}</Text>
+                  <Text style={styles.noticeText}>{n.text}</Text>
+                </View>
               </Pressable>
             ))
           )}
@@ -82,6 +96,7 @@ const styles = StyleSheet.create({
     top: "100%",
     right: spacing.md,
     minWidth: 240,
+    maxWidth: 340,
     backgroundColor: colors.surface,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -95,4 +110,9 @@ const styles = StyleSheet.create({
   },
   item: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md },
   itemText: { fontSize: 15, fontFamily: fonts.medium, color: colors.text },
+  notice: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.sm },
+  toneIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  noticeBody: { flex: 1, gap: 2 },
+  itemTitle: { fontSize: 14, fontFamily: fonts.semibold, color: colors.text },
+  noticeText: { fontSize: 13, lineHeight: 18, fontFamily: fonts.regular, color: colors.textMuted },
 });
