@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -19,6 +20,8 @@ from contracts.interfaces.llm.llm_client import LlmClient, LlmMessage, LlmTurn
 from contracts.interfaces.repositories.shared import Clock, ConversationRepository
 from services.chat import prompts
 from services.chat.tool_registry import ToolRegistry, UnknownTool
+
+log = logging.getLogger(__name__)
 
 MAX_TOOL_ROUNDS = 4
 MAX_WIDGETS = 3
@@ -92,7 +95,9 @@ class ChatOrchestrator:
                 turn: LlmTurn = self._llm.generate(
                     messages, specs, force_tool=force_tool if round_no == 0 else None
                 )
-            except LlmUnavailable:
+            except LlmUnavailable as e:
+                # The user sees a friendly message; the real reason goes to the backend log.
+                log.warning("LLM unavailable in round %d: %s", round_no, e)
                 return prompts.LLM_DOWN, widgets, sources
 
             if turn.finish_reason == "safety":

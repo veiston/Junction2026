@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 
-import { api, ApiError } from "@/api/client";
+import { api, ApiError, CHAT_TIMEOUT_MS } from "@/api/client";
 import type { AssistantMessage, ChatRequest, ChatResponse, QuickAction } from "@/contracts";
 
 import { withSession } from "./session";
@@ -37,7 +37,12 @@ export function useChat(): UseChat {
     failed.current = null;
     try {
       const res = await withSession(() =>
-        api.request<ChatResponse>("POST", "/chat", { ...req, conversation_id: conversationId.current }),
+        api.request<ChatResponse>(
+          "POST",
+          "/chat",
+          { ...req, conversation_id: conversationId.current },
+          CHAT_TIMEOUT_MS,
+        ),
       );
       conversationId.current = res.conversation_id;
       setMessages((m) => [...m, res.message]);
