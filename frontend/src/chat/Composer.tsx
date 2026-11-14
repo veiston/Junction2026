@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, View, type TextStyle } from "react-native";
 
 import { Icon } from "@/components/Icon";
 import { SvgMicIcon } from "@/components/SvgMicIcon";
 import { coachColors, colors, fonts, spacing } from "@/theme";
+
+/**
+ * Browsers draw a focus ring with `outline-style: auto`, which ignores `outline-width`, so it must be
+ * switched off with `outline-style: none`. React Native's types do not list "none", so it is web-only here.
+ */
+export const WEB_NO_FOCUS_RING = { outlineStyle: "none", outlineWidth: 0 } as const;
+const NO_FOCUS_RING = Platform.select<TextStyle>({
+  web: WEB_NO_FOCUS_RING as unknown as TextStyle,
+  default: {},
+});
 
 interface ComposerProps {
   onSend: (text: string) => void;
@@ -48,7 +58,7 @@ export function Composer({
   return (
     <View style={[styles.pill, isConversationMode && styles.pillActive]}>
       <TextInput
-        style={styles.input}
+        style={[styles.input, NO_FOCUS_RING]}
         // A plain blinking text cursor in the brand colour, no extra focus border.
         cursorColor={colors.primary}
         selectionColor={colors.primary}
@@ -112,8 +122,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.text,
     minHeight: 40,
-    // Web browsers draw a blue focus ring around inputs; the pill already shows where you type.
-    outlineWidth: 0,
   },
   micButton: {
     width: 36,
