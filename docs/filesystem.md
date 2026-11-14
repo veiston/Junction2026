@@ -29,7 +29,6 @@ Junction2026/
 ├── scripts/
 │   ├── ingest.py                        F  CSV → SQLite + classification + monthly_spend
 │   └── gen_contracts.py                 F  contracts → Pydantic + TS (contracts/README.md)
-├── embedded-demo/                       F  existing Expo app; only app/ai.tsx + src/config.ts change
 ├── s-money-coach/
 │   ├── backend/
 │   │   ├── main.py                      F  uvicorn entry
@@ -69,12 +68,13 @@ Junction2026/
 │   │       ├── plan/                    W2
 │   │       └── habits/                  W3
 │   └── frontend/
-│       ├── index.html, package.json, vite.config.ts, tsconfig.json   F
+│       ├── app.json, package.json, tsconfig.json   F  Expo / React Native (ADR 0013)
+│       ├── app/                         F  expo-router screens: index, etukortti, pankki, mina, ai (native coach)
 │       └── src/
-│           ├── main.tsx, App.tsx        F
+│           ├── components/, theme.ts, config.ts   F  S-mobiili look-alike + API base URL
 │           ├── contracts/               F  GENERATED (types + widget-registry.ts)
 │           ├── api/client.ts            F
-│           ├── auth/token.ts            F  reads #token= then clears it from the URL
+│           ├── auth/token.ts            F  in-memory session token (never in a URL)
 │           ├── chat/                    F  ChatScreen, MessageList, Composer, QuickActions, WidgetHost, registry.ts, useChat.ts
 │           ├── widgets/common/          F  WidgetCard, TransactionList, Money, SourceLine, (charts wrapper)
 │           ├── dev/WidgetGallery.tsx    F  /dev/gallery renders each slice's mocks
@@ -83,7 +83,7 @@ Junction2026/
 │               ├── understand/  index.ts (stub: widgets = {}), mocks.ts, widgets/*.tsx, hooks/*.ts, understand.css   W1
 │               ├── plan/        same shape                                                             W2
 │               └── habits/      same shape                                                             W3
-├── run.sh / run.bat / initialize.sh / initialize.bat   F  (update paths: backend/frontend moved)
+├── run.sh / run.bat / initialize.sh / initialize.bat   F  (start backend + Expo web only)
 └── .env.example                         F  add new env names (no values)
 ```
 
@@ -95,4 +95,4 @@ Junction2026/
   the adapter in `adapters/llm/`). Proposed: delete it. Open question Q2.
 - Old `backend/` and `frontend/` are deleted in your working tree but still in git history; the
   foundation branch commits that move. This docs branch does not touch them.
-- Ports: backend 8000, coach 5173, embedded-demo (Expo) 8081.
+- Ports: backend 8000, Expo web app 8081.
