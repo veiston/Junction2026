@@ -49,7 +49,7 @@ def test_registry_unknown_call_and_customer_id_stripped(svc):
     reg = default_registry(svc)
     assert reg.has("list_transactions") and "list_transactions" in [s.name for s in reg.specs()]
     with pytest.raises(UnknownTool):
-        reg.run(CTX, "get_basket_breakdown", {})
+        reg.run(CTX, "get_balance_forecast", {})
     r = reg.run(CTX, "list_transactions", {"customer_id": "CUST00002"})  # ignored, not an error
     assert r.facts["matching_count"] > 0
 

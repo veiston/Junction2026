@@ -32,7 +32,7 @@ describe("WidgetHost", () => {
   });
 
   it("shows a neutral fallback for a type with no component, never a crash", () => {
-    render(<WidgetHost widget={{ id: "w2", version: 1, type: "spender_profile", data: {} } as Widget} api={api} />);
+    render(<WidgetHost widget={{ id: "w2", version: 1, type: "not_a_real_widget", data: {} } as unknown as Widget} api={api} />);
     expect(screen.getByTestId("widget-fallback")).toBeTruthy();
   });
 });

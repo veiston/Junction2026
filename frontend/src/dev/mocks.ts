@@ -16,6 +16,7 @@ import type {
 } from "@/contracts";
 import { challengeProgressLostMock, challengeProgressWonMock, habitsMocks } from "@/slices/habits/mocks";
 import { conceptMocks } from "@/widgets/common/conceptMocks";
+import { mocks as understandMocks } from "@/slices/understand/mocks";
 
 const tx = (id: number, date: string, label: string, cents: number): Transaction => ({
   id,
@@ -205,6 +206,7 @@ export const mocks: Partial<Record<WidgetType, unknown>> = {
   safe_to_spend: safeToSpendMock,
   what_if: whatIfMock,
   concept_note: conceptMocks.small_purchases_add_up,
+  ...understandMocks,
   ...habitsMocks,
 };
 

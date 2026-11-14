@@ -4,10 +4,12 @@ import { Icon, type IconName } from "@/components/Icon";
 import type { QuickAction } from "@/contracts";
 import { colors, fonts } from "@/theme";
 
-export const FUNCTIONS: { action: QuickAction; title: string; description: string; icon: IconName }[] = [
+/** `prompt` (optional) is what the customer "says" when the card is tapped; default QUICK_ACTION_TEXT. */
+export const FUNCTIONS: { action: QuickAction; title: string; description: string; prompt?: string; icon: IconName }[] = [
   {
     action: "understand_my_money",
     title: "Understand My Money",
+    prompt: "Show me my spending analysis and monthly trends",
     description: "Spending analysis · Subscriptions · Monthly trends · Finnish household comparisons",
     icon: "chart-donut",
   },

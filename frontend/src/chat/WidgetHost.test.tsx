@@ -24,7 +24,7 @@ describe("question buttons only where they mean something", () => {
   });
 
   it("a card with no component yet has none", () => {
-    show("spender_profile", {});
+    show("not_a_real_widget", {}); // every contract type has a component now
     expect(screen.getByTestId("widget-fallback")).toBeTruthy();
     expect(screen.queryByTestId("explain-buttons")).toBeNull();
   });

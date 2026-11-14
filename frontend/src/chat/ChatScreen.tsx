@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api as apiClient } from "@/api/client";
 import type { QuickAction, TransactionListData } from "@/contracts";
@@ -7,31 +7,31 @@ import { colors, fonts, spacing } from "@/theme";
 import { useVoiceConversation } from "@/voice/useVoiceConversation";
 import { formatCents } from "@/widgets/common/Money";
 
+import { registerChatAsk } from "./chatAsk";
 import { Composer } from "./Composer";
-import { FunctionCards } from "./FunctionCards";
+import { FUNCTIONS, FunctionCards } from "./FunctionCards";
 import { MessageList } from "./MessageList";
 import { SeeAllPanel } from "./SeeAllPanel";
 import { SuggestionChips } from "./SuggestionChips";
+import { TypingBubble } from "./TypingBubble";
 import type { WidgetHostApi } from "./registry";
-import { registerChatAsk } from "./chatAsk";
+import { typingSteps } from "./typingSteps";
 import { QUICK_ACTION_TEXT, type UseChat } from "./useChat";
 
-/** Chat UI: all data comes from the `chat` hook result passed in. */
-const WAIT_TEXT: Record<string, string> = {
-  [QUICK_ACTION_TEXT.improve_my_habits]: "Looking through your last 4 weeks to find one habit to test. This takes a few seconds.",
-  [QUICK_ACTION_TEXT.understand_my_money]: "Looking at where your money went. This takes a few seconds.",
-  [QUICK_ACTION_TEXT.plan_my_finances]: "Working out your plan. This takes a few seconds.",
-};
-
-export function ChatScreen({ chat }: { chat: UseChat }) {
-  const { messages, busy, error, send, sendChip, askAbout, retry, started } = chat;
-  const lastUser = [...messages].reverse().find((m) => m.role === "user");
-  const waitText = (lastUser && "text" in lastUser && WAIT_TEXT[lastUser.text]) || "Looking at your data. This takes a few seconds.";
+/** Chat UI: all data comes from the `chat` hook result passed in. `today` (demo clock) names the month. */
+export function ChatScreen({ chat, today }: { chat: UseChat; today?: string }) {
+  const { messages, busy, error, send, sendChip, askAbout, pending, retry, started } = chat;
   useEffect(() => registerChatAsk(askAbout), [askAbout]);
+  const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
   const ys = useRef<Record<string, number>>({});
   const listY = useRef(0);
   const scrolledTo = useRef<string | null>(null);
-  const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
+
+  /** A function card or a widget's quick action: show the customer's prompt first, then ask. */
+  const pick = useCallback(
+    (action: QuickAction) => sendChip(action, FUNCTIONS.find((f) => f.action === action)?.prompt),
+    [sendChip],
+  );
 
   const voice = useVoiceConversation({
     messages,
@@ -58,11 +58,13 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
   const host: WidgetHostApi = useMemo(
     () => ({
       request: apiClient.request,
-      sendChat: (req) => (req.quick_action ? sendChip(req.quick_action as QuickAction) : send(req.message ?? "")),
+      sendChat: (req) => (req.quick_action ? pick(req.quick_action as QuickAction) : send(req.message ?? "")),
       formatCents,
     }),
-    [send, sendChip],
+    [send, pick],
   );
+
+  const steps = useMemo(() => typingSteps(pending, today), [pending, today]);
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -88,7 +90,7 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
                   </Text>
                   <Text style={styles.sub}>Choose an option or ask your own question.</Text>
                 </View>
-                <FunctionCards onPick={sendChip} disabled={busy} />
+                <FunctionCards onPick={pick} disabled={busy} />
               </>
             ) : null}
             <View onLayout={(e) => (listY.current = e.nativeEvent.layout.y)}>
@@ -107,12 +109,7 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
                 onMessageLayout={(id, y) => (ys.current[id] = y)}
               />
             </View>
-            {busy ? (
-              <View accessibilityRole="progressbar" accessibilityLabel="Looking at your data" style={styles.loading}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.status}>{waitText}</Text>
-              </View>
-            ) : null}
+            {busy ? <TypingBubble steps={steps} /> : null}
             {error ? (
               <View accessibilityRole="alert" style={styles.error}>
                 <Text style={styles.errorText}>{error}</Text>
@@ -172,7 +169,6 @@ export function ChatScreen({ chat }: { chat: UseChat }) {
 }
 
 const styles = StyleSheet.create({
-  loading: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   flex: { flex: 1 },
   scroll: { flex: 1, backgroundColor: colors.background },
   content: {
@@ -184,7 +180,6 @@ const styles = StyleSheet.create({
   intro: { gap: 4, paddingVertical: 4 },
   heading: { fontSize: 24, lineHeight: 30, fontFamily: fonts.bold, color: "#0F2817" },
   sub: { fontSize: 14, fontFamily: fonts.regular, color: "#2C4032" },
-  status: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: colors.textMuted },
   error: { gap: spacing.sm },
   errorText: { fontSize: 15, fontFamily: fonts.regular, color: colors.text },
   retry: { minHeight: 44, justifyContent: "center" },
