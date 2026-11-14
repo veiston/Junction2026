@@ -60,7 +60,7 @@ flowchart LR
 | B | `foundation-adapter-db` | `../Junction2026-adapter-db` | models-and-ports | [ ] |
 | B | `foundation-services` | `../Junction2026-services` | models-and-ports | [ ] |
 | B | `foundation-controllers` | `../Junction2026-controllers` | models-and-ports | [ ] |
-| B | `foundation-frontend-hooks` | `../Junction2026-frontend-hooks` | frontend-foundation | [ ] |
+| B | `foundation-frontend-hooks` | `../Junction2026-frontend-hooks` | frontend-foundation | [x] |
 | C | `foundation-tests` | `../Junction2026-tests` | all of the above | [ ] |
 
 Wave B worktrees are created by `scripts/spawn-wave.sh B` after the dependency is merged into `foundation`.
