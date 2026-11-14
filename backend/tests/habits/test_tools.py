@@ -147,3 +147,11 @@ def test_a_savings_goal_gets_the_weeks_it_would_take(service):
 def test_a_bad_goal_is_rejected(service, bad):
     with pytest.raises(ValidationFailed):
         tool("suggest_challenges").run(CTX, {"goal_cents": bad})
+
+
+def test_a_savings_goal_is_worked_out_from_the_running_challenge(service):
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    r = tool("suggest_challenges").run(CTX, {"goal_cents": 60000})
+    check(r, "challenge_progress")
+    assert r.facts["weekly_saving_cents"] == 1300 and r.facts["weeks_to_goal"] == -(-60000 // 1300)
+    assert "estimate" in r.facts["note"]

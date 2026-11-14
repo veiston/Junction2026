@@ -145,6 +145,18 @@ class SuggestChallengesTool(_HabitsTool):
         running = [i for i in all_items if i.challenge.status.value == "active"]
         if running:
             current = running[0]
+            weekly_saving = max(0, (current.baseline_cents or 0) - (current.challenge.rule.amount_cents or 0))
+            if goal is not None and weekly_saving > 0:
+                facts = {
+                    "already_running": True, "title": current.challenge.title, "days_left": current.days_left,
+                    "goal_cents": goal, "weekly_saving_cents": weekly_saving, "weeks_to_goal": -(-goal // weekly_saving),
+                    "note": ("The customer is saving for a goal. Their running challenge could free about "
+                             "weekly_saving_cents a week if the goal is reached, so the goal would be reached in about "
+                             "weeks_to_goal weeks if they keep repeating it. This is an estimate. Say that only one "
+                             "challenge runs at a time and you cannot look up prices or trips."),
+                }
+                return ToolResult(facts=facts, widgets=[_widget("challenge_progress", current)],
+                                  sources=[current.source])
             facts = {
                 "already_running": True,
                 "title": current.challenge.title, "days_left": current.days_left, "on_track": current.on_track,
