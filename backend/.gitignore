@@ -1,0 +1,14 @@
+# Local Python environment and generated Python files
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local backend configuration
+.env
+.env.*
+!.env.example

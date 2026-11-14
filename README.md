@@ -11,7 +11,12 @@ Junction 2026, S-Bank challenge solution
 
 ``./download.sh && ./initialize.sh && ./run.sh``
 
-Delete the ``.csv`` files and run ``download.bat/sh`` to download the full data.
+Delete the `.csv` files and run `download.bat` or `download.sh` to download the full data.
+
+## Set up the database
+
+Run `./setup_db.sh` on macOS/Linux or `setup_db.bat` on Windows.
+It creates the local SQLite database from the challenge CSV files.
 
 ## Tech Stack
 
