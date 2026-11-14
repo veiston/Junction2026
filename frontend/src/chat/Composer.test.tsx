@@ -1,7 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { StyleSheet } from "react-native";
-
-import { Composer } from "./Composer";
+import { Composer, WEB_NO_FOCUS_RING } from "./Composer";
 
 const input = () => screen.getByLabelText("Message");
 
@@ -33,11 +31,15 @@ describe("Composer", () => {
     expect(input().props.value).toBe("hello coach");
   });
 
-  it("has no extra left icon and no browser focus ring, only a text cursor", () => {
+  it("has no extra left icon, only a text cursor", () => {
     render(<Composer onSend={jest.fn()} />);
     expect(screen.UNSAFE_queryAllByProps({ name: "message-outline" })).toHaveLength(0);
-    expect(StyleSheet.flatten(input().props.style).outlineWidth).toBe(0);
     expect(input().props.cursorColor).toBeTruthy();
+  });
+
+  it("switches the browser focus ring off with outline-style none (outline-width alone is ignored)", () => {
+    // Chrome's focus ring uses outline-style: auto, which ignores outline-width: 0.
+    expect(WEB_NO_FOCUS_RING.outlineStyle).toBe("none");
   });
 
   it("does not send while disabled or empty", () => {
