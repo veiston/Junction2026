@@ -35,6 +35,7 @@ The database step takes a few minutes. If `db/money_coach.sqlite3` already exist
 
 1. UV
 2. Python
+3. FastAPI: ``POST /api/v1/chat`` (Gemini). `backend/local_ai.py` is a local Ollama (gemma4:e4b) prototype that is not wired into the API yet; to try it, install [Ollama](https://ollama.com/) and run ``ollama pull gemma4:e4b``
 
 ### Frontend
 
