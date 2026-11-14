@@ -20,7 +20,7 @@ interface Props {
 
 /** Chat UI: all data comes from the `chat` hook result passed in. */
 export function ChatScreen({ chat, greeting }: Props) {
-  const { messages, busy, error, send, sendChip, retry } = chat;
+  const { messages, busy, error, send, sendChip, retry, started } = chat;
   const [seeAll, setSeeAll] = useState<TransactionListData | null>(null);
 
   const host: WidgetHostApi = useMemo(
@@ -39,7 +39,7 @@ export function ChatScreen({ chat, greeting }: Props) {
           <SeeAllPanel title={seeAll.title} filter={seeAll.filter} onClose={() => setSeeAll(null)} />
         ) : (
           <>
-            {messages.length === 0 && greeting ? <Text style={styles.greeting}>{greeting}</Text> : null}
+            {!started && greeting ? <Text style={styles.greeting}>{greeting}</Text> : null}
             <MessageList messages={messages} api={host} onSend={send} onSeeAll={setSeeAll} />
             {busy ? (
               <Text accessibilityRole="progressbar" style={styles.status}>
@@ -54,7 +54,7 @@ export function ChatScreen({ chat, greeting }: Props) {
                 </Pressable>
               </View>
             ) : null}
-            {messages.length === 0 ? <QuickActions onChip={sendChip} disabled={busy} /> : null}
+            {!started ? <QuickActions onChip={sendChip} disabled={busy} /> : null}
           </>
         )}
       </ScrollView>
