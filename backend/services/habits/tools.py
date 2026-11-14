@@ -136,13 +136,20 @@ class SuggestChallengesTool(_HabitsTool):
             }
             return ToolResult(facts=facts, widgets=[_widget("challenge_progress", current)], sources=[current.source])
         s = self._svc().challenge_suggestions(ctx.customer_id)
+        # A habit the customer just finished is repeated with its own button; here they get a different one.
+        finished = [i for i in self._svc().list_challenges(ctx.customer_id).items
+                    if i.challenge.status.value in ("won", "lost")]
+        last_group = max(finished, key=lambda i: i.challenge.id).challenge.spend_group if finished else None
+        fresh = [t for t in s.items if t.spend_group != last_group] or s.items
+        # One habit at a time: the card and the reply must describe the same one.
+        s = s.model_copy(update={"items": fresh[:1]})
         facts = {
             "count": len(s.items),
             "items": [{"title": t.title, "duration_days": int(t.duration_days),
                        "baseline_cents": t.baseline_cents, "baseline_count": t.baseline_count,
                        "target_cents": t.rule.amount_cents, "estimated_saving_cents": t.estimated_saving_cents,
                        "yearly_saving_cents": t.yearly_saving_cents, "reason": t.reason} for t in s.items],
-            "note": ("The customer starts the experiment with the button on the card. The yearly figure is an "
+            "note": ("Describe only this habit. The customer starts the challenge with the button on the card. The yearly figure is an "
                      "estimate, say so." if s.items
                      else "No regular everyday habit found yet. Say there is nothing suitable for an experiment "
                           "right now and point to the spending analysis."),

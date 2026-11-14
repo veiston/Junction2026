@@ -73,8 +73,11 @@ class HabitsServiceImpl:
 
     def start_challenge(self, customer_id: str, request: StartChallengeRequest) -> ChallengeProgress:
         today = self._clock.today()
+        self.list_challenges(customer_id)  # settles finished challenges before the duplicate check
         template = next((t for t in self._challenge_calc.templates(customer_id, today)
                          if t.id == request.template_id), None)
+        if template is None:
+            template = self._challenge_calc.template_for(customer_id, request.template_id, today)
         if template is None:
             raise NotFound("Challenge template not found.")
         if self._challenges.active_with_template(customer_id, template.id) is not None:

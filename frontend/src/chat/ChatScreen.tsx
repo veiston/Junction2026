@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api as apiClient } from "@/api/client";
@@ -12,6 +12,7 @@ import { MessageList } from "./MessageList";
 import { SeeAllPanel } from "./SeeAllPanel";
 import { SuggestionChips } from "./SuggestionChips";
 import type { WidgetHostApi } from "./registry";
+import { registerSilentAsk } from "./silentAsk";
 import { QUICK_ACTION_TEXT, type UseChat } from "./useChat";
 
 /** Chat UI: all data comes from the `chat` hook result passed in. */
@@ -22,9 +23,10 @@ const WAIT_TEXT: Record<string, string> = {
 };
 
 export function ChatScreen({ chat }: { chat: UseChat }) {
-  const { messages, busy, error, send, sendChip, retry, started } = chat;
+  const { messages, busy, error, send, sendChip, ask, retry, started } = chat;
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const waitText = (lastUser && "text" in lastUser && WAIT_TEXT[lastUser.text]) || "Looking at your data. This takes a few seconds.";
+  useEffect(() => registerSilentAsk(ask), [ask]);
   const scroll = useRef<ScrollView>(null);
   const ys = useRef<Record<string, number>>({});
   const listY = useRef(0);

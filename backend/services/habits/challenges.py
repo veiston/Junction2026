@@ -46,41 +46,60 @@ class ChallengeCalculator:
     # -------------------------------------------------------------- templates
     def templates(self, customer_id: str, today: date) -> list[ChallengeTemplate]:
         """One-week experiments on regular everyday habits found in the last 28 full days."""
-        first = max(DATA_FROM, today - timedelta(days=LOOKBACK_DAYS))
-        last = today - timedelta(days=1)
-        if first > last:
-            return []
-        rows = everyday_rows(self._tx.all_between(customer_id, first, last))
-        baseline_first = today - timedelta(days=EXPERIMENT_DAYS)
+        rows = self._recent_rows(customer_id, today)
         out: list[ChallengeTemplate] = []
         for g in group_totals(rows):
             if g.tx_count < MIN_PURCHASES:
                 continue
-            group = g.spend_group.value
-            baseline, count = self._group_spend(customer_id, group, baseline_first, last)
-            if count < 1 or baseline <= 0:
-                continue
-            target = _target_cents(baseline)
-            saving = baseline - target
-            name = g.label.lower()
-            if target == 0:
-                title = f"A week without {name}"
-                description = f"Skip {name} for {EXPERIMENT_DAYS} days."
-            else:
-                title = f"Keep {name} under {euros(target)} for {EXPERIMENT_DAYS} days"
-                description = f"Spend at most {euros(target)} on {name} over the next {EXPERIMENT_DAYS} days."
-            noun = "purchase" if count == 1 else "purchases"
-            out.append(ChallengeTemplate(
-                id=f"max_amount_{group}_{EXPERIMENT_DAYS}d", title=title, description=description,
-                spend_group=g.spend_group, rule=ChallengeRule(kind="max_amount", amount_cents=target),
-                duration_days=EXPERIMENT_DAYS, estimated_saving_cents=saving,
-                reason=f"{count} {noun} on {name}, {euros(baseline)} in the last {EXPERIMENT_DAYS} days.",
-                baseline_cents=baseline, baseline_count=count, yearly_saving_cents=saving * WEEKS_PER_YEAR,
-                concept=render_concept("compare_equal_periods"),
-            ))
+            template = self._make(customer_id, g, today, skip_if_over_today=True)
+            if template is not None:
+                out.append(template)
             if len(out) == MAX_SUGGESTIONS:
                 break
         return out
+
+    def template_for(self, customer_id: str, template_id: str, today: date) -> ChallengeTemplate | None:
+        """Rebuilds a template by id, so a finished experiment can be repeated from fresh numbers."""
+        prefix, suffix = "max_amount_", f"_{EXPERIMENT_DAYS}d"
+        if not (template_id.startswith(prefix) and template_id.endswith(suffix)):
+            return None
+        group = template_id[len(prefix):-len(suffix)]
+        g = next((x for x in group_totals(self._recent_rows(customer_id, today)) if x.spend_group.value == group), None)
+        return self._make(customer_id, g, today, skip_if_over_today=False) if g else None
+
+    def _recent_rows(self, customer_id: str, today: date):
+        first = max(DATA_FROM, today - timedelta(days=LOOKBACK_DAYS))
+        last = today - timedelta(days=1)
+        if first > last:
+            return []
+        return everyday_rows(self._tx.all_between(customer_id, first, last))
+
+    def _make(self, customer_id: str, g, today: date, skip_if_over_today: bool) -> ChallengeTemplate | None:
+        group = g.spend_group.value
+        baseline, count = self._group_spend(
+            customer_id, group, today - timedelta(days=EXPERIMENT_DAYS), today - timedelta(days=1))
+        if count < 1 or baseline <= 0:
+            return None
+        target = _target_cents(baseline)
+        if skip_if_over_today and self._group_spend(customer_id, group, today, today)[0] > target:
+            return None  # already over the goal today, so this challenge could not be won
+        saving = baseline - target
+        name = g.label.lower()
+        if target == 0:
+            title = f"A week without {name}"
+            description = f"Skip {name} for {EXPERIMENT_DAYS} days."
+        else:
+            title = f"Keep {name} under {euros(target)} for {EXPERIMENT_DAYS} days"
+            description = f"Spend at most {euros(target)} on {name} over the next {EXPERIMENT_DAYS} days."
+        noun = "purchase" if count == 1 else "purchases"
+        return ChallengeTemplate(
+            id=f"max_amount_{group}_{EXPERIMENT_DAYS}d", title=title, description=description,
+            spend_group=g.spend_group, rule=ChallengeRule(kind="max_amount", amount_cents=target),
+            duration_days=EXPERIMENT_DAYS, estimated_saving_cents=saving,
+            reason=f"{count} {noun} on {name}, {euros(baseline)} in the last {EXPERIMENT_DAYS} days.",
+            baseline_cents=baseline, baseline_count=count, yearly_saving_cents=saving * WEEKS_PER_YEAR,
+            concept=render_concept("compare_equal_periods"),
+        )
 
     # --------------------------------------------------------------- progress
     def progress(self, record: ChallengeRecord, today: date) -> tuple[ChallengeProgress, str]:
@@ -101,8 +120,8 @@ class ChallengeCalculator:
         else:
             ok = count <= (record.rule_count or 0)
         status = record.status
-        if status == "active" and today >= record.end_date:
-            status = "won" if ok else "lost"
+        if status != "cancelled":  # derived from the date, so moving the demo clock back stays consistent
+            status = ("won" if ok else "lost") if today >= record.end_date else "active"
         elapsed = min(duration, max(0, (today - record.start_date).days))
         projected = amount * duration // elapsed if elapsed >= 1 else None
         if status == "active" and record.rule_kind == "max_amount" and projected is not None and projected > target:

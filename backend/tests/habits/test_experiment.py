@@ -158,8 +158,13 @@ def test_active_off_track_when_projection_exceeds_target_even_if_under_target_so
 
 
 def test_active_off_track_when_current_exceeds_target():
-    p, _ = run_week(rows("taxis", [("2026-09-15", 5000)], start_id=60), date(2026, 9, 15))
-    assert p.on_track is False  # same day: no projection yet, but already over
+    p, _ = run_week(rows("taxis", [("2026-09-16", 5000)], start_id=60), date(2026, 9, 16))
+    assert p.on_track is False  # already over the 49.00 goal on day one
+
+
+def test_a_habit_already_over_its_goal_today_is_not_offered():
+    svc, *_ = build(rows("taxis", TAXIS) + rows("taxis", [("2026-09-15", 5000)], start_id=60))
+    assert ids(svc) == []
 
 
 def test_change_pct_is_null_without_baseline():
@@ -171,3 +176,27 @@ def test_change_pct_is_null_without_baseline():
     clock.set_today(date(2026, 7, 3))
     p = svc.list_challenges(ME).items[0]
     assert p.baseline_cents == 0 and p.change_pct is None and p.difference_cents == 0
+
+
+def test_a_finished_experiment_can_be_repeated_from_fresh_numbers():
+    svc, clock, _ = build(rows("taxis", TAXIS + [("2026-09-17", 3881)]))
+    start(svc)
+    clock.set_today(date(2026, 9, 22))
+    again = svc.start_challenge(ME, StartChallengeRequest(template_id=TAXI_ID))
+    assert again.challenge.status.value == "active" and again.baseline_cents == 3881
+
+
+def test_a_running_experiment_still_blocks_a_second_start():
+    svc, *_ = build(rows("taxis", TAXIS))
+    start(svc)
+    with pytest.raises(Conflict):
+        start(svc)
+
+
+def test_moving_the_clock_back_makes_a_settled_experiment_active_again():
+    svc, clock, _ = build(rows("taxis", TAXIS + [("2026-09-17", 3881)]))
+    start(svc)
+    clock.set_today(date(2026, 9, 22))
+    assert svc.list_challenges(ME).items[0].challenge.status.value == "won"
+    clock.set_today(date(2026, 9, 16))
+    assert svc.list_challenges(ME).items[0].challenge.status.value == "active"

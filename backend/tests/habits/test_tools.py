@@ -102,3 +102,4 @@ def test_customer_id_argument_is_dropped_by_registry(service):
     reg = ToolRegistry(TOOLS)
     r = reg.run(CTX, "suggest_monthly_limit", {"customer_id": "CUST00002"})
     assert r.widgets
+

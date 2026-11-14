@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { ChallengeProgress as ChallengeProgressData } from "@/contracts";
 import type { WidgetProps } from "@/chat/registry";
 import { coachColors, colors, fonts, spacing } from "@/theme";
+import { askSilently } from "@/chat/silentAsk";
 import { ConceptNoteBody } from "@/widgets/common/ConceptNote";
 
 import { useStartChallenge } from "../hooks/useStartChallenge";
@@ -62,7 +63,9 @@ export function ChallengeProgress({ widget, api }: WidgetProps<ChallengeProgress
             onPress={() => {
               void api
                 .request("PUT", "/demo/clock", { today: c.end_date })
-                .then(() => api.sendChat({ message: PROGRESS_MESSAGE }))
+                .then(() => {
+                  if (!askSilently(PROGRESS_MESSAGE)) api.sendChat({ message: PROGRESS_MESSAGE });
+                })
                 .catch(() => undefined);
             }}
           />

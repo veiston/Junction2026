@@ -16,6 +16,8 @@ export interface UseChat {
   error: string | null;
   send: (text: string) => void;
   sendChip: (action: QuickAction) => void;
+  /** Asks the assistant without adding a customer bubble. */
+  ask: (text: string) => void;
   /** Re-sends the last failed turn. */
   retry: () => void;
   /** False on the first view (three function buttons shown); true once a message or function was sent. */
@@ -101,6 +103,14 @@ export function useChat(): UseChat {
     [post],
   );
 
+  const ask = useCallback(
+    (text: string) => {
+      setStarted(true);
+      void post({ message: text });
+    },
+    [post],
+  );
+
   const sendChip = useCallback(
     (action: QuickAction) => {
       setMessages((m) => [...m, { id: `u-${++seq.current}`, role: "user", text: QUICK_ACTION_TEXT[action] }]);
@@ -124,5 +134,5 @@ export function useChat(): UseChat {
     setStarted(false);
   }, []);
 
-  return { messages, busy, error, send, sendChip, retry, started, reset };
+  return { messages, busy, error, send, sendChip, ask, retry, started, reset };
 }
