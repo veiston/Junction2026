@@ -127,7 +127,7 @@ export const challengeProgressMock: ChallengeProgress = {
   on_track: true,
   baseline_cents: 9926,
   baseline_count: 3,
-  concept: conceptMocks.spending_pace,
+  concept: conceptMocks.small_purchases_add_up,
   source: source("Taxi spending since the experiment started", "2026-09-10", "2026-09-13", 1),
 };
 

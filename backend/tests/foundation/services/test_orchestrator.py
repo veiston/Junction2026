@@ -221,3 +221,12 @@ def test_bad_concept_id_is_reported_to_the_model(world):
 
 def test_prompt_has_explain_rule():
     assert "explain_concept" in prompts.SYSTEM_PROMPT and "no blame" in prompts.SYSTEM_PROMPT
+
+
+def test_a_concept_card_is_the_whole_answer_so_the_text_is_one_short_sentence(world):
+    orch, llm, _ = world
+    llm.push(call("explain_concept", {"concept_id": "spending_pace"}))
+    llm.push(say("A long paraphrase of the same explanation that would repeat the card."))
+    r = ask(orch, "Explain in simple words: Spending pace")
+    assert [w.type.value for w in r.message.widgets] == ["concept_note"]
+    assert r.message.text == prompts.CONCEPT_INTRO

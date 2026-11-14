@@ -148,8 +148,10 @@ class ChallengeCalculator:
         if status in ("won", "lost"):
             concept = render_concept("one_week_is_not_proof")
         elif status == "active":
-            concept = render_concept("spending_pace", **({"projected": projected, "target": target}
-                                                         if projected is not None else {}))
+            concept = render_concept(
+                "small_purchases_add_up",
+                **({"weekly": baseline, "yearly": baseline * WEEKS_PER_YEAR} if baseline > 0 else {}),
+            )
         challenge = Challenge(
             id=record.id, template_id=record.template_id, title=record.title, spend_group=record.spend_group,
             rule=ChallengeRule(kind=record.rule_kind, amount_cents=record.rule_amount_cents, count=record.rule_count),

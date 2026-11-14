@@ -108,7 +108,7 @@ def test_start_errors_and_initial_progress():
     p = start(svc)
     assert p.challenge.start_date == TODAY and p.days_left == 7 and p.challenge.status.value == "active"
     assert p.baseline_cents == 9926 and p.baseline_count == 3 and p.current_amount_cents == 0
-    assert p.on_track is True and p.concept.id.value == "spending_pace" and p.next_step is None
+    assert p.on_track is True and p.concept.id.value == "small_purchases_add_up" and p.next_step is None
     with pytest.raises(Conflict):
         start(svc)
     assert len(challenges.rows) == 1
@@ -148,7 +148,7 @@ def test_purchase_on_the_end_date_is_not_counted():
 def test_active_on_track_uses_projection_after_a_full_day():
     p, _ = run_week(rows("taxis", [("2026-09-16", 1000)], start_id=60), date(2026, 9, 18))
     assert p.on_track is True and p.challenge.status.value == "active" and p.days_left == 4
-    assert "about EUR 23.33" in p.concept.text and "target of EUR 49" in p.concept.text
+    assert "EUR 99.26" in p.concept.text and "EUR 5161.52" in p.concept.text
     assert p.next_step is None
 
 

@@ -47,6 +47,7 @@ LLM_DOWN_WITH_CARD = "I could not write the explanation just now, but here is wh
 OFF_TOPIC = "I can only help with your own money: your spending, plans and habits. Try asking to see your latest transactions."
 TOOL_PROBLEM = "Sorry, I couldn't work that out. Try rephrasing, for example: show my latest transactions."
 TOO_MANY_ROUNDS = "That needed more steps than I can take in one go. Could you ask for one thing at a time?"
+CONCEPT_INTRO = "Here is a short explanation."
 EMPTY_REPLY = "Here is what I found."
 
 DEFAULT_SUGGESTIONS: list[str] = []

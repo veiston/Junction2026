@@ -61,7 +61,7 @@ export function explainMessage(widget: Widget, formatCents?: (cents: number) => 
 /** A question the customer would ask, not a command word. */
 const ASK_LABEL: Record<string, string> = {
   challenge_suggestions: "Why this goal?",
-  challenge_progress: "What does this mean?",
+  challenge_progress: "Why does this matter?",
 };
 
 function ExplainButton({ widget, api }: { widget: Widget; api: WidgetHostApi }) {

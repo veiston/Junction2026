@@ -66,7 +66,7 @@ describe("render from mocks", () => {
     expect(screen.getByLabelText(/Spent so far/)).toBeTruthy();
     expect(screen.getByLabelText(/Your goal /)).toBeTruthy();
     expect(screen.getByText("3 days left · doing well")).toBeTruthy();
-    expect(screen.queryByText("Spending pace")).toBeNull(); // explained by the Explain button, not twice
+    expect(screen.queryByText("Small purchases add up")).toBeNull(); // explained by the Explain button, not twice
   });
 
   it("challenge_progress active at risk", () => {

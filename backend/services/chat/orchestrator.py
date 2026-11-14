@@ -105,6 +105,8 @@ class ChatOrchestrator:
             if turn.finish_reason == "error":
                 return prompts.LLM_DOWN, widgets, sources
             if not turn.tool_calls:
+                if any(w.type.value == "concept_note" for w in widgets):
+                    return prompts.CONCEPT_INTRO, widgets, sources  # the card is the explanation, say it once
                 return (turn.text.strip() or prompts.EMPTY_REPLY), widgets, sources
             if round_no == MAX_TOOL_ROUNDS:
                 return prompts.TOO_MANY_ROUNDS, widgets, sources
