@@ -137,14 +137,15 @@ class SuggestChallengesTool(_HabitsTool):
         another = arguments.get("another") is True
         all_items = self._svc().list_challenges(ctx.customer_id).items
         running = [i for i in all_items if i.challenge.status.value == "active"]
-        if running and not another:
+        if running:
             current = running[0]
             facts = {
                 "already_running": True,
                 "title": current.challenge.title, "days_left": current.days_left, "on_track": current.on_track,
                 "current_amount_cents": current.current_amount_cents,
-                "note": ("The customer already has a 7-day challenge running. Say so in one friendly sentence, say how it is "
-                         "going and that a new challenge can start when this one ends. Do not offer a new one now."),
+                "note": ("The customer already has a 7-day challenge running, and only one can run at a time. Say so in one "
+                         "friendly sentence, say how it is going and that a new challenge can start when this one "
+                         "ends. Do not offer a new one now."),
             }
             return ToolResult(facts=facts, widgets=[_widget("challenge_progress", current)], sources=[current.source])
         s = self._svc().challenge_suggestions(ctx.customer_id)
@@ -189,7 +190,9 @@ class GetChallengeProgressTool(_HabitsTool):
         items = self._svc().list_challenges(ctx.customer_id).items
         if not items:
             return ToolResult(facts={"has_challenges": False, "note": "No challenge started yet. Offer suggestions."})
-        shown = ([i for i in items if i.challenge.status.value == "active"] or items)[:MAX_PROGRESS_WIDGETS]
+        active = [i for i in items if i.challenge.status.value == "active"]
+        # One challenge at a time: the running one, else the most recent one that finished.
+        shown = active[:1] or [max(items, key=lambda i: i.challenge.id)]
         facts = {
             "has_challenges": True,
             "items": [{"title": i.challenge.title, "status": i.challenge.status.value, "days_left": i.days_left,

@@ -218,3 +218,12 @@ def test_the_reason_names_the_spending_pattern():
     (t,) = svc.challenge_suggestions(ME).items
     assert "3 purchases on taxis, EUR 99.26 in the last 7 days." in t.reason
     assert "up from about EUR 10 in a usual week" in t.reason  # the earlier weeks were much quieter
+
+
+def test_only_one_challenge_runs_at_a_time():
+    svc, clock, _ = build(rows("taxis", TAXIS) + rows("bars", [("2026-08-25", 2000), ("2026-09-01", 2000), ("2026-09-09", 2500), ("2026-09-17", 2200)], start_id=200))
+    start(svc)
+    with pytest.raises(Conflict):
+        svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_bars_7d"))
+    clock.set_today(date(2026, 9, 22))  # the first one is over, so a new one can start
+    assert svc.start_challenge(ME, StartChallengeRequest(template_id="max_amount_bars_7d")).challenge.status.value == "active"

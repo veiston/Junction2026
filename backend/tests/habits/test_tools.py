@@ -127,3 +127,10 @@ def test_a_finished_challenge_carries_what_you_learned(service):
     item = tool("get_challenge_progress").run(later, {}).facts["items"][0]
     assert item["status"] in ("won", "lost")
     assert "comparing equal periods" in item["what_you_learned"] and "not proof" in item["what_you_learned"]
+
+
+def test_asking_for_another_challenge_while_one_runs_shows_the_running_one(service):
+    service.start_challenge(ME, StartChallengeRequest(template_id="max_amount_taxis_7d"))
+    r = tool("suggest_challenges").run(CTX, {"another": True})
+    check(r, "challenge_progress")
+    assert r.facts["already_running"] is True and "only one can run at a time" in r.facts["note"]
