@@ -1,19 +1,21 @@
+import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AiTopBar } from "@/chat/AiTopBar";
 import { ChatScreen } from "@/chat/ChatScreen";
 import { useChat } from "@/chat/useChat";
 import { greetingFor, useSession } from "@/chat/useSession";
-import { HeaderBar } from "@/components/HeaderBar";
 import { colors, fontSize, spacing } from "@/theme";
 
 export default function AiScreen() {
+  const router = useRouter();
   const session = useSession();
   const chat = useChat();
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
-      <HeaderBar title="AI" />
+      <AiTopBar onBack={() => router.navigate("/")} onShowFunctions={chat.reset} />
       <View style={styles.body}>
         {session.status === "loading" && (
           <View style={styles.center}>

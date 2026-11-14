@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import { setToken } from "@/auth/token";
 import { transactionListMock } from "@/dev/mocks";
@@ -143,5 +143,61 @@ describe("See all", () => {
     expect(await screen.findByText("Row page 2")).toBeTruthy();
     fireEvent.press(screen.getByText("Back to chat"));
     await waitFor(() => expect(screen.getByText("Here")).toBeTruthy());
+  });
+});
+
+describe("first view and the three functions", () => {
+  it("hides the chips and the greeting after a message is sent", async () => {
+    fetchMock.mockResolvedValue(reply("Hi back"));
+    render(<Harness />);
+    fireEvent.changeText(screen.getByLabelText("Message"), "hello");
+    fireEvent.press(screen.getByLabelText("Send"));
+    expect(await screen.findByText("Hi back")).toBeTruthy();
+    expect(screen.queryByText("Understand my money")).toBeNull();
+    expect(screen.queryByText("Hello there")).toBeNull();
+  });
+
+  it("hides the chips as soon as a function is picked, even before the answer", async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    render(<Harness />);
+    fireEvent.press(screen.getByText("Improve my habits"));
+    await waitFor(() => expect(screen.queryByText("Plan my finances")).toBeNull());
+  });
+
+  it("reset brings the first view back with the three chips and an empty conversation", async () => {
+    fetchMock.mockResolvedValue(reply("Answer one"));
+    let chatRef: ReturnType<typeof useChat> | null = null;
+    function WithRef() {
+      const chat = useChat();
+      chatRef = chat;
+      return <ChatScreen chat={chat} greeting="Hello there" />;
+    }
+    render(<WithRef />);
+    fireEvent.changeText(screen.getByLabelText("Message"), "hello");
+    fireEvent.press(screen.getByLabelText("Send"));
+    expect(await screen.findByText("Answer one")).toBeTruthy();
+
+    act(() => chatRef!.reset());
+    expect(screen.getByText("Understand my money")).toBeTruthy();
+    expect(screen.getByText("Hello there")).toBeTruthy();
+    expect(screen.queryByText("Answer one")).toBeNull();
+  });
+
+  it("an answer that arrives after reset is dropped", async () => {
+    let finish: (v: unknown) => void = () => {};
+    fetchMock.mockImplementation(() => new Promise((r) => (finish = r)));
+    let chatRef: ReturnType<typeof useChat> | null = null;
+    function WithRef() {
+      const chat = useChat();
+      chatRef = chat;
+      return <ChatScreen chat={chat} greeting="Hello there" />;
+    }
+    render(<WithRef />);
+    fireEvent.changeText(screen.getByLabelText("Message"), "hello");
+    fireEvent.press(screen.getByLabelText("Send"));
+    act(() => chatRef!.reset());
+    await act(async () => finish(reply("Too late")));
+    expect(screen.queryByText("Too late")).toBeNull();
+    expect(screen.getByText("Understand my money")).toBeTruthy();
   });
 });
