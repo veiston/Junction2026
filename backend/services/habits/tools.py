@@ -124,17 +124,23 @@ class SuggestChallengesTool(_HabitsTool):
         "Find one regular everyday habit in the customer's own transactions and offer a 7-day challenge, "
         "to be compared with the 7 days before. "
         "Use for 'help me improve my habits', 'give me a challenge', 'how can I spend less on X'. "
-        "Set another=true when the customer asks for another, a different or a new habit or challenge."
+        "Set another=true when the customer asks for another, a different or a new habit or challenge. "
+        "Set goal_cents (euro cents) when the customer wants to save for something, such as a trip, to see how many "
+        "weeks of the challenge would pay for it."
     )
     parameters = {
         "type": "object",
-        "properties": {"another": {"type": "boolean"}},
+        "properties": {"another": {"type": "boolean"}, "goal_cents": {"type": "integer", "minimum": 1}},
         "additionalProperties": False,
     }
 
     def run(self, ctx: ToolContext, arguments: dict[str, Any]) -> ToolResult:
-        _check_args(arguments, {"another"})
+        _check_args(arguments, {"another", "goal_cents"})
         another = arguments.get("another") is True
+        goal = arguments.get("goal_cents")
+        if goal is not None and (not isinstance(goal, int) or isinstance(goal, bool) or goal < 1):
+            raise ValidationFailed("goal_cents must be a positive whole number of euro cents.",
+                                   [{"field": "goal_cents", "issue": "positive integer"}])
         all_items = self._svc().list_challenges(ctx.customer_id).items
         running = [i for i in all_items if i.challenge.status.value == "active"]
         if running:
@@ -174,6 +180,12 @@ class SuggestChallengesTool(_HabitsTool):
                      else "No other regular everyday habit to test right now. Say so kindly and point to the "
                           "spending analysis."),
         }
+        if goal is not None and s.items:
+            weekly = s.items[0].estimated_saving_cents
+            facts["goal_cents"] = goal
+            facts["weeks_to_goal"] = -(-goal // weekly) if weekly > 0 else None
+            facts["goal_note"] = ("Estimate only: the weekly saving is what this challenge could free if the goal is "
+                                  "reached. You cannot look up prices, trips or offers; say so if asked.")
         widgets = [_widget("challenge_suggestions", s)] if s.items else []
         return ToolResult(facts=facts, widgets=widgets)
 

@@ -134,3 +134,16 @@ def test_asking_for_another_challenge_while_one_runs_shows_the_running_one(servi
     r = tool("suggest_challenges").run(CTX, {"another": True})
     check(r, "challenge_progress")
     assert r.facts["already_running"] is True and "only one can run at a time" in r.facts["note"]
+
+
+def test_a_savings_goal_gets_the_weeks_it_would_take(service):
+    facts = tool("suggest_challenges").run(CTX, {"goal_cents": 60000}).facts
+    weekly = 1300  # the fixture's weekly saving
+    assert facts["goal_cents"] == 60000 and facts["weeks_to_goal"] == -(-60000 // weekly)
+    assert "Estimate only" in facts["goal_note"]
+
+
+@pytest.mark.parametrize("bad", [0, -5, 1.5, True, "600"])
+def test_a_bad_goal_is_rejected(service, bad):
+    with pytest.raises(ValidationFailed):
+        tool("suggest_challenges").run(CTX, {"goal_cents": bad})
