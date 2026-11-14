@@ -7,7 +7,6 @@ set BASE=https://github.com/hackjunction/Junction-2026-S-pankki/raw/main
 
 for %%f in (tx_junction_transactions.csv tx_customers_junction.csv mtg_negotiation_history.csv mtg_tx_customer_link_and_final_mtg_infio.csv) do call :get %%f
 echo Done.
-pause
 exit /b
 
 :get
